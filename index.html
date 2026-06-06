@@ -3006,7 +3006,7 @@
         <div class="portal-cat-icon">🏗️</div>
         <div class="portal-cat-name">Оффис</div>
       </button>
-      <button class="portal-cat-btn" onclick="showPage('rent')">
+      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentCat='rent'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='rent')); applyListingFilter();}, 100)">
         <div class="portal-cat-icon">🔑</div>
         <div class="portal-cat-name">Түрээс</div>
       </button>
@@ -3637,11 +3637,14 @@
       <button class="filter-pill" data-cat="house">Хаус <span class="count" id="cnt-house"></span></button>
       <button class="filter-pill" data-cat="land">Газар <span class="count" id="cnt-land"></span></button>
       <button class="filter-pill" data-cat="office">Оффис <span class="count" id="cnt-office"></span></button>
+      <button class="filter-pill" data-cat="rent">Түрээс <span class="count" id="cnt-rent"></span></button>
       <div style="flex:1"></div>
-      <button class="filter-pill" onclick="changeSorting()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
-        <span id="sortLabel">Эрэмбэлэх</span>
-      </button>
+      <select id="sortSelect" onchange="setSorting(this.value)" style="border:1px solid var(--line-2);border-radius:20px;padding:6px 12px;font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;color:var(--ink);background:var(--paper);cursor:pointer;outline:none;">
+        <option value="default">Шинэ эхлэх</option>
+        <option value="price-asc">Үнэ ↑ (хямд)</option>
+        <option value="price-desc">Үнэ ↓ (өндөр)</option>
+        <option value="area-desc">Талбай (том→жижиг)</option>
+      </select>
     </div>
 
     <div class="listings-grid" id="listingsGrid">
@@ -5442,8 +5445,109 @@
       parking: 'Талбай дотор', elevator: 'Хамаарахгүй', utilityCost: 'Ус, цахилгаан, хий холбоотой',
       ownership: 'Хувийн эзэмшил (60 жил)', cadastre: 'Кадастр шинэчилсэн, хил тодорхой', collateral: 'Барьцаагүй',
       taxDebt: 'Татвар тушаасан', condition: 'Хашаатай, нэн даруй барилга эхлэх боломжтой', legalNotes: 'Гэрчилгээ бэлэн (ХА-002341)'
-    }
+    },
+    // ---- ТҮРЭЭС ----
+    { id: 31, cat: 'rent', title: 'Зайсан, 2 өрөө түрээс', loc: 'Хан-Уул · Зайсан', district: 'khan-uul',
+      price: 1.8, pricePerSqm: 'Сарын түрээс', area: 65, rooms: 2, floor: '5/16', year: 2021,
+      tag: { type: 'normal', text: 'Түрээс' }, badges: ['verified'],
+      loanType: 'Хамаарахгүй', monthly: 1.8,
+      img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
+      buildingType: 'Цутгамал', insulation: '100мм EPS', heating: 'Төвлөрсөн', parking: 'Байхгүй',
+      elevator: '2 лифт', utilityCost: 'Нэмэлтээр', ownership: 'Хувийн', cadastre: 'Баталгаажсан',
+      collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй', condition: 'Бүрэн засвартай',
+      legalNotes: '1 сарын барьцаа + 1 сарын урьдчилгаа' },
+    { id: 32, cat: 'rent', title: 'Сансар, 3 өрөө, бүрэн тавилгатай', loc: 'Сүхбаатар · Сансар', district: 'sukhbaatar',
+      price: 2.5, pricePerSqm: 'Сарын түрээс', area: 90, rooms: 3, floor: '8/14', year: 2019,
+      tag: { type: 'normal', text: 'Түрээс' }, badges: ['verified', 'hot'],
+      loanType: 'Хамаарахгүй', monthly: 2.5,
+      img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80',
+      buildingType: 'Цутгамал', insulation: '120мм MW', heating: 'Төвлөрсөн',
+      parking: '1 машины байр (нэмэлтээр)', elevator: '3 лифт', utilityCost: 'Нэмэлтээр',
+      ownership: 'Хувийн', cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
+      condition: 'Тавилгатай, угсралттай', legalNotes: '1 сарын барьцаа' },
+    { id: 33, cat: 'rent', title: 'Чингэлтэй, 1 өрөө studio', loc: 'Чингэлтэй · Төв', district: 'chingeltei',
+      price: 0.8, pricePerSqm: 'Сарын түрээс', area: 35, rooms: 1, floor: '3/9', year: 2017,
+      tag: { type: 'normal', text: 'Түрээс' }, badges: [],
+      loanType: 'Хамаарахгүй', monthly: 0.8,
+      img: 'https://images.unsplash.com/photo-1560185127-6ac024dd3cbc?w=800&q=80',
+      buildingType: 'Панел', insulation: '80мм EPS', heating: 'Төвлөрсөн', parking: 'Байхгүй',
+      elevator: '1 лифт', utilityCost: 'Нэмэлтээр', ownership: 'Хувийн',
+      cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
+      condition: 'Хэрэгцээний засвартай', legalNotes: 'Гэрээ 1 жил' },
+    { id: 34, cat: 'rent', title: 'Баянзүрх, 2 өрөө цэмцгэр', loc: 'Баянзүрх · 17-р хороо', district: 'bayanzurkh',
+      price: 1.2, pricePerSqm: 'Сарын түрээс', area: 58, rooms: 2, floor: '6/12', year: 2020,
+      tag: { type: 'below', text: '↓ Хямд' }, badges: ['new'],
+      loanType: 'Хамаарахгүй', monthly: 1.2,
+      img: 'https://images.unsplash.com/photo-1484154218744-5b44cd8c5afd?w=800&q=80',
+      buildingType: 'Цутгамал', insulation: '100мм EPS', heating: 'Төвлөрсөн', parking: 'Байхгүй',
+      elevator: '2 лифт', utilityCost: 'Нэмэлтээр', ownership: 'Хувийн',
+      cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
+      condition: 'Засвартай', legalNotes: '2 сарын урьдчилгаа' },
+    { id: 35, cat: 'rent', title: 'Баянгол, 1 өрөө Ногоон нуур', loc: 'Баянгол · Ногоон нуур', district: 'bayangol',
+      price: 0.75, pricePerSqm: 'Сарын түрээс', area: 38, rooms: 1, floor: '2/5', year: 2015,
+      tag: { type: 'normal', text: 'Түрээс' }, badges: [],
+      loanType: 'Хамаарахгүй', monthly: 0.75,
+      img: 'https://images.unsplash.com/photo-1512918728672-db6de3cd93e3?w=800&q=80',
+      buildingType: 'Хийц', insulation: '80мм', heating: 'Төвлөрсөн', parking: 'Байхгүй',
+      elevator: 'Байхгүй', utilityCost: 'Нэмэлтээр', ownership: 'Хувийн',
+      cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
+      condition: 'Дунд зэргийн', legalNotes: 'Гэрээ 6 сар+ боломжтой' },
+    { id: 36, cat: 'rent', title: 'Их Тойруу, 3 өрөө VIP', loc: 'Сүхбаатар · Их Тойруу', district: 'sukhbaatar',
+      price: 3.2, pricePerSqm: 'Сарын түрээс', area: 105, rooms: 3, floor: '12/18', year: 2023,
+      tag: { type: 'normal', text: 'Түрээс · Шинэ' }, badges: ['verified', 'new', 'hot'],
+      loanType: 'Хамаарахгүй', monthly: 3.2,
+      img: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80',
+      buildingType: 'Цутгамал монолит', insulation: '120мм MW', heating: 'Хувийн зохицуулалттай',
+      parking: '2 машины байр', elevator: '3 лифт', utilityCost: 'Нэмэлтээр',
+      ownership: 'Хувийн', cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
+      condition: 'Брэнд шинэ, угсралттай', legalNotes: '2 сарын барьцаа' },
+    { id: 37, cat: 'rent', title: 'Сонгинохайрхан, 2 өрөө', loc: 'Сонгинохайрхан · 17-р хороо', district: 'songinokhairkhan',
+      price: 0.95, pricePerSqm: 'Сарын түрээс', area: 55, rooms: 2, floor: '4/9', year: 2016,
+      tag: { type: 'normal', text: 'Түрээс' }, badges: [],
+      loanType: 'Хамаарахгүй', monthly: 0.95,
+      img: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80',
+      buildingType: 'Панел', insulation: '80мм', heating: 'Төвлөрсөн', parking: 'Байхгүй',
+      elevator: '1 лифт', utilityCost: 'Нэмэлтээр', ownership: 'Хувийн',
+      cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
+      condition: 'Дунд зэргийн', legalNotes: '1 сарын барьцаа' },
+    { id: 38, cat: 'rent', title: 'Хан-Уул, 4 өрөө хаус түрээс', loc: 'Хан-Уул · Яармаг', district: 'khan-uul',
+      price: 3.8, pricePerSqm: 'Сарын түрээс', area: 160, rooms: 4, floor: '2 давхар', year: 2018,
+      tag: { type: 'normal', text: 'Хаус түрээс' }, badges: ['verified'],
+      loanType: 'Хамаарахгүй', monthly: 3.8,
+      img: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80',
+      buildingType: 'Керамзитбетон блок', insulation: '100мм EPS', heating: 'Хувийн зуух',
+      parking: '2 машины байр (хашаанд)', elevator: 'Хамаарахгүй', utilityCost: 'Нэмэлтээр',
+      ownership: 'Хувийн', cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
+      condition: 'Сайн засвартай', legalNotes: '2 сарын барьцаа + гэрээ' },
+    { id: 39, cat: 'rent', title: 'Баянзүрх, 1 өрөө хямд', loc: 'Баянзүрх · 6-р хороо', district: 'bayanzurkh',
+      price: 0.65, pricePerSqm: 'Сарын түрээс', area: 32, rooms: 1, floor: '1/5', year: 2010,
+      tag: { type: 'normal', text: 'Түрээс · Хямд' }, badges: [],
+      loanType: 'Хамаарахгүй', monthly: 0.65,
+      img: 'https://images.unsplash.com/photo-1527456011965-6b88c71e5b9b?w=800&q=80',
+      buildingType: 'Хийц өрлөг', insulation: 'Байхгүй', heating: 'Төвлөрсөн', parking: 'Байхгүй',
+      elevator: 'Байхгүй', utilityCost: 'Нэмэлтээр', ownership: 'Хувийн',
+      cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
+      condition: 'Хэрэгцээний', legalNotes: 'Гэрээ уян хатан' },
+    { id: 40, cat: 'rent', title: 'Сүхбаатар, 2 өрөө цэвэрхэн', loc: 'Сүхбаатар · Энхтайваны өргөн чөлөө', district: 'sukhbaatar',
+      price: 2.0, pricePerSqm: 'Сарын түрээс', area: 72, rooms: 2, floor: '7/15', year: 2022,
+      tag: { type: 'normal', text: 'Түрээс' }, badges: ['verified', 'new'],
+      loanType: 'Хамаарахгүй', monthly: 2.0,
+      img: 'https://images.unsplash.com/photo-1598928506311-c55c1bfde24a?w=800&q=80',
+      buildingType: 'Цутгамал монолит', insulation: '110мм EPS', heating: 'Хувийн зохицуулалттай',
+      parking: 'Подвал (нэмэлтээр)', elevator: '2 лифт', utilityCost: 'Нэмэлтээр',
+      ownership: 'Хувийн', cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
+      condition: 'Засвартай, хэсэгчлэн тавилгатай', legalNotes: '1 сарын барьцаа' }
   ];
+
+  // Load any user-submitted listings from localStorage
+  (function() {
+    try {
+      var saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]');
+      saved.forEach(function(l) {
+        if (!listings.find(function(x) { return x.id === l.id; })) listings.push(l);
+      });
+    } catch(e) {}
+  })();
 
   // ===== UTILITIES =====
   function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
@@ -5523,8 +5627,8 @@
         <div class="listing-body">
           <div class="listing-price-row">
             <div>
-              <div class="listing-price">${l.price >= 1000 ? (l.price/1000).toFixed(1) : l.price}<span style="font-size:14px; color:var(--ink-3); font-weight:500;"> ${l.price >= 1000 ? 'тэрбум' : 'сая'} ₮</span></div>
-              <div class="listing-price-sub">${typeof l.pricePerSqm === 'number' ? l.pricePerSqm + ' сая ₮/м²' : l.pricePerSqm}</div>
+              <div class="listing-price">${l.price >= 1000 ? (l.price/1000).toFixed(1) : l.price}<span style="font-size:14px; color:var(--ink-3); font-weight:500;"> ${l.price >= 1000 ? 'тэрбум' : 'сая'} ₮${l.cat === 'rent' ? '/сар' : ''}</span></div>
+              <div class="listing-price-sub">${l.cat === 'rent' ? 'Сарын түрээс' : (typeof l.pricePerSqm === 'number' ? l.pricePerSqm + ' сая ₮/м²' : (l.pricePerSqm || ''))}</div>
             </div>
             <span class="price-tag ${l.tag.type === 'normal' ? '' : l.tag.type}">${l.tag.text}</span>
           </div>
@@ -5571,8 +5675,8 @@
         <div class="listing-body">
           <div class="listing-price-row">
             <div>
-              <div class="listing-price">${fmtPrice(l.price).replace(' тэрбум ₮','').replace(' сая ₮','')}<span style="font-size:14px; color:var(--ink-3); font-weight:500;"> ${l.price >= 1000 ? 'тэрбум' : 'сая'} ₮</span></div>
-              <div class="listing-price-sub">${typeof l.pricePerSqm === 'number' ? l.pricePerSqm + ' сая ₮/м²' : l.pricePerSqm}</div>
+              <div class="listing-price">${fmtPrice(l.price).replace(' тэрбум ₮','').replace(' сая ₮','')}<span style="font-size:14px; color:var(--ink-3); font-weight:500;"> ${l.price >= 1000 ? 'тэрбум' : 'сая'} ₮${l.cat === 'rent' ? '/сар' : ''}</span></div>
+              <div class="listing-price-sub">${l.cat === 'rent' ? 'Сарын түрээс' : (typeof l.pricePerSqm === 'number' ? l.pricePerSqm + ' сая ₮/м²' : (l.pricePerSqm || ''))}</div>
             </div>
             <span class="price-tag ${l.tag.type === 'normal' ? '' : l.tag.type}">${l.tag.text}</span>
           </div>
@@ -6875,6 +6979,46 @@
   function submitListing() {
     if (!validateStep(5)) return;
     saveStepData(5);
+
+    // Save to listings array + localStorage
+    const s = addListingState;
+    const districtLabels = {
+      'khan-uul': 'Хан-Уул', 'sukhbaatar': 'Сүхбаатар', 'chingeltei': 'Чингэлтэй',
+      'bayanzurkh': 'Баянзүрх', 'bayangol': 'Баянгол', 'songinokhairkhan': 'Сонгинохайрхан', 'nalaikh': 'Налайх'
+    };
+    const newId = Math.max(...listings.map(function(l) { return l.id; })) + 1;
+    const p = parseFloat(s.price) || 0;
+    const a = parseFloat(s.area) || 0;
+    const newListing = {
+      id: newId,
+      cat: s.propertyType || 'apartment',
+      title: s.title || ((districtLabels[s.district] || s.district) + ', ' + (s.rooms || '?') + ' өрөө'),
+      loc: (districtLabels[s.district] || s.district) + (s.khoroo ? ' · ' + s.khoroo + '-р хороо' : ''),
+      district: s.district || 'sukhbaatar',
+      price: p,
+      pricePerSqm: (a && p) ? parseFloat((p / a).toFixed(2)) : 0,
+      area: a,
+      rooms: parseInt(s.rooms) || 1,
+      floor: s.floor ? s.floor + '/' + (s.totalFloors || '?') : '?',
+      year: parseInt(s.year) || new Date().getFullYear(),
+      tag: { type: 'new', text: 'Шинэ зар' },
+      badges: ['new', 'user'],
+      loanType: 'Тохиролцоно',
+      monthly: 0,
+      img: (s.images && s.images[0]) || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
+      buildingType: s.buildingType || '', insulation: '', heating: s.heating || '',
+      parking: '', elevator: '', utilityCost: '', ownership: 'Хувийн өмчлөл',
+      cadastre: '', collateral: '', taxDebt: '', condition: s.condition || '',
+      legalNotes: 'Хэрэглэгчийн нэмсэн зар · ' + (s.name || '') + ' · ' + (s.phone || ''),
+      userSubmitted: true
+    };
+    listings.push(newListing);
+    try {
+      var saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]');
+      saved.push(newListing);
+      localStorage.setItem('bairxUserListings', JSON.stringify(saved));
+    } catch(e) {}
+
     addListingState.step = 6;
     document.getElementById('modalContent').innerHTML = renderAddListing();
   }
@@ -8562,7 +8706,18 @@
     // Category filter still applies
     if (currentCat !== 'all') results = results.filter(l => l.cat === currentCat);
 
+    // Apply sort
+    if (currentSort === 'price-asc') results.sort((a, b) => a.price - b.price);
+    else if (currentSort === 'price-desc') results.sort((a, b) => b.price - a.price);
+    else if (currentSort === 'area-desc') results.sort((a, b) => b.area - a.area);
+    else results.sort((a, b) => b.id - a.id); // default: newest first
+
     return results;
+  }
+
+  function setSorting(val) {
+    currentSort = val;
+    applyListingFilter();
   }
 
   function updateFilterCount() {
@@ -9136,7 +9291,7 @@
   renderListings(listings);
   renderHomeListings();
   // Update filter pill counts
-  ['all','apartment','house','land','office'].forEach(cat => {
+  ['all','apartment','house','land','office','rent'].forEach(cat => {
     const el = document.getElementById('cnt-' + cat);
     if (el) el.textContent = cat === 'all' ? listings.length : listings.filter(l => l.cat === cat).length;
   });
