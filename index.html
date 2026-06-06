@@ -2558,6 +2558,198 @@
     .modal-body { padding: 24px; }
     .modal-actions { flex-direction: column; }
   }
+
+  /* ============ AUTH MODAL ============ */
+  .auth-overlay {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(10, 22, 40, 0.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none; transition: opacity 0.22s ease;
+  }
+  .auth-overlay.open { opacity: 1; pointer-events: all; }
+  .auth-box {
+    background: white; border-radius: 24px;
+    width: 100%; max-width: 420px;
+    box-shadow: 0 32px 80px rgba(10,22,40,0.18), 0 8px 24px rgba(10,22,40,0.08);
+    overflow: hidden;
+    transform: translateY(10px); transition: transform 0.22s ease;
+  }
+  .auth-overlay.open .auth-box { transform: translateY(0); }
+
+  .auth-step {
+    padding: 40px 36px;
+    display: flex; flex-direction: column; gap: 18px;
+    animation: authFadeIn 0.2s ease;
+  }
+  @keyframes authFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+  .auth-header { display: flex; align-items: center; gap: 10px; }
+  .auth-close-btn {
+    margin-left: auto; width: 34px; height: 34px; border-radius: 50%;
+    border: none; background: var(--paper-2); cursor: pointer;
+    display: grid; place-items: center; transition: background 0.15s;
+  }
+  .auth-close-btn:hover { background: var(--paper-3); }
+  .auth-back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 600; color: var(--ink-3);
+    background: none; border: none; cursor: pointer; padding: 0;
+    font-family: inherit; transition: color 0.15s;
+  }
+  .auth-back-btn:hover { color: var(--ink); }
+  .auth-logo-mark {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-deep));
+    display: grid; place-items: center; color: white;
+    font-family: 'Fraunces', serif; font-weight: 700; font-size: 20px;
+    box-shadow: 0 4px 12px rgba(30,91,255,0.3);
+  }
+  .auth-title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--ink); }
+  .auth-sub { font-size: 14px; color: var(--ink-3); line-height: 1.5; margin-top: -6px; }
+
+  .auth-google-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 13px; border-radius: 12px;
+    border: 1.5px solid var(--line-2); background: white;
+    font-family: inherit; font-size: 14px; font-weight: 600; color: var(--ink);
+    cursor: pointer; transition: all 0.15s; box-shadow: var(--shadow-sm);
+  }
+  .auth-google-btn:hover { border-color: var(--primary-glow); box-shadow: 0 2px 12px rgba(30,91,255,0.1); }
+  .auth-google-icon { width: 20px; height: 20px; }
+
+  .auth-divider {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 12px; font-weight: 600; color: var(--ink-3);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .auth-divider::before, .auth-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--line);
+  }
+
+  .auth-phone-wrap {
+    display: flex; align-items: center;
+    border: 1.5px solid var(--line-2); border-radius: 12px;
+    overflow: hidden; transition: border-color 0.15s;
+  }
+  .auth-phone-wrap:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,91,255,0.1); }
+  .auth-phone-flag {
+    padding: 0 14px; font-size: 14px; font-weight: 700; color: var(--ink-3);
+    background: var(--paper-2); border-right: 1.5px solid var(--line); height: 50px;
+    display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .auth-phone-input {
+    flex: 1; border: none; outline: none; padding: 0 16px;
+    font-size: 15px; font-weight: 600; font-family: 'JetBrains Mono', monospace;
+    color: var(--ink); height: 50px; background: transparent;
+    letter-spacing: 0.05em;
+  }
+  .auth-phone-input::placeholder { font-weight: 400; color: var(--ink-3); letter-spacing: 0; }
+
+  .auth-submit-btn {
+    width: 100%; justify-content: center; height: 50px; font-size: 15px;
+    border-radius: 12px; margin-top: 2px;
+  }
+
+  /* OTP inputs */
+  .otp-wrap { display: flex; gap: 10px; justify-content: center; }
+  .otp-digit {
+    width: 50px; height: 58px; border-radius: 12px;
+    border: 1.5px solid var(--line-2); text-align: center;
+    font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+    color: var(--ink); outline: none; transition: all 0.15s;
+    caret-color: var(--primary);
+  }
+  .otp-digit:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,91,255,0.1); }
+  .otp-digit.filled { border-color: var(--primary); background: var(--primary-soft); }
+
+  .otp-phone-label {
+    font-size: 14px; color: var(--ink-3); text-align: center; line-height: 1.6;
+  }
+  .otp-phone-label strong { color: var(--ink); font-family: 'JetBrains Mono', monospace; }
+  .otp-resend {
+    font-size: 13px; color: var(--ink-3); text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .otp-resend button {
+    background: none; border: none; color: var(--primary); font-weight: 700;
+    cursor: pointer; font-family: inherit; font-size: 13px; padding: 0;
+  }
+  .otp-timer { font-weight: 700; color: var(--ink-2); font-family: 'JetBrains Mono', monospace; }
+  .otp-demo-hint {
+    display: flex; align-items: center; gap: 8px; padding: 12px 14px;
+    background: rgba(30,91,255,0.06); border-radius: 10px;
+    font-size: 12.5px; color: var(--primary-deep); border: 1px solid rgba(30,91,255,0.12);
+  }
+
+  /* Auth form fields */
+  .auth-field { display: flex; flex-direction: column; gap: 6px; }
+  .auth-field label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+  .auth-field input {
+    width: 100%; padding: 0 16px; height: 50px;
+    border: 1.5px solid var(--line-2); border-radius: 12px;
+    font-size: 15px; font-family: inherit; color: var(--ink);
+    outline: none; transition: border-color 0.15s; background: white;
+  }
+  .auth-field input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,91,255,0.1); }
+  .auth-field-row { display: flex; gap: 10px; }
+  .auth-field-row .auth-field { flex: 1; }
+
+  .auth-forgot-link {
+    text-align: right; font-size: 13px; font-weight: 600;
+    color: var(--primary); cursor: pointer; margin-top: -8px;
+  }
+  .auth-forgot-link:hover { text-decoration: underline; }
+
+  .auth-success-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #00a884);
+    display: grid; place-items: center; margin: 0 auto 4px;
+    box-shadow: 0 8px 24px rgba(0,212,170,0.3);
+  }
+
+  /* User avatar in nav */
+  .user-av-nav {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--primary-deep));
+    display: grid; place-items: center; cursor: pointer;
+    color: white; font-weight: 700; font-size: 14px;
+    border: 2px solid transparent; transition: all 0.15s;
+    position: relative;
+  }
+  .user-av-nav:hover { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,91,255,0.15); }
+  .user-dropdown {
+    position: absolute; top: calc(100% + 10px); right: 0;
+    background: white; border-radius: 14px;
+    box-shadow: var(--shadow-lg); border: 1px solid var(--line);
+    min-width: 200px; padding: 8px; z-index: 200;
+    display: none;
+  }
+  .user-dropdown.open { display: block; }
+  .user-dropdown-name {
+    padding: 10px 12px 6px;
+    font-weight: 700; font-size: 14px; color: var(--ink);
+  }
+  .user-dropdown-phone {
+    padding: 0 12px 10px;
+    font-size: 12px; color: var(--ink-3); font-family: 'JetBrains Mono', monospace;
+    border-bottom: 1px solid var(--line); margin-bottom: 6px;
+  }
+  .user-dropdown a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px; font-size: 14px; font-weight: 500;
+    color: var(--ink-2); cursor: pointer; transition: background 0.12s;
+    text-decoration: none;
+  }
+  .user-dropdown a:hover { background: var(--paper-2); }
+  .user-dropdown a.danger { color: var(--danger); }
+
+  @media (max-width: 640px) {
+    .auth-step { padding: 28px 24px; }
+    .otp-digit { width: 42px; height: 50px; font-size: 18px; }
+  }
 </style>
 </head>
 <body>
@@ -2602,8 +2794,33 @@
           </div>
         </div>
       </div>
-      <a class="btn btn-ghost" onclick="showToast('Удахгүй: Нэвтрэх систем')">Нэвтрэх</a>
-      <a class="btn btn-blue" onclick="openAddListing()">Зар нэмэх</a>
+      <a class="btn btn-ghost" id="loginBtn" onclick="openAuth()">Нэвтрэх</a>
+      <div style="position:relative;" id="userAvatarWrap" style="display:none">
+        <div class="user-av-nav" id="userAvatar" onclick="toggleUserMenu(event)" style="display:none">
+          <span id="userAvLetter">Б</span>
+        </div>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="user-dropdown-name" id="userDropName">Хэрэглэгч</div>
+          <div class="user-dropdown-phone" id="userDropPhone">+976 --------</div>
+          <a onclick="showPage('dashboard'); toggleUserMenu(null)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Хувийн самбар
+          </a>
+          <a onclick="openFavorites(); toggleUserMenu(null)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
+            Хадгалсан зарууд
+          </a>
+          <a onclick="openAddListing(); toggleUserMenu(null)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+            Зар нэмэх
+          </a>
+          <a class="danger" onclick="logout()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            Гарах
+          </a>
+        </div>
+      </div>
+      <a class="btn btn-blue" id="addListingBtn" onclick="openAddListing()">Зар нэмэх</a>
       <button class="mobile-toggle" onclick="toggleMobileMenu()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
       </button>
@@ -4277,6 +4494,166 @@
 </footer>
 
 <!-- ============ MODAL ============ -->
+<!-- ============ AUTH MODAL ============ -->
+<div class="auth-overlay" id="authModal" onclick="if(event.target===this) closeAuth()">
+  <div class="auth-box">
+
+    <!-- STEP 1: Нэвтрэх/Бүртгүүлэх -->
+    <div class="auth-step" id="authStep1">
+      <div class="auth-header">
+        <div class="auth-logo-mark">B</div>
+        <div class="auth-title">Нэвтрэх</div>
+        <button class="auth-close-btn" onclick="closeAuth()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="auth-sub">Байрны зар хайх, хадгалах, харьцуулах бол нэвтэрнэ үү.</div>
+
+      <button class="auth-google-btn" onclick="loginWithGoogle()">
+        <svg class="auth-google-icon" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Google-ээр нэвтрэх
+      </button>
+
+      <div class="auth-divider"><span>эсвэл утасны дугаараар</span></div>
+
+      <div>
+        <div class="auth-phone-wrap">
+          <div class="auth-phone-flag">🇲🇳 +976</div>
+          <input class="auth-phone-input" type="tel" id="authPhone" placeholder="88877877" maxlength="8" oninput="this.value=this.value.replace(/\D/g,'')" onkeydown="if(event.key==='Enter') submitPhone()"/>
+        </div>
+      </div>
+
+      <button class="btn btn-blue auth-submit-btn" onclick="submitPhone()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        Код авах
+      </button>
+    </div>
+
+    <!-- STEP 2: OTP баталгаажуулалт -->
+    <div class="auth-step" id="authStep2" style="display:none">
+      <div class="auth-header">
+        <button class="auth-back-btn" onclick="goToAuthStep(1)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Буцах
+        </button>
+        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="auth-title">Кодоо оруулна уу</div>
+      <div class="otp-phone-label">+976 <strong id="authPhoneDisplay">--------</strong> дугаарт<br>6 оронтой код илгээгдлээ</div>
+
+      <div class="otp-demo-hint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        Demo горим: Таны код автоматаар оруулагдана
+      </div>
+
+      <div class="otp-wrap" id="otpWrap">
+        <input class="otp-digit" type="tel" maxlength="1" inputmode="numeric"/>
+        <input class="otp-digit" type="tel" maxlength="1" inputmode="numeric"/>
+        <input class="otp-digit" type="tel" maxlength="1" inputmode="numeric"/>
+        <input class="otp-digit" type="tel" maxlength="1" inputmode="numeric"/>
+        <input class="otp-digit" type="tel" maxlength="1" inputmode="numeric"/>
+        <input class="otp-digit" type="tel" maxlength="1" inputmode="numeric"/>
+      </div>
+
+      <div class="otp-resend">
+        Код ирсэнгүй?
+        <button onclick="resendOTP()" id="resendBtn">Дахин илгээх</button>
+        <span class="otp-timer" id="otpTimer"></span>
+      </div>
+
+      <button class="btn btn-blue auth-submit-btn" onclick="verifyOTP()">Баталгаажуулах</button>
+    </div>
+
+    <!-- STEP 3A: Нууц үг (бүртгэлтэй хэрэглэгч) -->
+    <div class="auth-step" id="authStep3Login" style="display:none">
+      <div class="auth-header">
+        <button class="auth-back-btn" onclick="goToAuthStep(2)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Буцах
+        </button>
+        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="auth-title">Нууц үг оруулна уу</div>
+      <div class="auth-sub">+976 <span id="loginPhoneDisplay" style="font-family:'JetBrains Mono',monospace; font-weight:700;"></span></div>
+
+      <div class="auth-field">
+        <label>Нууц үг</label>
+        <input type="password" id="authPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter') loginWithPassword()"/>
+      </div>
+      <div class="auth-forgot-link" onclick="startForgotPassword()">Нууц үгээ мартсан уу?</div>
+
+      <button class="btn btn-blue auth-submit-btn" onclick="loginWithPassword()">Нэвтрэх</button>
+    </div>
+
+    <!-- STEP 3B: Шинэ бүртгэл - нууц үг үүсгэх -->
+    <div class="auth-step" id="authStep3Register" style="display:none">
+      <div class="auth-header">
+        <button class="auth-back-btn" onclick="goToAuthStep(2)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Буцах
+        </button>
+        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="auth-title">Бүртгэл үүсгэх</div>
+      <div class="auth-sub">+976 <span id="regPhoneDisplay" style="font-family:'JetBrains Mono',monospace; font-weight:700;"></span> — шинэ хэрэглэгч</div>
+
+      <div class="auth-field-row">
+        <div class="auth-field">
+          <label>Овог</label>
+          <input type="text" id="authLastName" placeholder="Дорж"/>
+        </div>
+        <div class="auth-field">
+          <label>Нэр</label>
+          <input type="text" id="authFirstName" placeholder="Батаа"/>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Нууц үг</label>
+        <input type="password" id="authNewPassword" placeholder="Хамгийн багадаа 6 тэмдэгт"/>
+      </div>
+      <div class="auth-field">
+        <label>Нууц үг давтах</label>
+        <input type="password" id="authNewPassword2" placeholder="Нууц үгийг дахин оруулна уу" onkeydown="if(event.key==='Enter') createAccount()"/>
+      </div>
+
+      <button class="btn btn-blue auth-submit-btn" onclick="createAccount()">Бүртгэл үүсгэх</button>
+    </div>
+
+    <!-- STEP FORGOT: Нууц үг сэргээх -->
+    <div class="auth-step" id="authStepForgot" style="display:none">
+      <div class="auth-header">
+        <button class="auth-back-btn" onclick="goToAuthStep('3login')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Буцах
+        </button>
+        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="auth-title">Нууц үг сэргээх</div>
+      <div class="auth-sub">Шинэ нууц үг тохируулна уу</div>
+
+      <div class="auth-field">
+        <label>Шинэ нууц үг</label>
+        <input type="password" id="authResetPw" placeholder="Хамгийн багадаа 6 тэмдэгт"/>
+      </div>
+      <div class="auth-field">
+        <label>Нууц үг давтах</label>
+        <input type="password" id="authResetPw2" placeholder="Нууц үгийг дахин оруулна уу" onkeydown="if(event.key==='Enter') resetPassword()"/>
+      </div>
+
+      <button class="btn btn-blue auth-submit-btn" onclick="resetPassword()">Нууц үг солих</button>
+    </div>
+
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal" onclick="if(event.target===this) closeModal()">
   <div class="modal" id="modalContent"></div>
 </div>
@@ -4300,6 +4677,242 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  // ===== AUTH SYSTEM =====
+  const DEMO_OTP = '123456';
+  const registeredUsers = {
+    '88877877': { firstName: 'Батаа', lastName: 'Дорж', password: 'demo123' },
+    '99001234': { firstName: 'Болд', lastName: 'Гантулга', password: 'demo123' },
+    '88001122': { firstName: 'Сарнай', lastName: 'Лхам', password: 'demo123' }
+  };
+  let currentUser = null;
+  let authCurrentPhone = '';
+  let authCurrentMode = 'login'; // 'login' | 'register' | 'forgot'
+  let otpTimerInterval = null;
+
+  function openAuth() {
+    goToAuthStep(1);
+    document.getElementById('authModal').classList.add('open');
+    setTimeout(() => document.getElementById('authPhone')?.focus(), 200);
+  }
+
+  function closeAuth() {
+    document.getElementById('authModal').classList.remove('open');
+    clearOtpTimer();
+  }
+
+  function goToAuthStep(step) {
+    ['authStep1','authStep2','authStep3Login','authStep3Register','authStepForgot'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    const map = { 1:'authStep1', 2:'authStep2', '3login':'authStep3Login', '3register':'authStep3Register', 'forgot':'authStepForgot' };
+    const target = document.getElementById(map[step]);
+    if (target) { target.style.display = 'flex'; target.style.animation = 'none'; void target.offsetWidth; target.style.animation = ''; }
+  }
+
+  function submitPhone() {
+    const phone = (document.getElementById('authPhone').value || '').trim();
+    if (!/^\d{8}$/.test(phone)) { showToast('8 оронтой утасны дугаар оруулна уу'); return; }
+    authCurrentPhone = phone;
+    authCurrentMode = registeredUsers[phone] ? 'login' : 'register';
+    document.getElementById('authPhoneDisplay').textContent = phone;
+    goToAuthStep(2);
+    startOtpTimer();
+    // Demo: auto-fill after 1s
+    setTimeout(() => fillDemoOTP(), 900);
+    showToast('Demo горим: код автоматаар оруулагдана', 'success');
+  }
+
+  function fillDemoOTP() {
+    const digits = document.querySelectorAll('#authStep2 .otp-digit');
+    DEMO_OTP.split('').forEach((d, i) => {
+      if (digits[i]) { digits[i].value = d; digits[i].classList.add('filled'); }
+    });
+  }
+
+  function startOtpTimer() {
+    let secs = 60;
+    const btn = document.getElementById('resendBtn');
+    const timer = document.getElementById('otpTimer');
+    if (btn) btn.style.display = 'none';
+    clearOtpTimer();
+    otpTimerInterval = setInterval(() => {
+      secs--;
+      if (timer) timer.textContent = secs + 'с';
+      if (secs <= 0) {
+        clearOtpTimer();
+        if (btn) btn.style.display = '';
+        if (timer) timer.textContent = '';
+      }
+    }, 1000);
+  }
+
+  function clearOtpTimer() {
+    if (otpTimerInterval) { clearInterval(otpTimerInterval); otpTimerInterval = null; }
+  }
+
+  function resendOTP() {
+    const digits = document.querySelectorAll('#authStep2 .otp-digit');
+    digits.forEach(d => { d.value = ''; d.classList.remove('filled'); });
+    startOtpTimer();
+    setTimeout(() => fillDemoOTP(), 900);
+    showToast('Код дахин илгээгдлээ', 'success');
+  }
+
+  function verifyOTP() {
+    const digits = document.querySelectorAll('#authStep2 .otp-digit');
+    const entered = Array.from(digits).map(d => d.value).join('');
+    if (entered.length < 6) { showToast('6 оронтой кодоо оруулна уу'); return; }
+    if (entered !== DEMO_OTP) { showToast('Буруу код. Demo код: 123456'); return; }
+    clearOtpTimer();
+    if (authCurrentMode === 'login') {
+      document.getElementById('loginPhoneDisplay').textContent = authCurrentPhone;
+      goToAuthStep('3login');
+      setTimeout(() => document.getElementById('authPassword')?.focus(), 100);
+    } else if (authCurrentMode === 'forgot') {
+      goToAuthStep('forgot');
+      setTimeout(() => document.getElementById('authResetPw')?.focus(), 100);
+    } else {
+      document.getElementById('regPhoneDisplay').textContent = authCurrentPhone;
+      goToAuthStep('3register');
+      setTimeout(() => document.getElementById('authLastName')?.focus(), 100);
+    }
+  }
+
+  function loginWithPassword() {
+    const pw = document.getElementById('authPassword').value;
+    if (!pw) { showToast('Нууц үг оруулна уу'); return; }
+    const user = registeredUsers[authCurrentPhone];
+    // Demo: accept any password or the stored one
+    const name = user.firstName;
+    currentUser = { name, lastName: user.lastName, phone: authCurrentPhone, letter: name[0] };
+    closeAuth();
+    updateNavLoggedIn();
+    showToast(`Тавтай морилно уу, ${name}!`, 'success');
+  }
+
+  function createAccount() {
+    const lastName = document.getElementById('authLastName').value.trim();
+    const firstName = document.getElementById('authFirstName').value.trim();
+    const pw = document.getElementById('authNewPassword').value;
+    const pw2 = document.getElementById('authNewPassword2').value;
+    if (!lastName || !firstName) { showToast('Овог нэрээ оруулна уу'); return; }
+    if (!pw || pw.length < 6) { showToast('Нууц үг хамгийн багадаа 6 тэмдэгт байна'); return; }
+    if (pw !== pw2) { showToast('Нууц үгнүүд таарахгүй байна'); return; }
+    registeredUsers[authCurrentPhone] = { firstName, lastName, password: pw };
+    currentUser = { name: firstName, lastName, phone: authCurrentPhone, letter: firstName[0] };
+    closeAuth();
+    updateNavLoggedIn();
+    showToast(`Бүртгэл амжилттай! Тавтай морилно уу, ${firstName}!`, 'success');
+  }
+
+  function startForgotPassword() {
+    authCurrentMode = 'forgot';
+    document.getElementById('authPhoneDisplay').textContent = authCurrentPhone;
+    goToAuthStep(2);
+    startOtpTimer();
+    setTimeout(() => fillDemoOTP(), 900);
+    showToast('Demo: код автоматаар оруулагдана', 'success');
+  }
+
+  function resetPassword() {
+    const pw = document.getElementById('authResetPw').value;
+    const pw2 = document.getElementById('authResetPw2').value;
+    if (!pw || pw.length < 6) { showToast('Нууц үг хамгийн багадаа 6 тэмдэгт байна'); return; }
+    if (pw !== pw2) { showToast('Нууц үгнүүд таарахгүй байна'); return; }
+    if (registeredUsers[authCurrentPhone]) registeredUsers[authCurrentPhone].password = pw;
+    const user = registeredUsers[authCurrentPhone];
+    currentUser = { name: user?.firstName || 'Хэрэглэгч', lastName: user?.lastName || '', phone: authCurrentPhone, letter: (user?.firstName || 'Х')[0] };
+    closeAuth();
+    updateNavLoggedIn();
+    showToast('Нууц үг амжилттай шинэчлэгдлээ!', 'success');
+  }
+
+  function loginWithGoogle() {
+    const names = ['Бат-Эрдэнэ', 'Мөнхбат', 'Энхтуяа', 'Золбоо'];
+    const picked = names[Math.floor(Math.random() * names.length)];
+    currentUser = { name: picked, lastName: '', phone: null, letter: picked[0], isGoogle: true };
+    closeAuth();
+    updateNavLoggedIn();
+    showToast(`Google-ээр нэвтэрлээ. Тавтай морилно уу!`, 'success');
+  }
+
+  function updateNavLoggedIn() {
+    const loginBtn = document.getElementById('loginBtn');
+    const userAvatar = document.getElementById('userAvatar');
+    const userDropName = document.getElementById('userDropName');
+    const userDropPhone = document.getElementById('userDropPhone');
+    const addListingBtn = document.getElementById('addListingBtn');
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (addListingBtn) addListingBtn.style.display = 'none';
+    if (userAvatar) {
+      userAvatar.style.display = 'grid';
+      document.getElementById('userAvLetter').textContent = currentUser.letter;
+    }
+    if (userDropName) userDropName.textContent = (currentUser.lastName ? currentUser.lastName + ' ' : '') + currentUser.name;
+    if (userDropPhone) userDropPhone.textContent = currentUser.phone ? '+976 ' + currentUser.phone : 'Google хэрэглэгч';
+  }
+
+  function toggleUserMenu(e) {
+    if (e) e.stopPropagation();
+    const dd = document.getElementById('userDropdown');
+    if (dd) dd.classList.toggle('open');
+  }
+
+  function logout() {
+    currentUser = null;
+    const loginBtn = document.getElementById('loginBtn');
+    const userAvatar = document.getElementById('userAvatar');
+    const addListingBtn = document.getElementById('addListingBtn');
+    const dd = document.getElementById('userDropdown');
+    if (loginBtn) loginBtn.style.display = '';
+    if (userAvatar) userAvatar.style.display = 'none';
+    if (addListingBtn) addListingBtn.style.display = '';
+    if (dd) dd.classList.remove('open');
+    showToast('Амжилттай гарлаа');
+  }
+
+  // Close user dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    const dd = document.getElementById('userDropdown');
+    const av = document.getElementById('userAvatar');
+    if (dd && av && !av.contains(e.target) && !dd.contains(e.target)) {
+      dd.classList.remove('open');
+    }
+  });
+
+  // OTP keyboard navigation
+  document.addEventListener('DOMContentLoaded', () => {
+    const otpWrap = document.getElementById('otpWrap');
+    if (!otpWrap) return;
+    otpWrap.addEventListener('input', (e) => {
+      const input = e.target;
+      if (!input.classList.contains('otp-digit')) return;
+      input.value = input.value.replace(/\D/g, '').slice(-1);
+      input.classList.toggle('filled', !!input.value);
+      if (input.value) {
+        const next = input.nextElementSibling;
+        if (next && next.classList.contains('otp-digit')) next.focus();
+      }
+    });
+    otpWrap.addEventListener('keydown', (e) => {
+      const input = e.target;
+      if (!input.classList.contains('otp-digit')) return;
+      if (e.key === 'Backspace' && !input.value) {
+        const prev = input.previousElementSibling;
+        if (prev && prev.classList.contains('otp-digit')) { prev.value = ''; prev.classList.remove('filled'); prev.focus(); }
+      }
+      if (e.key === 'Enter') verifyOTP();
+    });
+    otpWrap.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+      const digits = otpWrap.querySelectorAll('.otp-digit');
+      text.split('').forEach((ch, i) => { if (digits[i]) { digits[i].value = ch; digits[i].classList.add('filled'); } });
+      if (digits[text.length - 1]) digits[text.length - 1].focus();
+    });
+  });
+
   // ===== LISTINGS DATA =====
   let favorites = [];
   const listings = [
