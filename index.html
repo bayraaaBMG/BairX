@@ -204,6 +204,26 @@
   .section-sub { color: var(--ink-3); max-width: 480px; font-size: 16px; }
 
   /* ============ LISTINGS ============ */
+  /* ============ HOME PORTAL ============ */
+  .home-portal-section { background: var(--paper); padding: 60px 32px 80px; }
+  .portal-cats {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 56px;
+  }
+  .portal-cat-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 20px 12px; background: white; border: 1.5px solid var(--line);
+    border-radius: var(--radius-md); cursor: pointer; transition: all 0.18s ease;
+    font-family: inherit;
+  }
+  .portal-cat-btn:hover { border-color: var(--primary); background: var(--primary-soft); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .portal-cat-icon { font-size: 28px; line-height: 1; }
+  .portal-cat-name { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+  .portal-section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; }
+  .portal-section-title { font-size: clamp(26px, 3vw, 38px); }
+  .portal-section-title em { font-style: italic; color: var(--primary); }
+  @media (max-width: 768px) {
+    .portal-cats { grid-template-columns: repeat(3, 1fr); }
+  }
   .listings-section { background: var(--paper); }
   .filter-bar {
     display: flex; gap: 8px; flex-wrap: wrap; padding: 14px; background: white;
@@ -2701,6 +2721,50 @@
   </div>
 </section>
 
+<!-- ============ HOME PORTAL ============ -->
+<section class="home-portal-section" id="home-portal">
+  <div class="section-inner">
+    <div class="portal-cats">
+      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentCat='apartment'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='apartment')); applyListingFilter();}, 100)">
+        <div class="portal-cat-icon">🏢</div>
+        <div class="portal-cat-name">Орон сууц</div>
+      </button>
+      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentCat='house'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='house')); applyListingFilter();}, 100)">
+        <div class="portal-cat-icon">🏠</div>
+        <div class="portal-cat-name">Хаус</div>
+      </button>
+      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentCat='land'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='land')); applyListingFilter();}, 100)">
+        <div class="portal-cat-icon">🌿</div>
+        <div class="portal-cat-name">Газар</div>
+      </button>
+      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentCat='office'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='office')); applyListingFilter();}, 100)">
+        <div class="portal-cat-icon">🏗️</div>
+        <div class="portal-cat-name">Оффис</div>
+      </button>
+      <button class="portal-cat-btn" onclick="showPage('rent')">
+        <div class="portal-cat-icon">🔑</div>
+        <div class="portal-cat-name">Түрээс</div>
+      </button>
+      <button class="portal-cat-btn" onclick="showPage('calc')">
+        <div class="portal-cat-icon">🏦</div>
+        <div class="portal-cat-name">Зээл</div>
+      </button>
+    </div>
+
+    <div class="portal-section-head">
+      <div>
+        <span class="section-eyebrow">Сүүлийн зарууд</span>
+        <h2 class="portal-section-title display">Шинээр нэмэгдсэн <em>зарууд</em></h2>
+      </div>
+      <button class="btn btn-ghost" onclick="showPage('listings')">
+        Бүгдийг үзэх
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+    <div id="homeListingsGrid" class="listings-grid"></div>
+  </div>
+</section>
+
 <!-- ============ BANKS STRIP ============ -->
 <section class="banks-section" id="banks">
   <div class="banks-inner">
@@ -3298,11 +3362,11 @@
     </div>
 
     <div class="filter-bar">
-      <button class="filter-pill active" data-cat="all">Бүгд <span class="count">6</span></button>
-      <button class="filter-pill" data-cat="apartment">Орон сууц <span class="count">3</span></button>
-      <button class="filter-pill" data-cat="house">Хаус <span class="count">1</span></button>
-      <button class="filter-pill" data-cat="land">Газар <span class="count">1</span></button>
-      <button class="filter-pill" data-cat="office">Оффис <span class="count">1</span></button>
+      <button class="filter-pill active" data-cat="all">Бүгд <span class="count" id="cnt-all"></span></button>
+      <button class="filter-pill" data-cat="apartment">Орон сууц <span class="count" id="cnt-apartment"></span></button>
+      <button class="filter-pill" data-cat="house">Хаус <span class="count" id="cnt-house"></span></button>
+      <button class="filter-pill" data-cat="land">Газар <span class="count" id="cnt-land"></span></button>
+      <button class="filter-pill" data-cat="office">Оффис <span class="count" id="cnt-office"></span></button>
       <div style="flex:1"></div>
       <button class="filter-pill" onclick="changeSorting()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
@@ -3316,7 +3380,7 @@
 
     <div style="text-align:center; margin-top:48px;">
       <a class="btn btn-primary btn-lg" onclick="showToast('Удахгүй: Илүү олон зар')">
-        Бүх 1,247 заруудыг үзэх
+        Бүх <span id="totalListingCount">30</span> заруудыг үзэх
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </a>
     </div>
@@ -4419,6 +4483,294 @@
       taxDebt: 'Газрын татвар тушаасан',
       condition: 'Хашаатай, барилгын ажил эхлэх боломжтой',
       legalNotes: 'Газар эзэмшүүлэх гэрчилгээ (НА-009876) бэлэн'
+    },
+    {
+      id: 7, cat: 'apartment', title: 'Баянзүрх, Баянмонгол 2 өрөө',
+      loc: 'Баянзүрх, 14-р хороо · Баянмонгол', district: 'bayanzurkh',
+      price: 195, pricePerSqm: 3.9, area: 50, rooms: 2, floor: '5/9', year: 2019,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
+      loanType: 'Ипотек 12%', monthly: 1.50,
+      img: 'https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 80мм EPS', heating: 'Төвлөрсөн халаалт',
+      parking: 'Гадна талбай', elevator: '1 лифт', utilityCost: '160,000 ₮/сар (зун) · 280,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Засвартай', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 8, cat: 'apartment', title: 'Чингэлтэй, 13-р хороо, 1 өрөө',
+      loc: 'Чингэлтэй, 13-р хороо · Амгалан', district: 'chingeltei',
+      price: 148, pricePerSqm: 3.7, area: 40, rooms: 1, floor: '3/5', year: 2015,
+      tag: { type: 'below', text: '↓ 5% доогуур' }, badges: ['verified'],
+      loanType: 'Ипотек 12%', monthly: 1.14,
+      img: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80',
+      buildingType: 'Хийц өрлөгийн (блок)', insulation: 'Гадна 80мм EPS', heating: 'Төвлөрсөн халаалт',
+      parking: 'Байхгүй', elevator: 'Байхгүй', utilityCost: '120,000 ₮/сар (зун) · 220,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Засвартай, тавилгатай', legalNotes: 'Гэрчилгээ бэлэн, нэн даруй шилжүүлэх'
+    },
+    {
+      id: 9, cat: 'apartment', title: 'Баянгол, Гандан, 3 өрөө',
+      loc: 'Баянгол, 6-р хороо · Гандан', district: 'bayangol',
+      price: 325, pricePerSqm: 4.5, area: 72, rooms: 3, floor: '7/12', year: 2020,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified', 'hot'],
+      loanType: 'Ипотек 12%', monthly: 2.51,
+      img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 100мм EPS', heating: 'Төвлөрсөн халаалт',
+      parking: 'Подвалын паркинг (20 сая ₮)', elevator: '2 лифт', utilityCost: '200,000 ₮/сар (зун) · 360,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Гүйцэт засвартай', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 10, cat: 'apartment', title: 'Сонгинохайрхан, шинэ 2 өрөө',
+      loc: 'Сонгинохайрхан, 20-р хороо', district: 'songinokhairkhan',
+      price: 178, pricePerSqm: 3.56, area: 50, rooms: 2, floor: '4/9', year: 2023,
+      tag: { type: 'below', text: '↓ 4% доогуур' }, badges: ['verified', 'new'],
+      loanType: 'Барилгын зээл 9%', monthly: 1.37,
+      img: 'https://images.unsplash.com/photo-1556909212-d5b604d0c90d?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 100мм PIR', heating: 'Төвлөрсөн халаалт',
+      parking: '1 машины байр (12 сая ₮)', elevator: '2 лифт', utilityCost: '150,000 ₮/сар (зун) · 270,000 ₮/сар (өвөл)',
+      ownership: 'Барилгын явц 90%', cadastre: 'Гарч буй', collateral: 'Барьцаагүй',
+      taxDebt: 'Шинэ барилга', condition: 'Засваргүй (white box)', legalNotes: 'Барилгын гэрээгээр'
+    },
+    {
+      id: 11, cat: 'apartment', title: 'Сүхбаатар, Их Тойруу 1 өрөө',
+      loc: 'Сүхбаатар, 8-р хороо · Их Тойруу', district: 'sukhbaatar',
+      price: 225, pricePerSqm: 5.0, area: 45, rooms: 1, floor: '11/18', year: 2021,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
+      loanType: 'Ипотек 12%', monthly: 1.74,
+      img: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 120мм MW', heating: 'Төвлөрсөн + зохицуулалт',
+      parking: 'Ойролцоо авч болно (25 сая ₮)', elevator: '2 лифт', utilityCost: '180,000 ₮/сар (зун) · 310,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Засвартай', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 12, cat: 'house', title: 'Хан-Уул, Зайсан, 4 өрөө хаус',
+      loc: 'Хан-Уул, Зайсан 15-р хэсэг', district: 'khan-uul',
+      price: 780, pricePerSqm: 3.25, area: 240, rooms: 4, floor: '0.06 га', year: 2020,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified', 'hot'],
+      loanType: 'Ипотек 12%', monthly: 6.02,
+      img: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80',
+      buildingType: 'Хийц өрлөгийн (керамзит блок)', insulation: 'Гадна 150мм EPS', heating: 'Хийн зуух + цахилгаан',
+      parking: '2 машины хаалттай гараж', elevator: 'Байхгүй', utilityCost: 'Хий 250,000 · Цахилгаан 130,000 ₮/сар',
+      ownership: 'Хувийн өмчлөл (газар + барилга)', cadastre: 'Газрын кадастр шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Засвартай, тавилгатай', legalNotes: 'Газрын гэрчилгээ бэлэн'
+    },
+    {
+      id: 13, cat: 'apartment', title: 'Баянзүрх, 17-р хороо, 3 өрөө',
+      loc: 'Баянзүрх, 17-р хороо · Нисэх', district: 'bayanzurkh',
+      price: 385, pricePerSqm: 4.85, area: 79, rooms: 3, floor: '10/16', year: 2021,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
+      loanType: 'Ипотек 12%', monthly: 2.97,
+      img: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 100мм EPS', heating: 'Төвлөрсөн халаалт',
+      parking: 'Гадна талбай', elevator: '2 лифт', utilityCost: '210,000 ₮/сар (зун) · 380,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Гүйцэт засвартай', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 14, cat: 'office', title: 'Чингэлтэй, Б зэрэглэлийн оффис',
+      loc: 'Чингэлтэй, 1-р хороо · Бизнес төв', district: 'chingeltei',
+      price: 450, pricePerSqm: 5.6, area: 80, rooms: 'Б', floor: '3/8', year: 2019,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
+      loanType: 'Арилжааны 18%', monthly: 5.8,
+      img: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон', insulation: 'Хосолсон ханатай', heating: 'Кондиционер системтэй',
+      parking: '1 машины байр', elevator: '2 лифт', utilityCost: '450,000 ₮/сар (бүгд багтсан)',
+      ownership: 'ХХК-ийн өмчлөл', cadastre: 'Арилжааны зориулалт', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Premium засвартай', legalNotes: 'Зөвшөөрөл бэлэн'
+    },
+    {
+      id: 15, cat: 'land', title: 'Налайх, иргэний зориулалт газар',
+      loc: 'Налайх дүүрэг · 3-р хороо', district: 'nalaikh',
+      price: 95, pricePerSqm: 0.19, area: 500, rooms: '0.05 га', floor: 'Эзэмшил',
+      year: 'Цахилгаан татсан', tag: { type: 'below', text: '↓ 10% доогуур' }, badges: ['verified'],
+      loanType: 'Бэлэн мөнгө', monthly: '+15% / 5 жил',
+      img: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80',
+      buildingType: 'Газар (иргэний)', insulation: 'Хамаарахгүй', heating: 'Дэд бүтэц байгаа',
+      parking: 'Талбай дотор', elevator: 'Хамаарахгүй', utilityCost: 'Цахилгаан холболт хийсэн',
+      ownership: 'Хувийн эзэмшил (60 жил)', cadastre: 'Шинэчилсэн', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Хашаатай', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 16, cat: 'apartment', title: 'Баянгол, Ногоон нуур, 2 өрөө',
+      loc: 'Баянгол, 19-р хороо · Ногоон нуур', district: 'bayangol',
+      price: 255, pricePerSqm: 4.25, area: 60, rooms: 2, floor: '6/12', year: 2018,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
+      loanType: 'Ипотек 12%', monthly: 1.97,
+      img: 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 80мм EPS', heating: 'Төвлөрсөн халаалт',
+      parking: 'Гадна талбай', elevator: '1 лифт', utilityCost: '170,000 ₮/сар (зун) · 300,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Засвартай', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 17, cat: 'apartment', title: 'Сүхбаатар, Сансар, 4 өрөө',
+      loc: 'Сүхбаатар, 3-р хороо · Сансар', district: 'sukhbaatar',
+      price: 920, pricePerSqm: 6.1, area: 151, rooms: 4, floor: '16/22', year: 2022,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified', 'hot'],
+      loanType: 'Ипотек 12%', monthly: 7.10,
+      img: 'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон, 9 баллын тэсвэртэй', insulation: 'Гадна 150мм MW', heating: 'Төвлөрсөн + зохицуулалт',
+      parking: '2 машины байр (40 сая ₮)', elevator: '3 лифт (нэг нь VIP)', utilityCost: '380,000 ₮/сар (зун) · 680,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Premium засвартай, тавилгатай', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 18, cat: 'apartment', title: 'Хан-Уул, Зайсан Тольт, 2 өрөө',
+      loc: 'Хан-Уул, 15-р хороо · Зайсан Тольт', district: 'khan-uul',
+      price: 380, pricePerSqm: 5.28, area: 72, rooms: 2, floor: '9/18', year: 2022,
+      tag: { type: 'below', text: '↓ 3% доогуур' }, badges: ['verified'],
+      loanType: 'Ипотек 12%', monthly: 2.93,
+      img: 'https://images.unsplash.com/photo-1571055107559-3e67626fa8be?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 120мм EPS', heating: 'Төвлөрсөн + зохицуулалт',
+      parking: '1 машины байр (30 сая ₮)', elevator: '2 лифт', utilityCost: '200,000 ₮/сар (зун) · 350,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Засвартай', legalNotes: 'Гэрчилгээ бэлэн, нэн даруй шилжүүлэх'
+    },
+    {
+      id: 19, cat: 'land', title: 'Баянзүрх, барилгын газар 700м²',
+      loc: 'Баянзүрх, 27-р хороо', district: 'bayanzurkh',
+      price: 182, pricePerSqm: 0.26, area: 700, rooms: '0.07 га', floor: 'Эзэмшил',
+      year: 'Ус, цахилгаан', tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
+      loanType: 'Бэлэн мөнгө', monthly: '+18% / 5 жил',
+      img: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80',
+      buildingType: 'Газар (барилгын)', insulation: 'Хамаарахгүй', heating: 'Дэд бүтэц бэлэн',
+      parking: 'Талбай дотор', elevator: 'Хамаарахгүй', utilityCost: 'Ус, цахилгаан холбоотой',
+      ownership: 'Хувийн эзэмшил (60 жил)', cadastre: 'Кадастр шинэчилсэн', collateral: 'Барьцаагүй',
+      taxDebt: 'Татвар тушаасан', condition: 'Хашаатай, барилгад бэлэн', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 20, cat: 'house', title: 'Сонгинохайрхан, 2 давхар хаус',
+      loc: 'Сонгинохайрхан, 32-р хороо', district: 'songinokhairkhan',
+      price: 520, pricePerSqm: 2.6, area: 200, rooms: 4, floor: '0.08 га', year: 2019,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
+      loanType: 'Ипотек 12%', monthly: 4.01,
+      img: 'https://images.unsplash.com/photo-1576941089067-2de3c901e126?w=800&q=80',
+      buildingType: 'Хийц өрлөгийн блок', insulation: 'Гадна 150мм EPS', heating: 'Хийн зуух',
+      parking: '2 машины гараж', elevator: 'Байхгүй', utilityCost: 'Хий 220,000 · Цахилгаан 110,000 ₮/сар',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Засвартай, хэсэгчлэн тавилгатай', legalNotes: 'Газар + барилгын гэрчилгээ бэлэн'
+    },
+    {
+      id: 21, cat: 'apartment', title: 'Чингэлтэй, шинэ 3 өрөө',
+      loc: 'Чингэлтэй, 6-р хороо · Хүрэлтогоот', district: 'chingeltei',
+      price: 292, pricePerSqm: 4.45, area: 65, rooms: 3, floor: '5/12', year: 2023,
+      tag: { type: 'below', text: '↓ 7% доогуур' }, badges: ['verified', 'new'],
+      loanType: 'Барилгын зээл 9%', monthly: 2.25,
+      img: 'https://images.unsplash.com/photo-1560185008-b033106af5c3?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 100мм PIR', heating: 'Төвлөрсөн халаалт',
+      parking: '1 машины байр (15 сая ₮)', elevator: '2 лифт', utilityCost: '180,000 ₮/сар (зун) · 320,000 ₮/сар (өвөл)',
+      ownership: 'Барилгын явц 95%', cadastre: 'Гарч буй', collateral: 'Барьцаагүй',
+      taxDebt: 'Шинэ барилга', condition: 'Засваргүй (white box)', legalNotes: 'ХХБ-тай гэрээтэй'
+    },
+    {
+      id: 22, cat: 'office', title: 'Баянгол, арилжааны зориулалт',
+      loc: 'Баянгол, 4-р хороо · Олимп', district: 'bayangol',
+      price: 680, pricePerSqm: 6.8, area: 100, rooms: 'А', floor: '5/10', year: 2020,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
+      loanType: 'Арилжааны 18%', monthly: 8.8,
+      img: 'https://images.unsplash.com/photo-1604328698692-f76ea9498e76?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон', insulation: 'Хосолсон ханатай', heating: 'VRV системтэй кондиционер',
+      parking: '2 машины байр (багтсан)', elevator: '3 лифт', utilityCost: '750,000 ₮/сар (бүгд)',
+      ownership: 'ХХК-ийн өмчлөл', cadastre: 'Арилжааны зориулалт', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Premium засвартай', legalNotes: 'Зөвшөөрөл бэлэн'
+    },
+    {
+      id: 23, cat: 'apartment', title: 'Сүхбаатар, Чингис хаан, 2 өрөө',
+      loc: 'Сүхбаатар, 6-р хороо · Чингис хааны гудамж', district: 'sukhbaatar',
+      price: 485, pricePerSqm: 5.72, area: 85, rooms: 2, floor: '12/20', year: 2021,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified', 'hot'],
+      loanType: 'Ипотек 12%', monthly: 3.74,
+      img: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 120мм MW', heating: 'Төвлөрсөн + зохицуулалт',
+      parking: '1 машины байр (35 сая ₮)', elevator: '3 лифт', utilityCost: '250,000 ₮/сар (зун) · 430,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Premium засвартай', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 24, cat: 'apartment', title: 'Хан-Уул, Зайсан Тольт, 3 өрөө',
+      loc: 'Хан-Уул, 12-р хороо · Зайсан', district: 'khan-uul',
+      price: 510, pricePerSqm: 5.1, area: 100, rooms: 3, floor: '11/18', year: 2022,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
+      loanType: 'Ипотек 12%', monthly: 3.93,
+      img: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 120мм EPS', heating: 'Төвлөрсөн + зохицуулалт',
+      parking: '1 машины байр (32 сая ₮)', elevator: '2 лифт', utilityCost: '280,000 ₮/сар (зун) · 490,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Гүйцэт засвартай, тавилгатай', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 25, cat: 'apartment', title: 'Баянзүрх, 1 өрөө, хямд',
+      loc: 'Баянзүрх, 22-р хороо', district: 'bayanzurkh',
+      price: 165, pricePerSqm: 3.67, area: 45, rooms: 1, floor: '4/9', year: 2016,
+      tag: { type: 'below', text: '↓ 8% доогуур' }, badges: ['verified'],
+      loanType: 'Ипотек 12%', monthly: 1.27,
+      img: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80',
+      buildingType: 'Хуучин цутгамал (K серий)', insulation: 'Засвар хийсэн', heating: 'Төвлөрсөн халаалт',
+      parking: 'Гадна талбай', elevator: 'Байхгүй', utilityCost: '110,000 ₮/сар (зун) · 200,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Засвартай', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 26, cat: 'house', title: 'Чингэлтэй, орчин үеийн хаус',
+      loc: 'Чингэлтэй, 3-р хороо · Дамбадаржаа', district: 'chingeltei',
+      price: 645, pricePerSqm: 3.22, area: 200, rooms: 5, floor: '0.05 га', year: 2021,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
+      loanType: 'Ипотек 12%', monthly: 4.97,
+      img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80',
+      buildingType: 'Хийц өрлөгийн (AAC блок)', insulation: 'Гадна 150мм EPS', heating: 'Хийн зуух + дулааны шал',
+      parking: '2 машины хаалттай гараж', elevator: 'Байхгүй', utilityCost: 'Хий 230,000 · Цахилгаан 120,000 ₮/сар',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Засвартай, тавилгатай', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 27, cat: 'apartment', title: 'Налайх, 2 өрөө, хямд',
+      loc: 'Налайх дүүрэг · 5-р хороо', district: 'nalaikh',
+      price: 128, pricePerSqm: 2.56, area: 50, rooms: 2, floor: '3/5', year: 2014,
+      tag: { type: 'below', text: '↓ 12% доогуур' }, badges: ['verified'],
+      loanType: 'Ипотек 12%', monthly: 0.99,
+      img: 'https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=800&q=80',
+      buildingType: 'Хуучин хийц (блок)', insulation: 'Дотроос хийсэн 50мм', heating: 'Төвлөрсөн халаалт',
+      parking: 'Гадна талбай', elevator: 'Байхгүй', utilityCost: '90,000 ₮/сар (зун) · 170,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Хэсэгчлэн засвартай', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 28, cat: 'apartment', title: 'Баянгол, Хорооллын гудамж, 3 өрөө',
+      loc: 'Баянгол, 11-р хороо · Хорооллын гудамж', district: 'bayangol',
+      price: 312, pricePerSqm: 4.45, area: 70, rooms: 3, floor: '8/14', year: 2020,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
+      loanType: 'Ипотек 12%', monthly: 2.41,
+      img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 100мм EPS', heating: 'Төвлөрсөн халаалт',
+      parking: 'Гадна талбай (8 сая ₮)', elevator: '2 лифт', utilityCost: '190,000 ₮/сар (зун) · 340,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Засвартай', legalNotes: 'Гэрчилгээ бэлэн'
+    },
+    {
+      id: 29, cat: 'apartment', title: 'Сүхбаатар, Токио Street, 5 өрөө',
+      loc: 'Сүхбаатар, 5-р хороо · Токио Street', district: 'sukhbaatar',
+      price: 1250, pricePerSqm: 6.94, area: 180, rooms: 5, floor: '18/24', year: 2023,
+      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified', 'hot'],
+      loanType: 'Ипотек 12%', monthly: 9.64,
+      img: 'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&q=80',
+      buildingType: 'Цутгамал төмөр бетон, 9 баллын тэсвэртэй', insulation: 'Гадна 150мм MW', heating: 'Төвлөрсөн + хувийн зохицуулалт',
+      parking: '2 машины байр (50 сая ₮)', elevator: '4 лифт (2 нь VIP)', utilityCost: '500,000 ₮/сар (зун) · 900,000 ₮/сар (өвөл)',
+      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
+      taxDebt: 'Өргүй', condition: 'Premium засвартай, тавилгатай', legalNotes: 'Гэрчилгээ бэлэн, нэн даруй'
+    },
+    {
+      id: 30, cat: 'land', title: 'Хан-Уул, хөрөнгө оруулалтын газар',
+      loc: 'Хан-Уул, 16-р хороо · Яармаг', district: 'khan-uul',
+      price: 350, pricePerSqm: 0.5, area: 700, rooms: '0.07 га', floor: 'Эзэмшил',
+      year: 'Бүрэн дэд бүтэц', tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
+      loanType: 'Бэлэн мөнгө', monthly: '+22% / 5 жил',
+      img: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80',
+      buildingType: 'Газар (барилгын)', insulation: 'Хамаарахгүй', heating: 'Дэд бүтэц бэлэн',
+      parking: 'Талбай дотор', elevator: 'Хамаарахгүй', utilityCost: 'Ус, цахилгаан, хий холбоотой',
+      ownership: 'Хувийн эзэмшил (60 жил)', cadastre: 'Кадастр шинэчилсэн, хил тодорхой', collateral: 'Барьцаагүй',
+      taxDebt: 'Татвар тушаасан', condition: 'Хашаатай, нэн даруй барилга эхлэх боломжтой', legalNotes: 'Гэрчилгээ бэлэн (ХА-002341)'
     }
   ];
 
@@ -4443,7 +4795,9 @@
     if (target === 'home') {
       const hero = document.getElementById('home');
       const banks = document.getElementById('banks');
+      const portal = document.getElementById('home-portal');
       if (hero) hero.classList.add('page-active');
+      if (portal) portal.classList.add('page-active');
       if (banks) banks.classList.add('page-active');
       if (history.pushState) history.pushState(null, '', location.pathname);
     } else {
@@ -4476,6 +4830,44 @@
     5: { coords: { x: 50, y: 40 }, gallery: ['https://images.unsplash.com/photo-1497366216548-37526070297c?w=900&q=80', 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=900&q=80', 'https://images.unsplash.com/photo-1604328698692-f76ea9498e76?w=900&q=80'] },
     6: { coords: { x: 85, y: 55 }, gallery: ['https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=900&q=80', 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=900&q=80'] }
   };
+
+  // ===== HOME LISTINGS PREVIEW =====
+  function renderHomeListings() {
+    const grid = document.getElementById('homeListingsGrid');
+    if (!grid) return;
+    const recent = listings.slice(-8).reverse();
+    grid.innerHTML = recent.map(l => `
+      <article class="listing-card" onclick="showPage('listings'); setTimeout(()=>openListing(${l.id}),150)">
+        <div class="listing-img">
+          <img src="${l.img}" alt="${l.title}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';"/>
+          <div class="listing-badges">
+            ${l.badges.includes('verified') ? '<span class="badge verified">✓ Баталгаажсан</span>' : ''}
+            ${l.badges.includes('new') ? '<span class="badge new">Шинэ</span>' : ''}
+            ${l.badges.includes('hot') ? '<span class="badge hot">Эрэлттэй</span>' : ''}
+          </div>
+          <button class="listing-fav ${favorites.includes(l.id) ? 'faved' : ''}" onclick="event.stopPropagation(); toggleFav(this, ${l.id})">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
+          </button>
+        </div>
+        <div class="listing-body">
+          <div class="listing-price-row">
+            <div>
+              <div class="listing-price">${l.price >= 1000 ? (l.price/1000).toFixed(1) : l.price}<span style="font-size:14px; color:var(--ink-3); font-weight:500;"> ${l.price >= 1000 ? 'тэрбум' : 'сая'} ₮</span></div>
+              <div class="listing-price-sub">${typeof l.pricePerSqm === 'number' ? l.pricePerSqm + ' сая ₮/м²' : l.pricePerSqm}</div>
+            </div>
+            <span class="price-tag ${l.tag.type === 'normal' ? '' : l.tag.type}">${l.tag.text}</span>
+          </div>
+          <h3 class="listing-title">${l.title}</h3>
+          <div class="listing-loc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${l.loc}</div>
+          <div class="listing-meta">
+            <span class="listing-meta-item"><strong>${l.area}</strong> м²</span>
+            <span class="listing-meta-item"><strong>${l.rooms}</strong>${typeof l.rooms === 'number' ? ' өрөө' : ''}</span>
+            <span class="listing-meta-item"><strong>${l.floor}</strong></span>
+          </div>
+        </div>
+      </article>
+    `).join('');
+  }
 
   // ===== RENDER LISTINGS =====
   function renderListings(items) {
@@ -7985,6 +8377,13 @@
 
   // ===== INIT =====
   renderListings(listings);
+  renderHomeListings();
+  // Update filter pill counts
+  ['all','apartment','house','land','office'].forEach(cat => {
+    const el = document.getElementById('cnt-' + cat);
+    if (el) el.textContent = cat === 'all' ? listings.length : listings.filter(l => l.cat === cat).length;
+  });
+  const tlc = document.getElementById('totalListingCount'); if(tlc) tlc.textContent = listings.length;
   calculate();
   renderRentListings('all');
   calculateCompare();
