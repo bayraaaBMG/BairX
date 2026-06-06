@@ -2829,7 +2829,7 @@
         </div>
       </div>
       <a class="btn btn-ghost" id="loginBtn" onclick="openAuth()">Нэвтрэх</a>
-      <div style="position:relative;" id="userAvatarWrap" style="display:none">
+      <div style="position:relative; display:none" id="userAvatarWrap">
         <div class="user-av-nav" id="userAvatar" onclick="toggleUserMenu(event)" style="display:none">
           <span id="userAvLetter">Б</span>
         </div>
@@ -4846,6 +4846,11 @@
   }
 
   function startForgotPassword() {
+    if (!authCurrentPhone) {
+      showToast('Эхлээд утасны дугаараа оруулна уу');
+      goToAuthStep(1);
+      return;
+    }
     authCurrentMode = 'forgot';
     document.getElementById('authPhoneDisplay').textContent = authCurrentPhone;
     goToAuthStep(2);
@@ -4879,11 +4884,11 @@
   function updateNavLoggedIn() {
     const loginBtn = document.getElementById('loginBtn');
     const userAvatar = document.getElementById('userAvatar');
+    const userAvatarWrap = document.getElementById('userAvatarWrap');
     const userDropName = document.getElementById('userDropName');
     const userDropPhone = document.getElementById('userDropPhone');
-    const addListingBtn = document.getElementById('addListingBtn');
     if (loginBtn) loginBtn.style.display = 'none';
-    if (addListingBtn) addListingBtn.style.display = 'none';
+    if (userAvatarWrap) userAvatarWrap.style.display = '';
     if (userAvatar) {
       userAvatar.style.display = 'grid';
       document.getElementById('userAvLetter').textContent = currentUser.letter;
@@ -4902,11 +4907,11 @@
     currentUser = null;
     const loginBtn = document.getElementById('loginBtn');
     const userAvatar = document.getElementById('userAvatar');
-    const addListingBtn = document.getElementById('addListingBtn');
+    const userAvatarWrap = document.getElementById('userAvatarWrap');
     const dd = document.getElementById('userDropdown');
     if (loginBtn) loginBtn.style.display = '';
     if (userAvatar) userAvatar.style.display = 'none';
-    if (addListingBtn) addListingBtn.style.display = '';
+    if (userAvatarWrap) userAvatarWrap.style.display = 'none';
     if (dd) dd.classList.remove('open');
     showToast('Амжилттай гарлаа');
   }
@@ -5487,7 +5492,7 @@
   function renderHomeListings() {
     const grid = document.getElementById('homeListingsGrid');
     if (!grid) return;
-    const recent = listings.slice(-8).reverse();
+    const recent = [...listings].sort((a, b) => b.id - a.id).slice(0, 8);
     grid.innerHTML = recent.map(l => `
       <article class="listing-card" onclick="showPage('listings'); setTimeout(()=>openListing(${l.id}),150)">
         <div class="listing-img">
@@ -7305,14 +7310,9 @@
   let currentSort = 'default';
 
   function applyListingFilter() {
-    let filtered = [...listings];
-    if (currentCat !== 'all') {
-      filtered = filtered.filter(l => l.cat === currentCat);
-    }
-    if (currentSort === 'price-asc') filtered.sort((a, b) => a.price - b.price);
-    if (currentSort === 'price-desc') filtered.sort((a, b) => b.price - a.price);
-    if (currentSort === 'area-desc') filtered.sort((a, b) => b.area - a.area);
+    const filtered = getFilteredListings();
     renderListings(filtered);
+    updateFilterCount();
   }
 
   function changeSorting() {
