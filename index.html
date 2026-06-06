@@ -4,6 +4,13 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>BairX — Монголын Ухаалаг Үл Хөдлөх Платформ</title>
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#1E5BFF" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="BairX" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -2788,6 +2795,13 @@
 </head>
 <body>
 
+<!-- ============ BETA BAR ============ -->
+<div id="betaBar" style="background:#1E5BFF;color:#fff;font-family:'Manrope',sans-serif;font-size:13px;font-weight:500;text-align:center;padding:8px 16px;display:flex;align-items:center;justify-content:center;gap:10px;position:relative;z-index:200;">
+  <span style="background:rgba(255,255,255,0.2);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;letter-spacing:.5px;">BETA</span>
+  <span>Туршилтын хувилбар — дата болон нөхцөлүүд demo горимд байна</span>
+  <button onclick="document.getElementById('betaBar').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:16px;line-height:1;padding:0;position:absolute;right:16px;">✕</button>
+</div>
+
 <!-- ============ NAV ============ -->
 <nav class="nav">
   <div class="nav-inner">
@@ -2889,16 +2903,16 @@
       </div>
       <div class="hero-stats">
         <div>
-          <div class="hero-stat-num">24,500<em>+</em></div>
-          <div class="hero-stat-label">Идэвхтэй зар</div>
+          <div class="hero-stat-num">30<em>+</em></div>
+          <div class="hero-stat-label">Demo зар</div>
         </div>
         <div>
           <div class="hero-stat-num">12</div>
-          <div class="hero-stat-label">Банктай хамтран</div>
+          <div class="hero-stat-label">Банкны тооцоолуур</div>
         </div>
         <div>
-          <div class="hero-stat-num">98<em>%</em></div>
-          <div class="hero-stat-label">Баталгаажсан</div>
+          <div class="hero-stat-num" style="font-size:20px;">Beta</div>
+          <div class="hero-stat-label">Туршилтын горим</div>
         </div>
       </div>
     </div>
@@ -4435,15 +4449,15 @@
         <div class="feature-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         </div>
-        <h4>Бодит цагийн харьцуулалт</h4>
-        <p>12 банкны зээлийн нөхцөлийг секунд тутамд шинэчлэн харьцуулж, аль нь хамгийн бага хүүтэй болохыг хэлж өгнө.</p>
+        <h4>Банкны нөхцөл харьцуулалт</h4>
+        <p>12 банкны нийтэд зарласан зээлийн нөхцөлийг нэг дороос харьцуулж, аль нь хамгийн ашигтай болохыг тооцоолно.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
         </div>
-        <h4>100% Баталгаажсан зар</h4>
-        <p>Зар оруулах хүн бүр утасны дугаараар бүртгэлтэй. Хуурамч, давхар зар бараг үгүй болсон.</p>
+        <h4>Утасны дугаараар бүртгэлтэй</h4>
+        <p>Зар оруулах хүн бүр утасны дугаараар нэвтэрч бүртгэлтэй. Баталгаажуулалтын систем хөгжүүлэгдэж байна.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">
@@ -4584,7 +4598,7 @@
 
       <div class="otp-demo-hint">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-        Demo горим: Таны код автоматаар оруулагдана
+        Beta хувилбар: туршилтын код <strong>123456</strong> — автоматаар бөглөгдөнө
       </div>
 
       <div class="otp-wrap" id="otpWrap">
@@ -6900,12 +6914,12 @@
         <h4>Бидний эрхэм зорилго</h4>
         <p>Монголын иргэн бүр зөв шийдвэр гаргаж, өөрийн орон сууцтай болохын тулд шаардлагатай бүх мэдээллийг нэг дороос авч чадахаар зохион байгуулах. Үл хөдлөх + банк санхүү + AI анализыг нэгтгэн ажиллуулж буй цорын ганц платформ бид юм.</p>
 
-        <h4>Тоон үзүүлэлт</h4>
+        <h4>Beta хувилбарын байдал</h4>
         <div class="info-stats">
-          <div class="info-stat"><div class="info-stat-num">24,500+</div><div class="info-stat-label">Идэвхтэй зар</div></div>
-          <div class="info-stat"><div class="info-stat-num">12</div><div class="info-stat-label">Хамтрагч банк</div></div>
-          <div class="info-stat"><div class="info-stat-num">98%</div><div class="info-stat-label">Баталгаажсан</div></div>
-          <div class="info-stat"><div class="info-stat-num">45,000+</div><div class="info-stat-label">Идэвхтэй хэрэглэгч</div></div>
+          <div class="info-stat"><div class="info-stat-num">30+</div><div class="info-stat-label">Demo зар</div></div>
+          <div class="info-stat"><div class="info-stat-num">12</div><div class="info-stat-label">Банкны тооцоолуур</div></div>
+          <div class="info-stat"><div class="info-stat-num">2026</div><div class="info-stat-label">Үүсгэн байгуулсан</div></div>
+          <div class="info-stat"><div class="info-stat-num" style="font-size:16px;">Beta</div><div class="info-stat-label">Хөгжлийн шат</div></div>
         </div>
 
         <h4>Манай үнэт зүйлс</h4>
@@ -6964,29 +6978,29 @@
       title: 'Хэвлэл мэдээлэл',
       eyebrow: 'Press & Media',
       body: `
-        <p>BairX-ийн талаарх сүүлийн үеийн мэдээ, хэвлэлийн материал, медиа сурталчилгааны сан.</p>
+        <p>BairX бол 2026 онд хөгжүүлэлт эхлэсэн <strong>beta хувилбар</strong> платформ юм. Доорх зорилтуудыг хэрэгжүүлэхийн тулд ажиллаж байна.</p>
 
-        <h4>Сүүлийн үеийн мэдээ</h4>
+        <h4>Хөгжлийн зам (Roadmap)</h4>
         <div class="press-list">
           <div class="press-item">
-            <div class="press-date">2026.04.15</div>
-            <div class="press-title">BairX 12 банктай хамтран ажиллах гэрээ байгууллаа</div>
-            <div class="press-desc">Монголын тэргүүлэх 12 банктай хамтран ажиллаж, орон сууцны зээлийн нөхцөлийг бодит цагт харьцуулах боломжийг хэрэглэгчдэд олгоно.</div>
+            <div class="press-date" style="color:var(--accent)">Зорилт</div>
+            <div class="press-title">12 банктай нөхцөл харьцуулалтын хамтын ажиллагаа</div>
+            <div class="press-desc">Монголын тэргүүлэх банкуудтай хамтран, орон сууцны зээлийн бодит нөхцөлийг автоматаар харьцуулах боломж олгох.</div>
           </div>
           <div class="press-item">
-            <div class="press-date">2026.03.02</div>
-            <div class="press-title">AI-аар ажилладаг үнэлгээний систем нэвтрүүллээ</div>
-            <div class="press-desc">Сүүлийн 5 жилийн зах зээлийн өгөгдөл, дүүргийн өсөлт, барилгын чанарт суурилж байрны жинхэнэ үнийг тооцоолох ухаалаг систем.</div>
+            <div class="press-date" style="color:var(--accent)">Зорилт</div>
+            <div class="press-title">AI-д суурилсан үнэлгээний систем</div>
+            <div class="press-desc">Зах зээлийн өгөгдөл, дүүргийн өсөлт, барилгын чанарт суурилж байрны зах зээлийн үнийг автоматаар тооцоолох систем.</div>
           </div>
           <div class="press-item">
-            <div class="press-date">2026.01.20</div>
-            <div class="press-title">BairX 100,000-аас давсан хэрэглэгчтэй болов</div>
-            <div class="press-desc">Платформ ажиллаж эхэлснээс хойш 8 сарын дотор бүртгүүлсэн хэрэглэгчдийн тоо 100,000-аас давлаа.</div>
+            <div class="press-date" style="color:var(--primary)">Идэвхтэй</div>
+            <div class="press-title">Beta хувилбар нийтэд нээлттэй боллоо</div>
+            <div class="press-desc">Зар хайх, зар нэмэх, зээл тооцоолох 3 үндсэн боломж бүхий beta хувилбарыг туршихад урьж байна. Санал хүсэлтийг хүлээн авч байна.</div>
           </div>
           <div class="press-item">
-            <div class="press-date">2025.10.05</div>
-            <div class="press-title">BairX платформ үйл ажиллагаагаа эхлүүллээ</div>
-            <div class="press-desc">Монголын анхны ухаалаг үл хөдлөх хөрөнгийн платформ нь Улаанбаатар хотноо албан ёсоор ажиллаж эхэлсэн.</div>
+            <div class="press-date" style="color:var(--accent)">Зорилт</div>
+            <div class="press-title">Баталгаажуулалтын систем ба жинхэнэ зар</div>
+            <div class="press-desc">Эзэмшлийн гэрчилгээгээр баталгаажсан зар, агентуудын бүртгэл, хуурамч зарыг тасалгаасан систем нэвтрүүлэх.</div>
           </div>
         </div>
 
@@ -9152,6 +9166,56 @@
       showPage(h || 'home');
     });
   })();
+
+  // PWA — Service Worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js').catch(function() {});
+    });
+  }
+
+  // PWA — Install prompt
+  let _pwaPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    _pwaPrompt = e;
+    var banner = document.getElementById('pwaBanner');
+    if (banner) banner.style.display = 'flex';
+  });
+  window.addEventListener('appinstalled', function() {
+    var banner = document.getElementById('pwaBanner');
+    if (banner) banner.style.display = 'none';
+    _pwaPrompt = null;
+    showToast('BairX амжилттай суулгагдлаа!', 'success');
+  });
+
+  function pwaInstall() {
+    if (!_pwaPrompt) return;
+    _pwaPrompt.prompt();
+    _pwaPrompt.userChoice.then(function(r) {
+      if (r.outcome === 'accepted') {
+        var banner = document.getElementById('pwaBanner');
+        if (banner) banner.style.display = 'none';
+      }
+      _pwaPrompt = null;
+    });
+  }
+  function pwaDismiss() {
+    var banner = document.getElementById('pwaBanner');
+    if (banner) banner.style.display = 'none';
+  }
 </script>
+
+<!-- PWA install banner (shown by JS when browser supports install) -->
+<div id="pwaBanner" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--line-2);border-radius:16px;box-shadow:0 8px 32px rgba(10,22,40,0.15);padding:14px 20px;font-family:'Manrope',sans-serif;font-size:14px;align-items:center;gap:14px;z-index:9999;max-width:340px;width:calc(100% - 40px);">
+  <div style="width:40px;height:40px;background:#1E5BFF;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:18px;flex-shrink:0;">B</div>
+  <div style="flex:1;">
+    <div style="font-weight:700;color:#0A1628;">BairX суулгах</div>
+    <div style="color:#1B2D4F;font-size:12px;">Гар утас дээрээ нэмж ашигла</div>
+  </div>
+  <button onclick="pwaInstall()" style="background:#1E5BFF;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">Суулгах</button>
+  <button onclick="pwaDismiss()" style="background:none;border:none;color:#8899AA;cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">✕</button>
+</div>
+
 </body>
 </html>

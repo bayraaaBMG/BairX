@@ -1,0 +1,53 @@
+{
+  "name": "BairX — Монголын Үл Хөдлөх",
+  "short_name": "BairX",
+  "description": "Монголын №1 ухаалаг үл хөдлөхийн платформ",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FAFBFC",
+  "theme_color": "#1E5BFF",
+  "orientation": "any",
+  "lang": "mn",
+  "categories": ["lifestyle", "shopping"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Зар хайх",
+      "short_name": "Хайх",
+      "url": "/#listings",
+      "description": "Байрны зар хайх"
+    },
+    {
+      "name": "Зээл тооцоолох",
+      "short_name": "Тооцоолол",
+      "url": "/#calc",
+      "description": "Ипотекийн зээл тооцоолох"
+    },
+    {
+      "name": "Зар нэмэх",
+      "short_name": "Зар нэмэх",
+      "url": "/#add",
+      "description": "Шинэ зар байршуулах"
+    }
+  ]
+}
