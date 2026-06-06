@@ -191,7 +191,8 @@
   .chip.active { background: var(--primary); color: white; }
 
   /* ============ SECTION ============ */
-  section { padding: 100px 32px; }
+  section { padding: 100px 32px; display: none; }
+  section.page-active { display: block; }
   .section-inner { max-width: 1320px; margin: 0 auto; }
   .section-head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 48px; gap: 32px; flex-wrap: wrap; }
   .section-eyebrow {
@@ -2544,7 +2545,7 @@
 <!-- ============ NAV ============ -->
 <nav class="nav">
   <div class="nav-inner">
-    <a class="logo" onclick="scrollTo(0,0)">
+    <a class="logo" onclick="showPage('home')">
       <div class="logo-mark">B</div>
       <div class="logo-text">Bair<em>X</em></div>
     </a>
@@ -2602,7 +2603,7 @@
 </nav>
 
 <!-- ============ HERO ============ -->
-<section class="hero">
+<section class="hero" id="home">
   <div class="hero-grid">
     <div>
       <span class="hero-tag"><span class="hero-tag-dot"></span>Монголын №1 ухаалаг үл хөдлөхийн платформ</span>
@@ -2701,7 +2702,7 @@
 </section>
 
 <!-- ============ BANKS STRIP ============ -->
-<section class="banks-section">
+<section class="banks-section" id="banks">
   <div class="banks-inner">
     <div class="banks-label">Хамтран ажилладаг банкууд</div>
     <div class="banks-row">
@@ -4435,12 +4436,31 @@
     setTimeout(() => t.classList.remove('show'), 2600);
   }
 
-  function scrollToSection(id) {
-    const el = document.getElementById(id);
-    if (el) {
-      const y = el.getBoundingClientRect().top + window.scrollY - 80;
-      window.scrollTo({ top: y, behavior: 'smooth' });
+  // ===== PAGE ROUTER =====
+  function showPage(id) {
+    const target = id || 'home';
+    document.querySelectorAll('section').forEach(s => s.classList.remove('page-active'));
+    if (target === 'home') {
+      const hero = document.getElementById('home');
+      const banks = document.getElementById('banks');
+      if (hero) hero.classList.add('page-active');
+      if (banks) banks.classList.add('page-active');
+      if (history.pushState) history.pushState(null, '', location.pathname);
+    } else {
+      const el = document.getElementById(target);
+      if (el) {
+        el.classList.add('page-active');
+        if (history.pushState) history.pushState(null, '', '#' + target);
+      }
     }
+    document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+    const activeLink = document.querySelector(`.nav-links a[onclick*="'${target}'"]`);
+    if (activeLink) activeLink.classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function scrollToSection(id) {
+    showPage(id);
   }
 
   function toggleMobileMenu() {
@@ -7980,6 +8000,16 @@
 
   // Simulate a live notification after 12 seconds
   setTimeout(simulateLiveNotif, 12000);
+
+  // Initialize page router
+  (function() {
+    const hash = location.hash.replace('#', '');
+    showPage(hash || 'home');
+    window.addEventListener('popstate', function() {
+      const h = location.hash.replace('#', '');
+      showPage(h || 'home');
+    });
+  })();
 </script>
 </body>
 </html>
