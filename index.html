@@ -4799,7 +4799,7 @@
 <div class="auth-overlay" id="authModal" onclick="if(event.target===this) closeAuth()">
   <div class="auth-box">
 
-    <!-- STEP 1: Нэвтрэх/Бүртгүүлэх -->
+    <!-- STEP 1: Имэйл оруулах -->
     <div class="auth-step" id="authStep1">
       <div class="auth-header">
         <div class="auth-logo-mark">B</div>
@@ -4815,23 +4815,20 @@
         Google-ээр нэвтрэх
       </button>
 
-      <div class="auth-divider"><span>эсвэл утасны дугаараар</span></div>
+      <div class="auth-divider"><span>эсвэл имэйлээр</span></div>
 
-      <div>
-        <div class="auth-phone-wrap">
-          <div class="auth-phone-flag">🇲🇳 +976</div>
-          <input class="auth-phone-input" type="tel" id="authPhone" placeholder="88877877" maxlength="8" oninput="this.value=this.value.replace(/\D/g,'')" onkeydown="if(event.key==='Enter') submitPhone()"/>
-        </div>
+      <div class="auth-field">
+        <input type="email" id="authEmail" placeholder="tanii@email.com" autocomplete="email" onkeydown="if(event.key==='Enter') submitEmail()"/>
       </div>
 
-      <button class="btn btn-blue auth-submit-btn" onclick="submitPhone()">
+      <button class="btn btn-blue auth-submit-btn" onclick="submitEmail()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-        Код авах
+        Үргэлжлүүлэх
       </button>
     </div>
 
-    <!-- STEP 2: OTP баталгаажуулалт -->
-    <div class="auth-step" id="authStep2" style="display:none">
+    <!-- STEP 3A: Нууц үг (бүртгэлтэй хэрэглэгч) -->
+    <div class="auth-step" id="authStep3Login" style="display:none">
       <div class="auth-header">
         <button class="auth-back-btn" onclick="goToAuthStep(1)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
@@ -4841,59 +4838,22 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
-      <div class="auth-title">Кодоо оруулна уу</div>
-      <div class="otp-phone-label">+976 <strong id="authPhoneDisplay">--------</strong> дугаарт<br>6 оронтой код илгээгдлээ</div>
-
-      <div class="otp-demo-hint">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-        Beta хувилбар: туршилтын код <strong>123456</strong> — автоматаар бөглөгдөнө
-      </div>
-
-      <div class="otp-wrap" id="otpWrap">
-        <input class="otp-digit" type="tel" maxlength="1" inputmode="numeric"/>
-        <input class="otp-digit" type="tel" maxlength="1" inputmode="numeric"/>
-        <input class="otp-digit" type="tel" maxlength="1" inputmode="numeric"/>
-        <input class="otp-digit" type="tel" maxlength="1" inputmode="numeric"/>
-        <input class="otp-digit" type="tel" maxlength="1" inputmode="numeric"/>
-        <input class="otp-digit" type="tel" maxlength="1" inputmode="numeric"/>
-      </div>
-
-      <div class="otp-resend">
-        Код ирсэнгүй?
-        <button onclick="resendOTP()" id="resendBtn">Дахин илгээх</button>
-        <span class="otp-timer" id="otpTimer"></span>
-      </div>
-
-      <button class="btn btn-blue auth-submit-btn" onclick="verifyOTP()">Баталгаажуулах</button>
-    </div>
-
-    <!-- STEP 3A: Нууц үг (бүртгэлтэй хэрэглэгч) -->
-    <div class="auth-step" id="authStep3Login" style="display:none">
-      <div class="auth-header">
-        <button class="auth-back-btn" onclick="goToAuthStep(2)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-          Буцах
-        </button>
-        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
-      </div>
       <div class="auth-title">Нууц үг оруулна уу</div>
-      <div class="auth-sub">+976 <span id="loginPhoneDisplay" style="font-family:'JetBrains Mono',monospace; font-weight:700;"></span></div>
+      <div class="auth-sub" style="word-break:break-all;color:var(--ink-3);font-size:13px;" id="loginEmailDisplay"></div>
 
       <div class="auth-field">
         <label>Нууц үг</label>
-        <input type="password" id="authPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter') loginWithPassword()"/>
+        <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') loginWithEmail()"/>
       </div>
       <div class="auth-forgot-link" onclick="startForgotPassword()">Нууц үгээ мартсан уу?</div>
 
-      <button class="btn btn-blue auth-submit-btn" onclick="loginWithPassword()">Нэвтрэх</button>
+      <button class="btn btn-blue auth-submit-btn" onclick="loginWithEmail()">Нэвтрэх</button>
     </div>
 
-    <!-- STEP 3B: Шинэ бүртгэл - нууц үг үүсгэх -->
+    <!-- STEP 3B: Шинэ бүртгэл -->
     <div class="auth-step" id="authStep3Register" style="display:none">
       <div class="auth-header">
-        <button class="auth-back-btn" onclick="goToAuthStep(2)">
+        <button class="auth-back-btn" onclick="goToAuthStep(1)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           Буцах
         </button>
@@ -4902,25 +4862,25 @@
         </button>
       </div>
       <div class="auth-title">Бүртгэл үүсгэх</div>
-      <div class="auth-sub">+976 <span id="regPhoneDisplay" style="font-family:'JetBrains Mono',monospace; font-weight:700;"></span> — шинэ хэрэглэгч</div>
+      <div class="auth-sub" style="word-break:break-all;color:var(--ink-3);font-size:13px;" id="regEmailDisplay"></div>
 
       <div class="auth-field-row">
         <div class="auth-field">
           <label>Овог</label>
-          <input type="text" id="authLastName" placeholder="Дорж"/>
+          <input type="text" id="authLastName" placeholder="Дорж" autocomplete="family-name"/>
         </div>
         <div class="auth-field">
           <label>Нэр</label>
-          <input type="text" id="authFirstName" placeholder="Батаа"/>
+          <input type="text" id="authFirstName" placeholder="Батаа" autocomplete="given-name"/>
         </div>
       </div>
       <div class="auth-field">
         <label>Нууц үг</label>
-        <input type="password" id="authNewPassword" placeholder="Хамгийн багадаа 6 тэмдэгт"/>
+        <input type="password" id="authNewPassword" placeholder="Хамгийн багадаа 6 тэмдэгт" autocomplete="new-password"/>
       </div>
       <div class="auth-field">
         <label>Нууц үг давтах</label>
-        <input type="password" id="authNewPassword2" placeholder="Нууц үгийг дахин оруулна уу" onkeydown="if(event.key==='Enter') createAccount()"/>
+        <input type="password" id="authNewPassword2" placeholder="Нууц үгийг дахин оруулна уу" autocomplete="new-password" onkeydown="if(event.key==='Enter') createAccount()"/>
       </div>
 
       <button class="btn btn-blue auth-submit-btn" onclick="createAccount()">Бүртгэл үүсгэх</button>
@@ -4938,18 +4898,13 @@
         </button>
       </div>
       <div class="auth-title">Нууц үг сэргээх</div>
-      <div class="auth-sub">Шинэ нууц үг тохируулна уу</div>
+      <div class="auth-sub">Дараах имэйл рүү сэргээх линк илгээгдэх болно</div>
+      <div style="word-break:break-all;font-weight:700;font-size:14px;margin-top:4px;" id="forgotEmailDisplay"></div>
 
-      <div class="auth-field">
-        <label>Шинэ нууц үг</label>
-        <input type="password" id="authResetPw" placeholder="Хамгийн багадаа 6 тэмдэгт"/>
-      </div>
-      <div class="auth-field">
-        <label>Нууц үг давтах</label>
-        <input type="password" id="authResetPw2" placeholder="Нууц үгийг дахин оруулна уу" onkeydown="if(event.key==='Enter') resetPassword()"/>
-      </div>
-
-      <button class="btn btn-blue auth-submit-btn" onclick="resetPassword()">Нууц үг солих</button>
+      <button class="btn btn-blue auth-submit-btn" onclick="sendPasswordReset()" style="margin-top:24px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        Линк илгээх
+      </button>
     </div>
 
   </div>
@@ -4977,170 +4932,189 @@
 <!-- ============ TOAST ============ -->
 <div class="toast" id="toast"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
 <script>
-  // ===== AUTH SYSTEM =====
-  const DEMO_OTP = '123456';
-  const registeredUsers = {
-    '88877877': { firstName: 'Батаа', lastName: 'Дорж', password: 'demo123' },
-    '99001234': { firstName: 'Болд', lastName: 'Гантулга', password: 'demo123' },
-    '88001122': { firstName: 'Сарнай', lastName: 'Лхам', password: 'demo123' }
+  // ===== FIREBASE INIT =====
+  const firebaseConfig = {
+    apiKey: "AIzaSyBdCxMJWmdO9BLuSPLJrkigQTqKfmvZvYw",
+    authDomain: "bairx-fd502.firebaseapp.com",
+    projectId: "bairx-fd502",
+    storageBucket: "bairx-fd502.firebasestorage.app",
+    messagingSenderId: "459958506902",
+    appId: "1:459958506902:web:4032ffe101a40e7d49b9b7"
   };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  // ===== AUTH SYSTEM =====
   let currentUser = null;
-  let authCurrentPhone = '';
-  let authCurrentMode = 'login'; // 'login' | 'register' | 'forgot'
-  let otpTimerInterval = null;
+  let authCurrentEmail = '';
+
+  // onAuthStateChanged — page load болгонд Firebase session сэргээнэ
+  auth.onAuthStateChanged(async (fbUser) => {
+    if (fbUser) {
+      try {
+        const snap = await db.collection('users').doc(fbUser.uid).get();
+        const data = snap.data() || {};
+        const firstName = data.firstName || fbUser.displayName?.split(' ')[0] || 'Хэрэглэгч';
+        const lastName = data.lastName || fbUser.displayName?.split(' ').slice(1).join(' ') || '';
+        currentUser = {
+          uid: fbUser.uid,
+          email: fbUser.email,
+          name: firstName,
+          lastName,
+          letter: firstName[0] || 'Х',
+          isGoogle: fbUser.providerData.some(p => p.providerId === 'google.com')
+        };
+        updateNavLoggedIn();
+      } catch(e) {
+        currentUser = null;
+      }
+    } else {
+      currentUser = null;
+      const loginBtn = document.getElementById('loginBtn');
+      const userAvatarWrap = document.getElementById('userAvatarWrap');
+      const userAvatar = document.getElementById('userAvatar');
+      if (loginBtn) loginBtn.style.display = '';
+      if (userAvatar) userAvatar.style.display = 'none';
+      if (userAvatarWrap) userAvatarWrap.style.display = 'none';
+    }
+  });
 
   function openAuth() {
     goToAuthStep(1);
     document.getElementById('authModal').classList.add('open');
-    setTimeout(() => document.getElementById('authPhone')?.focus(), 200);
+    setTimeout(() => document.getElementById('authEmail')?.focus(), 200);
   }
 
   function closeAuth() {
     document.getElementById('authModal').classList.remove('open');
-    clearOtpTimer();
   }
 
   function goToAuthStep(step) {
-    ['authStep1','authStep2','authStep3Login','authStep3Register','authStepForgot'].forEach(id => {
+    ['authStep1','authStep3Login','authStep3Register','authStepForgot'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
-    const map = { 1:'authStep1', 2:'authStep2', '3login':'authStep3Login', '3register':'authStep3Register', 'forgot':'authStepForgot' };
+    const map = { 1:'authStep1', '3login':'authStep3Login', '3register':'authStep3Register', 'forgot':'authStepForgot' };
     const target = document.getElementById(map[step]);
     if (target) { target.style.display = 'flex'; target.style.animation = 'none'; void target.offsetWidth; target.style.animation = ''; }
   }
 
-  function submitPhone() {
-    const phone = (document.getElementById('authPhone').value || '').trim();
-    if (!/^\d{8}$/.test(phone)) { showToast('8 оронтой утасны дугаар оруулна уу'); return; }
-    authCurrentPhone = phone;
-    authCurrentMode = registeredUsers[phone] ? 'login' : 'register';
-    document.getElementById('authPhoneDisplay').textContent = phone;
-    goToAuthStep(2);
-    startOtpTimer();
-    // Demo: auto-fill after 1s
-    setTimeout(() => fillDemoOTP(), 900);
-    showToast('Demo горим: код автоматаар оруулагдана', 'success');
-  }
-
-  function fillDemoOTP() {
-    const digits = document.querySelectorAll('#authStep2 .otp-digit');
-    DEMO_OTP.split('').forEach((d, i) => {
-      if (digits[i]) { digits[i].value = d; digits[i].classList.add('filled'); }
-    });
-  }
-
-  function startOtpTimer() {
-    let secs = 60;
-    const btn = document.getElementById('resendBtn');
-    const timer = document.getElementById('otpTimer');
-    if (btn) btn.style.display = 'none';
-    clearOtpTimer();
-    otpTimerInterval = setInterval(() => {
-      secs--;
-      if (timer) timer.textContent = secs + 'с';
-      if (secs <= 0) {
-        clearOtpTimer();
-        if (btn) btn.style.display = '';
-        if (timer) timer.textContent = '';
+  async function submitEmail() {
+    const email = (document.getElementById('authEmail')?.value || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Зөв имэйл хаяг оруулна уу'); return; }
+    authCurrentEmail = email;
+    try {
+      const methods = await auth.fetchSignInMethodsForEmail(email);
+      if (methods.length > 0) {
+        const el = document.getElementById('loginEmailDisplay');
+        if (el) el.textContent = email;
+        goToAuthStep('3login');
+        setTimeout(() => document.getElementById('authPassword')?.focus(), 100);
+      } else {
+        const el = document.getElementById('regEmailDisplay');
+        if (el) el.textContent = email;
+        goToAuthStep('3register');
+        setTimeout(() => document.getElementById('authLastName')?.focus(), 100);
       }
-    }, 1000);
-  }
-
-  function clearOtpTimer() {
-    if (otpTimerInterval) { clearInterval(otpTimerInterval); otpTimerInterval = null; }
-  }
-
-  function resendOTP() {
-    const digits = document.querySelectorAll('#authStep2 .otp-digit');
-    digits.forEach(d => { d.value = ''; d.classList.remove('filled'); });
-    startOtpTimer();
-    setTimeout(() => fillDemoOTP(), 900);
-    showToast('Код дахин илгээгдлээ', 'success');
-  }
-
-  function verifyOTP() {
-    const digits = document.querySelectorAll('#authStep2 .otp-digit');
-    const entered = Array.from(digits).map(d => d.value).join('');
-    if (entered.length < 6) { showToast('6 оронтой кодоо оруулна уу'); return; }
-    if (entered !== DEMO_OTP) { showToast('Буруу код. Demo код: 123456'); return; }
-    clearOtpTimer();
-    if (authCurrentMode === 'login') {
-      document.getElementById('loginPhoneDisplay').textContent = authCurrentPhone;
-      goToAuthStep('3login');
-      setTimeout(() => document.getElementById('authPassword')?.focus(), 100);
-    } else if (authCurrentMode === 'forgot') {
-      goToAuthStep('forgot');
-      setTimeout(() => document.getElementById('authResetPw')?.focus(), 100);
-    } else {
-      document.getElementById('regPhoneDisplay').textContent = authCurrentPhone;
-      goToAuthStep('3register');
-      setTimeout(() => document.getElementById('authLastName')?.focus(), 100);
+    } catch(e) {
+      showToast('Алдаа гарлаа. Дахин оролдоно уу.');
     }
   }
 
-  function loginWithPassword() {
-    const pw = document.getElementById('authPassword').value;
+  async function loginWithEmail() {
+    const pw = document.getElementById('authPassword')?.value;
     if (!pw) { showToast('Нууц үг оруулна уу'); return; }
-    const user = registeredUsers[authCurrentPhone];
-    // Demo: accept any password or the stored one
-    const name = user.firstName;
-    currentUser = { name, lastName: user.lastName, phone: authCurrentPhone, letter: name[0] };
-    closeAuth();
-    updateNavLoggedIn();
-    showToast(`Тавтай морилно уу, ${name}!`, 'success');
+    try {
+      await auth.signInWithEmailAndPassword(authCurrentEmail, pw);
+      closeAuth();
+      showToast('Тавтай морилно уу!', 'success');
+    } catch(e) {
+      const msgs = {
+        'auth/wrong-password': 'Нууц үг буруу байна',
+        'auth/invalid-credential': 'Нууц үг буруу байна',
+        'auth/too-many-requests': 'Хэт олон оролдлого. Түр хүлээнэ үү.',
+        'auth/user-disabled': 'Энэ бүртгэл хаагдсан байна'
+      };
+      showToast(msgs[e.code] || 'Нэвтрэхэд алдаа гарлаа');
+    }
   }
 
-  function createAccount() {
-    const lastName = document.getElementById('authLastName').value.trim();
-    const firstName = document.getElementById('authFirstName').value.trim();
-    const pw = document.getElementById('authNewPassword').value;
-    const pw2 = document.getElementById('authNewPassword2').value;
+  async function createAccount() {
+    const lastName = (document.getElementById('authLastName')?.value || '').trim();
+    const firstName = (document.getElementById('authFirstName')?.value || '').trim();
+    const pw = document.getElementById('authNewPassword')?.value || '';
+    const pw2 = document.getElementById('authNewPassword2')?.value || '';
     if (!lastName || !firstName) { showToast('Овог нэрээ оруулна уу'); return; }
-    if (!pw || pw.length < 6) { showToast('Нууц үг хамгийн багадаа 6 тэмдэгт байна'); return; }
+    if (pw.length < 6) { showToast('Нууц үг хамгийн багадаа 6 тэмдэгт байна'); return; }
     if (pw !== pw2) { showToast('Нууц үгнүүд таарахгүй байна'); return; }
-    registeredUsers[authCurrentPhone] = { firstName, lastName, password: pw };
-    currentUser = { name: firstName, lastName, phone: authCurrentPhone, letter: firstName[0] };
-    closeAuth();
-    updateNavLoggedIn();
-    showToast(`Бүртгэл амжилттай! Тавтай морилно уу, ${firstName}!`, 'success');
+    try {
+      const cred = await auth.createUserWithEmailAndPassword(authCurrentEmail, pw);
+      await cred.user.updateProfile({ displayName: firstName + ' ' + lastName });
+      await db.collection('users').doc(cred.user.uid).set({
+        uid: cred.user.uid,
+        firstName,
+        lastName,
+        email: authCurrentEmail,
+        role: 'user',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      closeAuth();
+      showToast(`Бүртгэл амжилттай! Тавтай морилно уу, ${firstName}!`, 'success');
+    } catch(e) {
+      const msgs = {
+        'auth/email-already-in-use': 'Энэ имэйл аль хэдийн бүртгэлтэй байна',
+        'auth/weak-password': 'Нууц үг хэтэрхий энгийн байна'
+      };
+      showToast(msgs[e.code] || 'Бүртгэл үүсгэхэд алдаа гарлаа');
+    }
+  }
+
+  async function loginWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    try {
+      const result = await auth.signInWithPopup(provider);
+      const fbUser = result.user;
+      const userDoc = await db.collection('users').doc(fbUser.uid).get();
+      if (!userDoc.exists) {
+        const parts = (fbUser.displayName || 'Хэрэглэгч').split(' ');
+        await db.collection('users').doc(fbUser.uid).set({
+          uid: fbUser.uid,
+          firstName: parts[0] || 'Хэрэглэгч',
+          lastName: parts.slice(1).join(' ') || '',
+          email: fbUser.email,
+          role: 'user',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+      closeAuth();
+      showToast('Google-ээр нэвтэрлээ. Тавтай морилно уу!', 'success');
+    } catch(e) {
+      if (e.code !== 'auth/popup-closed-by-user') showToast('Google нэвтрэхэд алдаа гарлаа');
+    }
   }
 
   function startForgotPassword() {
-    if (!authCurrentPhone) {
-      showToast('Эхлээд утасны дугаараа оруулна уу');
-      goToAuthStep(1);
-      return;
+    if (!authCurrentEmail) { showToast('Эхлээд имэйл хаягаа оруулна уу'); goToAuthStep(1); return; }
+    const el = document.getElementById('forgotEmailDisplay');
+    if (el) el.textContent = authCurrentEmail;
+    goToAuthStep('forgot');
+  }
+
+  async function sendPasswordReset() {
+    try {
+      await auth.sendPasswordResetEmail(authCurrentEmail);
+      closeAuth();
+      showToast('Нууц үг сэргээх линк имэйлд илгээгдлээ', 'success');
+    } catch(e) {
+      showToast('Имэйл илгээхэд алдаа гарлаа');
     }
-    authCurrentMode = 'forgot';
-    document.getElementById('authPhoneDisplay').textContent = authCurrentPhone;
-    goToAuthStep(2);
-    startOtpTimer();
-    setTimeout(() => fillDemoOTP(), 900);
-    showToast('Demo: код автоматаар оруулагдана', 'success');
-  }
-
-  function resetPassword() {
-    const pw = document.getElementById('authResetPw').value;
-    const pw2 = document.getElementById('authResetPw2').value;
-    if (!pw || pw.length < 6) { showToast('Нууц үг хамгийн багадаа 6 тэмдэгт байна'); return; }
-    if (pw !== pw2) { showToast('Нууц үгнүүд таарахгүй байна'); return; }
-    if (registeredUsers[authCurrentPhone]) registeredUsers[authCurrentPhone].password = pw;
-    const user = registeredUsers[authCurrentPhone];
-    currentUser = { name: user?.firstName || 'Хэрэглэгч', lastName: user?.lastName || '', phone: authCurrentPhone, letter: (user?.firstName || 'Х')[0] };
-    closeAuth();
-    updateNavLoggedIn();
-    showToast('Нууц үг амжилттай шинэчлэгдлээ!', 'success');
-  }
-
-  function loginWithGoogle() {
-    const names = ['Бат-Эрдэнэ', 'Мөнхбат', 'Энхтуяа', 'Золбоо'];
-    const picked = names[Math.floor(Math.random() * names.length)];
-    currentUser = { name: picked, lastName: '', phone: null, letter: picked[0], isGoogle: true };
-    closeAuth();
-    updateNavLoggedIn();
-    showToast(`Google-ээр нэвтэрлээ. Тавтай морилно уу!`, 'success');
   }
 
   function updateNavLoggedIn() {
@@ -5153,10 +5127,11 @@
     if (userAvatarWrap) userAvatarWrap.style.display = '';
     if (userAvatar) {
       userAvatar.style.display = 'grid';
-      document.getElementById('userAvLetter').textContent = currentUser.letter;
+      const letterEl = document.getElementById('userAvLetter');
+      if (letterEl) letterEl.textContent = currentUser.letter;
     }
     if (userDropName) userDropName.textContent = (currentUser.lastName ? currentUser.lastName + ' ' : '') + currentUser.name;
-    if (userDropPhone) userDropPhone.textContent = currentUser.phone ? '+976 ' + currentUser.phone : 'Google хэрэглэгч';
+    if (userDropPhone) userDropPhone.textContent = currentUser.isGoogle ? 'Google хэрэглэгч' : (currentUser.email || '');
   }
 
   function toggleUserMenu(e) {
@@ -5165,58 +5140,19 @@
     if (dd) dd.classList.toggle('open');
   }
 
-  function logout() {
-    currentUser = null;
-    const loginBtn = document.getElementById('loginBtn');
-    const userAvatar = document.getElementById('userAvatar');
-    const userAvatarWrap = document.getElementById('userAvatarWrap');
-    const dd = document.getElementById('userDropdown');
-    if (loginBtn) loginBtn.style.display = '';
-    if (userAvatar) userAvatar.style.display = 'none';
-    if (userAvatarWrap) userAvatarWrap.style.display = 'none';
-    if (dd) dd.classList.remove('open');
-    showToast('Амжилттай гарлаа');
+  async function logout() {
+    try {
+      await auth.signOut();
+      const dd = document.getElementById('userDropdown');
+      if (dd) dd.classList.remove('open');
+      showToast('Амжилттай гарлаа');
+    } catch(e) {}
   }
 
-  // Close user dropdown when clicking outside
   document.addEventListener('click', (e) => {
     const dd = document.getElementById('userDropdown');
     const av = document.getElementById('userAvatar');
-    if (dd && av && !av.contains(e.target) && !dd.contains(e.target)) {
-      dd.classList.remove('open');
-    }
-  });
-
-  // OTP keyboard navigation
-  document.addEventListener('DOMContentLoaded', () => {
-    const otpWrap = document.getElementById('otpWrap');
-    if (!otpWrap) return;
-    otpWrap.addEventListener('input', (e) => {
-      const input = e.target;
-      if (!input.classList.contains('otp-digit')) return;
-      input.value = input.value.replace(/\D/g, '').slice(-1);
-      input.classList.toggle('filled', !!input.value);
-      if (input.value) {
-        const next = input.nextElementSibling;
-        if (next && next.classList.contains('otp-digit')) next.focus();
-      }
-    });
-    otpWrap.addEventListener('keydown', (e) => {
-      const input = e.target;
-      if (!input.classList.contains('otp-digit')) return;
-      if (e.key === 'Backspace' && !input.value) {
-        const prev = input.previousElementSibling;
-        if (prev && prev.classList.contains('otp-digit')) { prev.value = ''; prev.classList.remove('filled'); prev.focus(); }
-      }
-      if (e.key === 'Enter') verifyOTP();
-    });
-    otpWrap.addEventListener('paste', (e) => {
-      e.preventDefault();
-      const text = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
-      const digits = otpWrap.querySelectorAll('.otp-digit');
-      text.split('').forEach((ch, i) => { if (digits[i]) { digits[i].value = ch; digits[i].classList.add('filled'); } });
-      if (digits[text.length - 1]) digits[text.length - 1].focus();
-    });
+    if (dd && av && !av.contains(e.target) && !dd.contains(e.target)) dd.classList.remove('open');
   });
 
   // ===== LISTINGS DATA =====
@@ -6266,7 +6202,7 @@
 
     // Seller data from lookup table (deterministic, no Math.random)
     const seller = l.userSubmitted
-      ? { phone: currentUser?.phone || '9900-0000', name: currentUser?.name || 'Хэрэглэгч', type: 'Хувь хүн' }
+      ? { phone: currentUser?.email || '9900-0000', name: currentUser?.name || 'Хэрэглэгч', type: 'Хувь хүн' }
       : (sellerData[l.id] || { phone: '9911-2233', name: 'Баталгаажсан Агент', type: 'Агент' });
     const sellerName = seller.name;
     const sellerLetter = sellerName[0] || 'А';
