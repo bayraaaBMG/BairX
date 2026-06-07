@@ -2600,6 +2600,42 @@
     .modal-actions { flex-direction: column; }
   }
 
+  /* ============ MOBILE BOTTOM NAV ============ */
+  .mobile-bottom-nav {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    background: rgba(250,251,252,0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--line);
+    padding: 0 0 env(safe-area-inset-bottom, 0);
+  }
+  .mobile-bottom-nav-inner {
+    display: flex; align-items: stretch; height: 58px;
+  }
+  .mbn-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; cursor: pointer; background: none; border: none;
+    color: var(--ink-3); font-size: 9px; font-weight: 700; font-family: 'Manrope',sans-serif;
+    letter-spacing: 0.02em; text-transform: uppercase; padding: 6px 0;
+    transition: color 0.15s;
+    position: relative;
+  }
+  .mbn-btn.active, .mbn-btn:active { color: var(--primary); }
+  .mbn-btn svg { flex-shrink: 0; }
+  .mbn-fav-badge {
+    position: absolute; top: 4px; right: calc(50% - 16px);
+    background: var(--danger); color: #fff;
+    font-size: 9px; font-weight: 700; border-radius: 100px;
+    min-width: 16px; height: 16px; display: none;
+    align-items: center; justify-content: center; padding: 0 3px;
+  }
+  @media (max-width: 768px) {
+    .mobile-bottom-nav { display: block; }
+    body { padding-bottom: 58px; }
+    #pwaBanner { bottom: 68px; }
+  }
+
   /* ============ AUTH MODAL ============ */
   .auth-overlay {
     position: fixed; inset: 0; z-index: 300;
@@ -2854,6 +2890,10 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             Хувийн самбар
           </a>
+          <a onclick="showPage('my-listings'); renderMyListings('active'); toggleUserMenu(null)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Миний зарууд
+          </a>
           <a onclick="openFavorites(); toggleUserMenu(null)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
             Хадгалсан зарууд
@@ -2949,6 +2989,14 @@
         </div>
       </div>
 
+      <div class="field-group" style="margin-bottom:0;">
+        <label>Хайлтын үг</label>
+        <div style="position:relative;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="heroSearch" placeholder="Жнь: Зайсан 2 өрөө…" style="width:100%;padding:10px 12px 10px 38px;border:1.5px solid var(--line-2);border-radius:10px;font-size:14px;font-family:'Manrope',sans-serif;outline:none;background:var(--paper);" />
+        </div>
+      </div>
+
       <div class="search-fields">
         <div class="field-group">
           <label>Өрөөний тоо</label>
@@ -2989,7 +3037,7 @@
 <!-- ============ HOME PORTAL ============ -->
 <section class="home-portal-section" id="home-portal">
   <div class="section-inner">
-    <div class="portal-cats">
+    <div class="portal-cats" style="grid-template-columns:repeat(5, 1fr);">
       <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentCat='apartment'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='apartment')); applyListingFilter();}, 100)">
         <div class="portal-cat-icon">🏢</div>
         <div class="portal-cat-name">Орон сууц</div>
@@ -3010,9 +3058,25 @@
         <div class="portal-cat-icon">🔑</div>
         <div class="portal-cat-name">Түрээс</div>
       </button>
-      <button class="portal-cat-btn" onclick="showPage('calc')">
+      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{activeFilterToggles=['new']; document.querySelectorAll('.filter-toggle').forEach(t=>t.classList.toggle('active',t.dataset.ftoggle==='new')); currentCat='all'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='all')); applyListingFilter();}, 100)">
+        <div class="portal-cat-icon">✨</div>
+        <div class="portal-cat-name">Шинэ барилга</div>
+      </button>
+      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{activeFilterToggles=['loan']; document.querySelectorAll('.filter-toggle').forEach(t=>t.classList.toggle('active',t.dataset.ftoggle==='loan')); currentCat='all'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='all')); applyListingFilter();}, 100)">
         <div class="portal-cat-icon">🏦</div>
-        <div class="portal-cat-name">Зээл</div>
+        <div class="portal-cat-name">Зээлтэй байр</div>
+      </button>
+      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{activeFilterToggles=['below']; document.querySelectorAll('.filter-toggle').forEach(t=>t.classList.toggle('active',t.dataset.ftoggle==='below')); currentCat='all'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='all')); applyListingFilter();}, 100)">
+        <div class="portal-cat-icon">💸</div>
+        <div class="portal-cat-name">Хямд байр</div>
+      </button>
+      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentSort='default'; const s=document.getElementById('sortSelect'); if(s)s.value='default'; currentCat='all'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='all')); applyListingFilter();}, 100)">
+        <div class="portal-cat-icon">🆕</div>
+        <div class="portal-cat-name">Шинэ зар</div>
+      </button>
+      <button class="portal-cat-btn" onclick="showPage('calc')">
+        <div class="portal-cat-icon">📊</div>
+        <div class="portal-cat-name">Тооцоолуур</div>
       </button>
     </div>
 
@@ -3565,6 +3629,13 @@
         </div>
         <button class="filter-reset" onclick="resetFilters()">Цэвэрлэх</button>
       </div>
+      <div class="filter-field" style="margin-bottom:16px;">
+        <label>Хайх (гарчиг, байршил, өрөө…)</label>
+        <div style="position:relative;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="fSearch" class="form-input" placeholder="Жнь: Зайсан 2 өрөө, шинэ барилга…" oninput="searchText=this.value; applyListingFilter();" style="padding-left:38px;" />
+        </div>
+      </div>
       <div class="filter-grid">
         <div class="filter-field">
           <label>Дүүрэг</label>
@@ -3646,6 +3717,8 @@
         <option value="area-desc">Талбай (том→жижиг)</option>
       </select>
     </div>
+
+    <div id="activeFilterTags" style="display:none; flex-wrap:wrap; gap:8px; margin-bottom:12px;"></div>
 
     <div class="listings-grid" id="listingsGrid">
       <!-- Cards will be rendered here by JS -->
@@ -4081,6 +4154,30 @@
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ============ MY LISTINGS ============ -->
+<section class="dash-section" id="my-listings">
+  <div class="section-inner">
+    <div class="section-head">
+      <div>
+        <span class="section-eyebrow">Миний зарууд</span>
+        <h2 class="section-title display">Өөрийн нийтэлсэн <em>зарууд</em></h2>
+      </div>
+      <button class="btn btn-blue" onclick="openAddListing()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Шинэ зар нэмэх
+      </button>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
+      <button class="rent-tab active" id="myTab-active" onclick="renderMyListings('active')">Идэвхтэй</button>
+      <button class="rent-tab" id="myTab-pending" onclick="renderMyListings('pending')">Хүлээгдэж буй</button>
+      <button class="rent-tab" id="myTab-ended" onclick="renderMyListings('ended')">Дууссан</button>
+    </div>
+
+    <div id="myListingsGrid" class="listings-grid"></div>
   </div>
 </section>
 
@@ -4975,7 +5072,9 @@
   });
 
   // ===== LISTINGS DATA =====
-  let favorites = [];
+  let favorites = (function() {
+    try { return JSON.parse(localStorage.getItem('bairxFavorites') || '[]'); } catch(e) { return []; }
+  })();
   const listings = [
     {
       id: 1,
@@ -5715,6 +5814,7 @@
       btn.classList.add('faved');
       showToast('Таалагдсан зар хадгаллаа', 'success');
     }
+    try { localStorage.setItem('bairxFavorites', JSON.stringify(favorites)); } catch(e) {}
     updateFavCount();
   }
 
@@ -5723,6 +5823,11 @@
     if (badge) {
       if (favorites.length > 0) { badge.textContent = favorites.length; badge.style.display = 'grid'; }
       else badge.style.display = 'none';
+    }
+    const mbnBadge = document.getElementById('mbnFavCount');
+    if (mbnBadge) {
+      if (favorites.length > 0) { mbnBadge.textContent = favorites.length; mbnBadge.style.display = 'flex'; }
+      else mbnBadge.style.display = 'none';
     }
   }
 
@@ -6094,10 +6199,22 @@
           </ol>
         </div>
 
+        <!-- ХОЛБОО БАРИХ -->
+        <div class="modal-section">
+          <h4>Холбоо барих</h4>
+          <div id="contactBox_${l.id}" style="background:var(--paper-2);border-radius:14px;padding:18px;text-align:center;">
+            <div style="font-size:13px;color:var(--ink-3);margin-bottom:12px;">Эзэн/Агентийн утасны дугаарыг харахдаа дарна уу</div>
+            <button class="btn btn-blue btn-lg" style="width:100%;justify-content:center;" onclick="revealPhone('${l.id}', '${l.phone || '8811-2233'}')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
+              Дугаар харах
+            </button>
+          </div>
+        </div>
+
         <div class="modal-actions">
-          <button class="btn btn-primary btn-lg" onclick="closeModal(); setTimeout(() => openChat(${l.id}), 300)">
+          <button class="btn btn-primary btn-lg" onclick="openListingChat(${l.id}, '${l.title.replace(/'/g, '&#39;')}')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Чатаар холбогдох
+            Чат бичих
           </button>
           <button class="btn btn-blue btn-lg" onclick="showToast('Зээлийн хүсэлт илгээгдлээ', 'success'); closeModal()">
             Зээл авах
@@ -6108,6 +6225,51 @@
     `;
     document.getElementById('modal').classList.add('open');
     document.body.style.overflow = 'hidden';
+  }
+
+  function revealPhone(listingId, phone) {
+    const box = document.getElementById('contactBox_' + listingId);
+    if (!box) return;
+    box.innerHTML = `
+      <div style="font-size:22px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--ink);letter-spacing:2px;margin-bottom:16px;">${phone}</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <a href="tel:${phone.replace(/\D/g,'')}" class="btn btn-blue">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
+          Залгах
+        </a>
+        <button class="btn btn-primary" onclick="navigator.clipboard&&navigator.clipboard.writeText('${phone}').then(()=>showToast('Дугаар хуулагдлаа','success'))">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Хуулах
+        </button>
+      </div>
+    `;
+  }
+
+  function openListingChat(id, title) {
+    const l = listings.find(x => x.id === id);
+    closeModal();
+    setTimeout(() => {
+      const msg = encodeURIComponent(`Сайн байна уу! "${title}" зарт сонирхсон байна. Дэлгэрэнгүй мэдээлэл авах боломжтой юу?`);
+      document.getElementById('modalContent').innerHTML = `
+        <button class="modal-close" onclick="closeModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <div style="padding:32px 28px;">
+          <h3 style="font-family:'Fraunces',serif;margin-bottom:6px;">Зар дахь чат</h3>
+          <div style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">${title}</div>
+          <textarea id="chatMsgInput" rows="5" style="width:100%;padding:12px;border:1.5px solid var(--line-2);border-radius:12px;font-size:14px;font-family:'Manrope',sans-serif;resize:vertical;outline:none;">${decodeURIComponent(msg)}</textarea>
+          <div style="display:flex;gap:10px;margin-top:14px;">
+            <button class="btn btn-blue btn-lg" style="flex:1;justify-content:center;" onclick="showToast('Мессеж илгээгдлээ!','success');closeModal();">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Илгээх
+            </button>
+            <button class="btn btn-ghost" onclick="closeModal()">Цуцлах</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('modal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }, 300);
   }
 
   function closeModal() {
@@ -7024,9 +7186,72 @@
     renderHomeListings();
     renderListings(getFilteredListings());
     updateCatPillCounts();
+    renderMyListings();
 
     addListingState.step = 6;
     document.getElementById('modalContent').innerHTML = renderAddListing();
+  }
+
+  let myListingsTab = 'active';
+  function renderMyListings(tab) {
+    myListingsTab = tab || myListingsTab;
+    // Highlight active tab
+    ['active','pending','ended'].forEach(t => {
+      const btn = document.getElementById('myTab-' + t);
+      if (btn) btn.classList.toggle('active', t === myListingsTab);
+    });
+    const grid = document.getElementById('myListingsGrid');
+    if (!grid) return;
+    const userListings = listings.filter(l => l.userSubmitted || l.badges.includes('user'));
+    // Simulate tabs: active = all user listings, pending = none (demo), ended = none (demo)
+    const shown = myListingsTab === 'active' ? userListings : [];
+    if (shown.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 24px;color:var(--ink-3);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.4;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+        <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px;">Зар байхгүй</div>
+        <div style="font-size:13px;margin-bottom:20px;">Одоогоор энэ хэсэгт зар байхгүй байна.</div>
+        <button class="btn btn-blue" onclick="openAddListing()">Зар нэмэх</button>
+      </div>`;
+      return;
+    }
+    grid.innerHTML = shown.map(l => `
+      <article class="listing-card" onclick="showPage('listings'); setTimeout(()=>openListing(${l.id}),150)">
+        <div class="listing-img">
+          <img src="${l.img}" alt="${l.title}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';"/>
+          <div class="listing-badges"><span class="badge new">Идэвхтэй</span></div>
+        </div>
+        <div class="listing-body">
+          <div class="listing-price-row">
+            <div class="listing-price">${fmtPrice(l.price)}</div>
+          </div>
+          <h3 class="listing-title">${l.title}</h3>
+          <div class="listing-loc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${l.loc}</div>
+          <div class="listing-meta">
+            <span class="listing-meta-item"><strong>${l.area}</strong> м²</span>
+            <span class="listing-meta-item"><strong>${l.rooms}</strong> өрөө</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px;">
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:12px;" onclick="event.stopPropagation();showToast('Засварлах функц удахгүй')">Засах</button>
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:12px;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
+          </div>
+        </div>
+      </article>
+    `).join('');
+  }
+
+  function deleteMyListing(id) {
+    if (!confirm('Зарыг устгах уу?')) return;
+    const idx = listings.findIndex(l => l.id === id);
+    if (idx > -1) listings.splice(idx, 1);
+    try {
+      const saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]').filter(l => l.id !== id);
+      localStorage.setItem('bairxUserListings', JSON.stringify(saved));
+    } catch(e) {}
+    renderMyListings();
+    renderHomeListings();
+    renderListings(getFilteredListings());
+    updateCatPillCounts();
+    showToast('Зар устгагдлаа');
   }
 
   function confirmCloseAddListing() {
@@ -7472,12 +7697,47 @@
   // ===== FILTER LISTINGS =====
   let currentCat = 'all';
   let currentSort = 'default';
+  let searchText = '';
 
   function applyListingFilter() {
     const filtered = getFilteredListings();
     renderListings(filtered);
+    renderFilterTags();
     updateFilterCount();
     if (mapViewOn) renderMiniMap(filtered);
+  }
+
+  function clearFilterTag(type, val) {
+    if (type === 'district') { const el=document.getElementById('fDistrict'); if(el)el.value='all'; }
+    else if (type === 'search') { searchText=''; const f=document.getElementById('fSearch'); if(f)f.value=''; }
+    else if (type === 'cat') { currentCat='all'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='all')); }
+    else if (type === 'toggle') { const i=activeFilterToggles.indexOf(val); if(i>-1)activeFilterToggles.splice(i,1); document.querySelectorAll('.filter-toggle').forEach(el=>el.classList.toggle('active',activeFilterToggles.includes(el.dataset.ftoggle))); }
+    applyListingFilter();
+  }
+
+  function renderFilterTags() {
+    const wrap = document.getElementById('activeFilterTags');
+    if (!wrap) return;
+    const tags = [];
+    const districtLabels2 = {'khan-uul':'Хан-Уул','sukhbaatar':'Сүхбаатар','chingeltei':'Чингэлтэй','bayanzurkh':'Баянзүрх','bayangol':'Баянгол','songinokhairkhan':'Сонгинохайрхан','nalaikh':'Налайх','bagakhangai':'Багахангай','baganuur':'Багануур'};
+    const district = document.getElementById('fDistrict')?.value;
+    if (district && district !== 'all') tags.push({ label: districtLabels2[district]||district, onclick: `clearFilterTag('district','${district}')` });
+    const q = (searchText || document.getElementById('fSearch')?.value || '').trim();
+    if (q) tags.push({ label: '"' + q + '"', onclick: `clearFilterTag('search','')` });
+    if (currentCat && currentCat !== 'all') {
+      const catLabels2 = {apartment:'Орон сууц',house:'Хаус',land:'Газар',office:'Оффис',rent:'Түрээс'};
+      tags.push({ label: catLabels2[currentCat]||currentCat, onclick: `clearFilterTag('cat','')` });
+    }
+    const toggleLabels = {new:'Шинэ барилга',verified:'Баталгаажсан',below:'Зах зээлийн хямд',loan:'Зээлд хамрагдах',parking:'Паркингтай'};
+    activeFilterToggles.forEach(t => tags.push({ label: toggleLabels[t]||t, onclick: `clearFilterTag('toggle','${t}')` }));
+    if (tags.length === 0) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'flex';
+    wrap.innerHTML = tags.map(t => `
+      <span style="display:inline-flex;align-items:center;gap:6px;background:var(--primary-soft);color:var(--primary-deep);border-radius:100px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;" onclick="${t.onclick}">
+        ${t.label}
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </span>
+    `).join('');
   }
 
   // ===== SEARCH =====
@@ -7487,12 +7747,17 @@
     const rooms = document.getElementById('searchRooms').value;
     const min = parseFloat(document.getElementById('priceMin').value) || 0;
     const max = parseFloat(document.getElementById('priceMax').value) || Infinity;
+    const heroQ = (document.getElementById('heroSearch')?.value || '').trim();
 
     // Hero хайлтыг доорх filter panel-тай синк хийнэ
     if (document.getElementById('fDistrict')) document.getElementById('fDistrict').value = loc;
     if (document.getElementById('fRooms')) document.getElementById('fRooms').value = rooms;
     if (document.getElementById('fPriceMin')) document.getElementById('fPriceMin').value = min > 0 ? min : '';
     if (document.getElementById('fPriceMax')) document.getElementById('fPriceMax').value = max < Infinity ? max : '';
+    if (heroQ) {
+      searchText = heroQ;
+      if (document.getElementById('fSearch')) document.getElementById('fSearch').value = heroQ;
+    }
 
     // Category filter pill-ийг синк хийнэ
     if (type !== 'all') {
@@ -8675,6 +8940,15 @@
     const areaMin = parseFloat(document.getElementById('fAreaMin')?.value) || 0;
     const areaMax = parseFloat(document.getElementById('fAreaMax')?.value) || Infinity;
     const rooms = document.getElementById('fRooms')?.value || 'all';
+    const q = (searchText || (document.getElementById('fSearch')?.value) || '').trim().toLowerCase();
+
+    if (q) {
+      results = results.filter(l => {
+        const catMap = { apartment: 'орон сууц байр', house: 'хаус хувийн', land: 'газар', office: 'оффис', rent: 'түрээс' };
+        const haystack = [l.title, l.loc, l.district, catMap[l.cat] || l.cat, String(l.rooms), String(l.price), l.description || ''].join(' ').toLowerCase();
+        return q.split(/\s+/).every(word => haystack.includes(word));
+      });
+    }
 
     if (district !== 'all') results = results.filter(l => l.district === district);
     // Rent listings use price as monthly ₮ (0.65–3.8 сая) vs sale listings (100+ сая)
@@ -8751,12 +9025,18 @@
     document.getElementById('fAreaMin').value = '';
     document.getElementById('fAreaMax').value = '';
     document.getElementById('fRooms').value = 'all';
+    const fSearch = document.getElementById('fSearch');
+    if (fSearch) fSearch.value = '';
+    searchText = '';
     document.querySelectorAll('.filter-toggle').forEach(t => t.classList.remove('active'));
     activeFilterToggles = [];
+    currentCat = 'all';
+    document.querySelectorAll('.filter-pill[data-cat]').forEach(x => x.classList.toggle('active', x.dataset.cat === 'all'));
     const sel = document.getElementById('sortSelect');
     if (sel) sel.value = 'default';
     currentSort = 'default';
     renderListings(getFilteredListings());
+    renderFilterTags();
     updateFilterCount();
     showToast('Шүүлтүүр цэвэрлэгдлээ');
   }
@@ -9302,8 +9582,10 @@
   updateNotifCount();
   renderViewsChart();
   updateFilterCount();
+  renderFilterTags();
   updateChatCount();
   updateFavCount();
+  renderMyListings();
   renderBuyerDocs();
 
   // Simulate a live notification after 12 seconds
@@ -9357,6 +9639,35 @@
     if (banner) banner.style.display = 'none';
   }
 </script>
+
+<!-- ============ MOBILE BOTTOM NAV ============ -->
+<div class="mobile-bottom-nav">
+  <div class="mobile-bottom-nav-inner">
+    <button class="mbn-btn" id="mbn-home" onclick="showPage('home')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Нүүр
+    </button>
+    <button class="mbn-btn" id="mbn-listings" onclick="showPage('listings')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+      Хайх
+    </button>
+    <button class="mbn-btn mbn-add" onclick="openAddListing()" style="color:var(--primary);">
+      <div style="width:42px;height:42px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;margin-bottom:2px;box-shadow:0 4px 14px rgba(30,91,255,0.4);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+      Зар нэмэх
+    </button>
+    <button class="mbn-btn" id="mbn-fav" onclick="openFavorites()" style="position:relative;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
+      <span class="mbn-fav-badge" id="mbnFavCount">0</span>
+      Хадгалсан
+    </button>
+    <button class="mbn-btn" id="mbn-me" onclick="currentUser ? showPage('dashboard') : openAuth()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Миний
+    </button>
+  </div>
+</div>
 
 <!-- PWA install banner (shown by JS when browser supports install) -->
 <div id="pwaBanner" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--line-2);border-radius:16px;box-shadow:0 8px 32px rgba(10,22,40,0.15);padding:14px 20px;font-family:'Manrope',sans-serif;font-size:14px;align-items:center;gap:14px;z-index:9999;max-width:340px;width:calc(100% - 40px);">
