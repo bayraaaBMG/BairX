@@ -4971,6 +4971,29 @@
           isGoogle: fbUser.providerData.some(p => p.providerId === 'google.com')
         };
         updateNavLoggedIn();
+        // Firestore-с хэрэглэгчийн зарнуудыг татаж авна
+        try {
+          const lsnap = await db.collection('listings').where('ownerId', '==', fbUser.uid).get();
+          lsnap.forEach(doc => {
+            if (listings.some(l => l.firestoreId === doc.id)) return;
+            const d = doc.data();
+            const numId = listings.reduce((m, l) => l.id > m ? l.id : m, 0) + 1;
+            const entry = {
+              id: numId, firestoreId: doc.id,
+              cat: d.category || 'apartment', title: d.title, loc: d.loc,
+              district: d.district, price: d.price, area: d.area, rooms: d.rooms,
+              floor: d.floor, year: d.year,
+              img: (d.images && d.images[0]) || d.img || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
+              tag: { type: 'new', text: 'Шинэ зар' }, badges: d.badges || ['user'],
+              loanType: 'Тохиролцоно', monthly: 0,
+              userSubmitted: true, _inactive: d.status === 'inactive'
+            };
+            listings.push(entry);
+            if (d.images && d.images.length > 0) listingExtras[numId] = { coords: { x: 50, y: 50 }, gallery: d.images };
+            sellerData[numId] = { phone: d.sellerPhone || '', name: d.sellerName || 'Хэрэглэгч', type: d.sellerType || 'Хувь хүн' };
+          });
+          renderMyListings(); renderHomeListings(); renderListings(getFilteredListings());
+        } catch(e) {}
       } catch(e) {
         currentUser = null;
       }
@@ -5096,7 +5119,7 @@
       closeAuth();
       showToast('Google-ээр нэвтэрлээ. Тавтай морилно уу!', 'success');
     } catch(e) {
-      if (e.code !== 'auth/popup-closed-by-user') showToast('Google алдаа: ' + (e.code || e.message));
+      if (e.code !== 'auth/popup-closed-by-user') showToast('Google нэвтрэхэд алдаа гарлаа');
     }
   }
 
@@ -7516,11 +7539,10 @@
     showToast('Код дахин илгээгдлээ (демо: 1234)', 'success');
   }
 
-  function submitListing() {
+  async function submitListing() {
     if (!validateStep(5)) return;
     saveStepData(5);
 
-    // Save to listings array + localStorage
     const s = addListingState;
     const districtLabels = {
       'khan-uul': 'Хан-Уул', 'sukhbaatar': 'Сүхбаатар', 'chingeltei': 'Чингэлтэй',
@@ -7530,6 +7552,7 @@
     const newId = listings.reduce(function(m, l) { return l.id > m ? l.id : m; }, 0) + 1;
     const p = parseFloat(s.price) || 0;
     const a = parseFloat(s.area) || 0;
+    const allImages = s.images.filter(Boolean);
     const newListing = {
       id: newId,
       cat: s.propertyType || 'apartment',
@@ -7546,22 +7569,57 @@
       badges: ['new', 'user'],
       loanType: 'Тохиролцоно',
       monthly: 0,
-      img: (s.images && s.images[0]) || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
+      img: allImages[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
       buildingType: s.buildingType || '', insulation: '', heating: s.heating || '',
       parking: '', elevator: '', utilityCost: '', ownership: 'Хувийн өмчлөл',
       cadastre: '', collateral: '', taxDebt: '', condition: s.condition || '',
       legalNotes: 'Хэрэглэгчийн нэмсэн зар · ' + (s.name || '') + ' · ' + (s.phone || ''),
       userSubmitted: true
     };
-    // Populate listingExtras so the inline gallery carousel shows uploaded images
-    const allImages = s.images.filter(Boolean);
-    if (allImages.length > 0) {
-      listingExtras[newId] = { coords: { x: 50, y: 50 }, gallery: allImages };
-    }
-    // Capture before editingListingId is cleared below
+    if (allImages.length > 0) listingExtras[newId] = { coords: { x: 50, y: 50 }, gallery: allImages };
+
     const targetId = editingListingId || newId;
+
+    // ===== FIRESTORE SAVE =====
+    if (currentUser) {
+      const fsDoc = {
+        ownerId: currentUser.uid,
+        ownerEmail: currentUser.email,
+        category: newListing.cat,
+        title: newListing.title,
+        loc: newListing.loc,
+        district: newListing.district,
+        price: newListing.price,
+        area: newListing.area,
+        rooms: newListing.rooms,
+        floor: newListing.floor,
+        year: newListing.year,
+        img: newListing.img,
+        images: allImages,
+        sellerName: s.name || currentUser.name || 'Хэрэглэгч',
+        sellerPhone: s.phone || '',
+        sellerType: s.role === 'agent' ? 'Агент' : (s.role === 'company' ? 'Компани' : 'Хувь хүн'),
+        status: 'active',
+        badges: ['new', 'user'],
+        boosted: false,
+        userSubmitted: true,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      try {
+        if (editingListingId) {
+          const existingFsId = listings.find(x => x.id === editingListingId)?.firestoreId;
+          if (existingFsId) await db.collection('listings').doc(existingFsId).update(fsDoc);
+        } else {
+          fsDoc.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+          fsDoc.viewCount = 0; fsDoc.favoriteCount = 0; fsDoc.reportCount = 0;
+          const docRef = await db.collection('listings').add(fsDoc);
+          newListing.firestoreId = docRef.id;
+        }
+      } catch(e) { showToast('Firestore хадгалахад алдаа гарлаа'); }
+    }
+    // ===== END FIRESTORE =====
+
     if (editingListingId) {
-      // Update existing listing in place
       const idx = listings.findIndex(x => x.id === editingListingId);
       if (idx > -1) Object.assign(listings[idx], newListing, { id: editingListingId, badges: listings[idx].badges, userSubmitted: true });
       if (allImages.length > 0) listingExtras[editingListingId] = { coords: { x: 50, y: 50 }, gallery: allImages };
@@ -7583,7 +7641,6 @@
       } catch(e) {}
     }
 
-    // Save seller contact info to sellerData + localStorage so detail modal shows correct data
     if (s.name || s.phone) {
       sellerData[targetId] = {
         phone: s.phone || '9900-0000',
@@ -7597,7 +7654,6 @@
       } catch(e) {}
     }
 
-    // Refresh all listing surfaces so the new card is visible immediately
     renderHomeListings();
     renderListings(getFilteredListings());
     updateCatPillCounts();
@@ -7667,10 +7723,18 @@
     `}).join('');
   }
 
-  function toggleListingActive(id) {
+  async function toggleListingActive(id) {
     const l = listings.find(x => x.id === id);
     if (!l) return;
     l._inactive = !l._inactive;
+    if (l.firestoreId) {
+      try {
+        await db.collection('listings').doc(l.firestoreId).update({
+          status: l._inactive ? 'inactive' : 'active',
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch(e) {}
+    }
     try {
       const saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]');
       const si = saved.findIndex(x => x.id === id);
@@ -7753,12 +7817,16 @@
     boostTargetId = null;
   }
 
-  function deleteMyListing(id) {
+  async function deleteMyListing(id) {
     if (!confirm('Зарыг устгах уу?')) return;
-    const idx = listings.findIndex(l => l.id === id);
+    const l = listings.find(x => x.id === id);
+    if (l?.firestoreId) {
+      try { await db.collection('listings').doc(l.firestoreId).delete(); } catch(e) {}
+    }
+    const idx = listings.findIndex(x => x.id === id);
     if (idx > -1) listings.splice(idx, 1);
     try {
-      const saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]').filter(l => l.id !== id);
+      const saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]').filter(x => x.id !== id);
       localStorage.setItem('bairxUserListings', JSON.stringify(saved));
     } catch(e) {}
     renderMyListings();
