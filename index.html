@@ -641,6 +641,7 @@
   /* ============ FEATURES ============ */
   .features-section { background: var(--paper); }
   .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .resources-section { background: var(--paper-2); }
   .feature-card {
     background: white; border: 1px solid var(--line); border-radius: var(--radius-lg);
     padding: 28px; transition: all 0.3s ease;
@@ -2914,12 +2915,11 @@
       <div class="logo-text">Bair<em>X</em></div>
     </a>
     <div class="nav-links">
-      <a onclick="scrollToSection('feed')">Feed</a>
-      <a onclick="scrollToSection('listings')">Зар</a>
-      <a onclick="scrollToSection('rent')">Түрээс</a>
-      <a onclick="scrollToSection('calc')">Тооцоолуур</a>
-      <a onclick="scrollToSection('guide')">Анхлан авагч</a>
-      <a onclick="scrollToSection('dashboard')">Миний самбар</a>
+      <a onclick="showPage('listings')">Зар хайх</a>
+      <a onclick="showPage('rent')">Түрээс</a>
+      <a onclick="showPage('calc')">Тооцоолуур</a>
+      <a onclick="showPage('resources')">Зөвлөгөө</a>
+      <a onclick="currentUser ? showPage('dashboard') : openAuth()">Миний самбар</a>
     </div>
     <div class="nav-actions">
       <button class="notif-trigger" onclick="openFavorites()" style="margin-right:-2px;">
@@ -2983,15 +2983,12 @@
     </div>
   </div>
   <div class="mobile-menu" id="mobileMenu">
-    <a onclick="scrollToSection('feed'); toggleMobileMenu()">Feed</a>
-    <a onclick="scrollToSection('listings'); toggleMobileMenu()">Зар</a>
-    <a onclick="scrollToSection('rent'); toggleMobileMenu()">Түрээс</a>
-    <a onclick="scrollToSection('guide'); toggleMobileMenu()">Анх удаа авах заавар</a>
-    <a onclick="scrollToSection('compare'); toggleMobileMenu()">Авах vs Түрээслэх</a>
-    <a onclick="scrollToSection('dashboard'); toggleMobileMenu()">Миний самбар</a>
-    <a onclick="scrollToSection('demo'); toggleMobileMenu()">Зах зээлийн анализ</a>
-    <a onclick="scrollToSection('calc'); toggleMobileMenu()">Зээл тооцоолуур</a>
-    <a onclick="scrollToSection('afford'); toggleMobileMenu()">Чадварын үнэлгээ</a>
+    <a onclick="showPage('listings'); toggleMobileMenu()">Зар хайх</a>
+    <a onclick="showPage('rent'); toggleMobileMenu()">Түрээс</a>
+    <a onclick="showPage('compare'); toggleMobileMenu()">Авах vs Түрээслэх</a>
+    <a onclick="showPage('calc'); toggleMobileMenu()">Зээл тооцоолуур</a>
+    <a onclick="showPage('resources'); toggleMobileMenu()">Зөвлөгөө</a>
+    <a onclick="currentUser ? showPage('dashboard') : openAuth(); toggleMobileMenu()">Миний самбар</a>
   </div>
 </nav>
 
@@ -3001,13 +2998,13 @@
     <div>
       <span class="hero-tag"><span class="hero-tag-dot"></span>Монголын №1 ухаалаг үл хөдлөхийн платформ</span>
       <h1 class="display">Гэр оронтой<br>болохын <em>хамгийн ухаалаг</em> зам</h1>
-      <p class="hero-sub">12 банкны зээлийн нөхцөлийг харьцуулж, чадварын үнэлгээ хийж, 20 жилийн өгөөжийг тооцоолон танд хамгийн ашигтай шийдвэрийг гаргахад туслана.</p>
+      <p class="hero-sub">Орон сууц, хаус, газар, оффис, түрээс — бүх зарыг нэг дороос хайж, үнэлж, шийд. Зар нийтлэхэд 5 минут.</p>
       <div class="hero-cta">
-        <a class="btn btn-blue btn-lg" onclick="scrollToSection('listings')">
-          Зар үзэх
+        <a class="btn btn-blue btn-lg" onclick="showPage('listings')">
+          Зар хайх
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </a>
-        <a class="btn btn-primary btn-lg" onclick="scrollToSection('compare')">Авах vs Түрээслэх</a>
+        <a class="btn btn-primary btn-lg" onclick="openAddListing()">Зар нэмэх</a>
       </div>
       <div class="hero-stats">
         <div>
@@ -3156,6 +3153,14 @@
       <button class="btn btn-ghost" onclick="showPage('listings')">
         Бүгдийг үзэх
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+    <!-- Latest listings header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;margin-top:8px;">
+      <h3 style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:var(--ink);">Сүүлийн зарууд</h3>
+      <button class="btn btn-ghost" onclick="showPage('listings')" style="font-size:12px;gap:5px;">
+        Бүгдийг харах
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </button>
     </div>
     <div id="homeListingsGrid" class="listings-grid"></div>
@@ -4659,6 +4664,81 @@
   </div>
 </section>
 
+<!-- ============ RESOURCES HUB ============ -->
+<section class="resources-section" id="resources">
+  <div class="section-inner" style="padding-top:60px;padding-bottom:60px;">
+  <div class="section-head" style="margin-bottom:40px;">
+    <div>
+      <span class="section-eyebrow">Мэдлэгийн сан</span>
+      <h2 class="section-title display">Байр авахад хэрэгтэй <em>бүх зааварчилгаа</em></h2>
+    </div>
+    <p class="section-sub">Анхлан авагчаас дэвшилтэт хөрөнгө оруулагч хүртэл бүгдэд зориулсан контент.</p>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;margin-bottom:48px;">
+    <div class="feature-card" style="cursor:pointer;" onclick="showPage('guide')">
+      <div class="feature-icon" style="background:var(--primary-soft);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      </div>
+      <h4>Анхлан авагчийн заавар</h4>
+      <p style="font-size:13px;color:var(--ink-3);">7 алхам, 8 түгээмэл алдаа, 11 шалгах баримт бичиг, нэмэлт зардлын тооцоо.</p>
+      <div style="margin-top:12px;font-size:12px;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:4px;">
+        Үзэх <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+    <div class="feature-card" style="cursor:pointer;" onclick="showPage('edu')">
+      <div class="feature-icon" style="background:#FFF8E6;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFB020" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <h4>Барилга &amp; Эдийн засгийн мэдлэг</h4>
+      <p style="font-size:13px;color:var(--ink-3);">Барилгын чанар хэрхэн ялгаатай, мөнгө цаг хугацааны хувьд хэрхэн ажилладаг.</p>
+      <div style="margin-top:12px;font-size:12px;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:4px;">
+        Үзэх <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+    <div class="feature-card" style="cursor:pointer;" onclick="showPage('calc')">
+      <div class="feature-icon" style="background:#E8FBF6;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#009878" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h8M8 14h4"/></svg>
+      </div>
+      <h4>Ипотекийн тооцоолуур</h4>
+      <p style="font-size:13px;color:var(--ink-3);">Сарын төлбөр, нийт хүү, 4 банкны нөхцөлийг харьцуулж тооцно.</p>
+      <div style="margin-top:12px;font-size:12px;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:4px;">
+        Тооцоолох <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+    <div class="feature-card" style="cursor:pointer;" onclick="showPage('afford')">
+      <div class="feature-icon" style="background:#FFF0F0;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E53935" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <h4>Чадварын үнэлгээ</h4>
+      <p style="font-size:13px;color:var(--ink-3);">Орлого, зээлийн түүхийн дагуу ямар үнэтэй байр авч болохыг тооцоолно.</p>
+      <div style="margin-top:12px;font-size:12px;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:4px;">
+        Шалгах <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+    <div class="feature-card" style="cursor:pointer;" onclick="showPage('demo')">
+      <div class="feature-icon" style="background:var(--primary-soft);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 4 5-5"/></svg>
+      </div>
+      <h4>Зах зээлийн анализ</h4>
+      <p style="font-size:13px;color:var(--ink-3);">Дүүрэг бүрийн үнийн хөдөлгөөн, өсөлтийн таамаглал.</p>
+      <div style="margin-top:12px;font-size:12px;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:4px;">
+        Харах <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+    <div class="feature-card" style="cursor:pointer;" onclick="showPage('compare')">
+      <div class="feature-icon" style="background:#F3F0FF;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2"><path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7"/></svg>
+      </div>
+      <h4>Авах vs Түрээслэх</h4>
+      <p style="font-size:13px;color:var(--ink-3);">Нөхцөл байдалтайгаа харьцуулаад аль нь таны хувьд ашигтай болохыг мэд.</p>
+      <div style="margin-top:12px;font-size:12px;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:4px;">
+        Харьцуулах <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+  </div>
+  </div>
+</section>
+
 <!-- ============ FOOTER ============ -->
 <footer class="footer">
   <div class="footer-inner">
@@ -5757,12 +5837,10 @@
     const target = id || 'home';
     document.querySelectorAll('section').forEach(s => s.classList.remove('page-active'));
     if (target === 'home') {
-      const hero = document.getElementById('home');
-      const banks = document.getElementById('banks');
-      const portal = document.getElementById('home-portal');
-      if (hero) hero.classList.add('page-active');
-      if (portal) portal.classList.add('page-active');
-      if (banks) banks.classList.add('page-active');
+      ['home', 'banks', 'home-portal', 'features'].forEach(function(sid) {
+        const el = document.getElementById(sid);
+        if (el) el.classList.add('page-active');
+      });
       if (history.pushState) history.pushState(null, '', location.pathname);
     } else {
       const el = document.getElementById(target);
