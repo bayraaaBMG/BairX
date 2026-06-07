@@ -704,6 +704,13 @@
     transition: all 0.18s;
   }
   .modal-close:hover { background: var(--paper-2); }
+  .modal-share-btn {
+    position: absolute; top: 16px; right: 60px; width: 36px; height: 36px;
+    border-radius: 50%; background: white; border: 1px solid var(--line);
+    display: grid; place-items: center; cursor: pointer; z-index: 10;
+    transition: all 0.18s;
+  }
+  .modal-share-btn:hover { background: var(--primary-soft); color: var(--primary); }
   .modal-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: var(--radius-xl) var(--radius-xl) 0 0; }
 
   /* Modal inline gallery carousel */
@@ -2646,6 +2653,20 @@
   }
 
   /* ============ MOBILE BOTTOM NAV ============ */
+  .mobile-sticky-call {
+    display: none;
+    position: sticky; bottom: 0; left: 0; right: 0;
+    background: rgba(250,251,252,0.97);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--line);
+    padding: 12px 20px;
+    margin: 0 -28px;
+    z-index: 50;
+  }
+  @media (max-width: 768px) {
+    .mobile-sticky-call { display: flex; }
+  }
+
   .mobile-bottom-nav {
     display: none;
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
@@ -5756,6 +5777,50 @@
     6: { coords: { x: 85, y: 55 }, gallery: ['https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=900&q=80', 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=900&q=80'] }
   };
 
+  // ===== SELLER DATA (phone, name, type per listing) =====
+  const sellerData = {
+    1:  { phone: '9911-2233', name: 'Бат-Эрдэнэ Г.', type: 'Хувь хүн' },
+    2:  { phone: '8822-3344', name: 'Сарнай Д.', type: 'Агент' },
+    3:  { phone: '9933-4455', name: 'Болд О.', type: 'Хувь хүн' },
+    4:  { phone: '8844-5566', name: 'Nominchimeg Б.', type: 'Агент' },
+    5:  { phone: '9955-6677', name: 'Гантулга Н.', type: 'Агент' },
+    6:  { phone: '8866-7788', name: 'Цэгмид Л.', type: 'Хувь хүн' },
+    7:  { phone: '9977-8899', name: 'Өлзий Р.', type: 'Хувь хүн' },
+    8:  { phone: '8888-9900', name: 'Мөнх-Эрдэнэ Б.', type: 'Агент' },
+    9:  { phone: '9900-1122', name: 'Энхжин С.', type: 'Хувь хүн' },
+    10: { phone: '8811-2244', name: 'Дэлгэрмаа Ч.', type: 'Агент' },
+    11: { phone: '9922-3355', name: 'Анхбаяр Г.', type: 'Хувь хүн' },
+    12: { phone: '8833-4466', name: 'Баярсайхан Д.', type: 'Агент' },
+    13: { phone: '9944-5577', name: 'Буяннэмэх О.', type: 'Хувь хүн' },
+    14: { phone: '8855-6688', name: 'Солонго Б.', type: 'Агент' },
+    15: { phone: '9966-7799', name: 'Батцэцэг Л.', type: 'Хувь хүн' },
+    16: { phone: '8877-8800', name: 'Ариунаа Н.', type: 'Агент' },
+    17: { phone: '9988-9911', name: 'Зандан Р.', type: 'Хувь хүн' },
+    18: { phone: '8899-0022', name: 'Мөнхтуяа С.', type: 'Агент' },
+    19: { phone: '9900-1133', name: 'Отгонбаяр Ч.', type: 'Хувь хүн' },
+    20: { phone: '8811-3344', name: 'Дорж-Одсүрэн Г.', type: 'Агент' },
+    21: { phone: '9922-4455', name: 'Энхтуяа Б.', type: 'Хувь хүн' },
+    22: { phone: '8833-5566', name: 'Нарантуяа Д.', type: 'Агент' },
+    23: { phone: '9944-6677', name: 'Батмөнх О.', type: 'Хувь хүн' },
+    24: { phone: '8855-7788', name: 'Гэрэлмаа Н.', type: 'Агент' },
+    25: { phone: '9966-8899', name: 'Тэгшбаяр Л.', type: 'Хувь хүн' },
+    26: { phone: '8877-9900', name: 'Нандинцэцэг Р.', type: 'Агент' },
+    27: { phone: '9988-0011', name: 'Баатар Б.', type: 'Хувь хүн' },
+    28: { phone: '8800-1122', name: 'Оюунаа С.', type: 'Агент' },
+    29: { phone: '9911-2233', name: 'Лхагва Ч.', type: 'Хувь хүн' },
+    30: { phone: '8822-3355', name: 'Мөнхбат Г.', type: 'Агент' },
+    31: { phone: '9933-4466', name: 'Энхбат Д.', type: 'Хувь хүн' },
+    32: { phone: '8844-5577', name: 'Цэцэгмаа О.', type: 'Агент' },
+    33: { phone: '9955-6688', name: 'Ганбат Н.', type: 'Хувь хүн' },
+    34: { phone: '8866-7799', name: 'Ундрах Б.', type: 'Агент' },
+    35: { phone: '9977-8800', name: 'Сэрээнэнэ Л.', type: 'Хувь хүн' },
+    36: { phone: '8888-9911', name: 'Болормаа Р.', type: 'Агент' },
+    37: { phone: '9900-0022', name: 'Дагиймаа С.', type: 'Хувь хүн' },
+    38: { phone: '8811-1133', name: 'Мэдэгмаа Ч.', type: 'Агент' },
+    39: { phone: '9922-2244', name: 'Пунцагдулам Г.', type: 'Хувь хүн' },
+    40: { phone: '8833-3355', name: 'Отгонсүрэн Д.', type: 'Агент' }
+  };
+
   // ===== HOME LISTINGS PREVIEW =====
   function renderHomeListings() {
     const grid = document.getElementById('homeListingsGrid');
@@ -6092,14 +6157,22 @@
       .sort((a, b) => Math.abs(a.price - l.price) - Math.abs(b.price - l.price))
       .slice(0, 3);
 
-    // Seller demo data
-    const sellerName = l.legalNotes?.includes('Хэрэглэгчийн') ? (l.legalNotes.split('·')[1]?.trim() || 'Хэрэглэгч') : 'Баталгаажсан Агент';
+    // Seller data from lookup table (deterministic, no Math.random)
+    const seller = l.userSubmitted
+      ? { phone: currentUser?.phone || '9900-0000', name: currentUser?.name || 'Хэрэглэгч', type: 'Хувь хүн' }
+      : (sellerData[l.id] || { phone: '9911-2233', name: 'Баталгаажсан Агент', type: 'Агент' });
+    const sellerName = seller.name;
     const sellerLetter = sellerName[0] || 'А';
-    const sellerStats = l.userSubmitted ? '1 зар · Шинэ гишүүн' : (Math.floor(Math.random() * 40) + 3) + ' зар · ' + (new Date().getFullYear() - (2018 + (l.id % 5))) + ' жил';
+    const totalListings = l.userSubmitted ? 1 : 3 + (l.id % 12);
+    const responseTime = l.id % 2 === 0 ? '10 минут' : '30 минут';
+    const memberSince = l.userSubmitted ? new Date().getFullYear() : 2020 + (l.id % 5);
 
     document.getElementById('modalContent').innerHTML = `
       <button class="modal-close" onclick="closeModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <button class="modal-share-btn" onclick="shareListingModal(${l.id}, '${l.title.replace(/'/g, '&#39;')}')" title="Хуваалцах">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       </button>
 
       <!-- INLINE GALLERY CAROUSEL -->
@@ -6165,14 +6238,14 @@
                 ${sellerName}
                 <span class="seller-verified">✓ Баталгаажсан</span>
               </div>
-              <div class="seller-meta">Үл хөдлөхийн мэргэжилтэн</div>
+              <div class="seller-meta">${seller.type}</div>
               <div class="seller-stats">
-                <span><b>${sellerStats.split('·')[0].trim()}</b></span>
-                <span>Хариу: <b>&lt;1 цаг</b></span>
-                <span>Гишүүн: <b>${2018 + (l.id % 5)} оноос</b></span>
+                <span><b>${totalListings} зар</b></span>
+                <span>Хариу: <b>${responseTime}</b></span>
+                <span>Гишүүн: <b>${memberSince} оноос</b></span>
               </div>
             </div>
-            <button class="btn btn-ghost" onclick="revealPhone('${l.id}', '${l.phone || '8811-2233'}')">
+            <button class="btn btn-ghost" onclick="revealPhone('${l.id}', '${seller.phone}')">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
               Залгах
             </button>
@@ -6250,8 +6323,12 @@
               <div class="map-pin">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
               </div>
-              <div style="font-weight:700;font-size:15px;color:var(--ink);">${l.loc}</div>
-              <div style="font-size:12px;color:var(--ink-3);margin-top:4px;">Demo байршил · Жинхэнэ map удахгүй нэмэгдэнэ</div>
+              <div style="font-weight:700;font-size:15px;color:var(--ink);">${l.district} дүүрэг, ${(l.id % 10) + 1}-р хороо</div>
+              <div style="font-size:13px;color:var(--ink-2);margin-top:3px;">${l.loc}</div>
+              <div style="font-size:11px;color:var(--ink-3);margin-top:6px;display:flex;align-items:center;gap:5px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Байршил ойролцоогоор · ${ ['Дэлгүүр', 'Сургууль', 'Эмнэлэг', 'Цэцэрлэгт хүрээлэн', 'Метроны буудал'][l.id % 5] } ойролцоо
+              </div>
             </div>
           </div>
         </div>
@@ -6339,7 +6416,7 @@
           <h4>Холбоо барих</h4>
           <div id="contactBox_${l.id}" style="background:var(--paper-2);border-radius:14px;padding:18px;text-align:center;">
             <div style="font-size:13px;color:var(--ink-3);margin-bottom:12px;">Эзэн/Агентийн утасны дугаарыг харахдаа дарна уу</div>
-            <button class="btn btn-blue btn-lg" style="width:100%;justify-content:center;" onclick="revealPhone('${l.id}', '${l.phone || '8811-2233'}')">
+            <button class="btn btn-blue btn-lg" style="width:100%;justify-content:center;" onclick="revealPhone('${l.id}', '${seller.phone}')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
               Дугаар харах
             </button>
@@ -6355,6 +6432,20 @@
             Зээл авах
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </button>
+        </div>
+
+        <!-- MOBILE STICKY CALL BAR (hidden on desktop via CSS) -->
+        <div class="mobile-sticky-call">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;">
+            <button class="btn btn-blue btn-lg" style="justify-content:center;" onclick="revealPhone('${l.id}', '${seller.phone}')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
+              Залгах
+            </button>
+            <button class="btn btn-primary btn-lg" style="justify-content:center;" onclick="openListingChat(${l.id}, '${l.title.replace(/'/g, '&#39;')}')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Чат
+            </button>
+          </div>
         </div>
 
         ${similar.length > 0 ? `
@@ -6379,6 +6470,18 @@
     `;
     document.getElementById('modal').classList.add('open');
     document.body.style.overflow = 'hidden';
+    if (history.pushState) history.pushState(null, '', '#listing-' + id);
+  }
+
+  function shareListingModal(id, title) {
+    const url = location.origin + location.pathname + '#listing-' + id;
+    if (navigator.share) {
+      navigator.share({ title: title, url: url }).catch(() => {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => showToast('Холбоос хуулагдлаа', 'success'));
+    } else {
+      showToast('Холбоос: ' + url);
+    }
   }
 
   function revealPhone(listingId, phone) {
@@ -6430,9 +6533,51 @@
     document.getElementById('modal').classList.remove('open');
     document.getElementById('modalContent').className = 'modal';
     document.body.style.overflow = '';
+    if (history.pushState && location.hash.startsWith('#listing-')) history.pushState(null, '', ' ');
   }
 
   // ===== ADD LISTING FORM =====
+  let editingListingId = null;
+
+  function editMyListing(id) {
+    const l = listings.find(x => x.id === id);
+    if (!l) return;
+    editingListingId = id;
+    const districtKeys = {
+      'Хан-Уул': 'khan-uul', 'Сүхбаатар': 'sukhbaatar', 'Чингэлтэй': 'chingeltei',
+      'Баянзүрх': 'bayanzurkh', 'Баянгол': 'bayangol', 'Сонгинохайрхан': 'songinokhairkhan',
+      'Налайх': 'nalaikh', 'Багахангай': 'bagakhangai', 'Багануур': 'baganuur'
+    };
+    Object.assign(addListingState, {
+      step: 2,
+      phoneVerified: true,
+      intent: l.cat === 'rent' ? 'rent' : 'sell',
+      propertyType: l.cat === 'rent' ? 'apartment' : l.cat,
+      title: l.title,
+      district: districtKeys[l.district] || l.district,
+      khoroo: '',
+      address: l.loc,
+      area: String(l.area),
+      rooms: String(l.rooms),
+      floor: (l.floor || '').split('/')[0] || '',
+      totalFloors: (l.floor || '').split('/')[1] || '',
+      year: String(l.year),
+      price: String(l.price),
+      buildingType: l.buildingType || '',
+      heating: l.heating || '',
+      condition: l.condition || '',
+      description: '',
+      features: [],
+      images: listingExtras[l.id]?.gallery || (l.img ? [l.img] : []),
+      phone: '',
+      name: ''
+    });
+    document.getElementById('modalContent').innerHTML = renderAddListing();
+    document.getElementById('modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    setTimeout(attachAddListingHandlers, 50);
+  }
+
   let addListingState = {
     step: 1,
     phoneVerified: false,
@@ -7334,14 +7479,28 @@
     if (allImages.length > 0) {
       listingExtras[newId] = { coords: { x: 50, y: 50 }, gallery: allImages };
     }
-    listings.push(newListing);
-    try {
-      var saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]');
-      // Store images array on the listing for refresh persistence
-      newListing._gallery = allImages;
-      saved.push(newListing);
-      localStorage.setItem('bairxUserListings', JSON.stringify(saved));
-    } catch(e) {}
+    if (editingListingId) {
+      // Update existing listing in place
+      const idx = listings.findIndex(x => x.id === editingListingId);
+      if (idx > -1) Object.assign(listings[idx], newListing, { id: editingListingId, badges: listings[idx].badges, userSubmitted: true });
+      if (allImages.length > 0) listingExtras[editingListingId] = { coords: { x: 50, y: 50 }, gallery: allImages };
+      try {
+        var saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]');
+        const si = saved.findIndex(x => x.id === editingListingId);
+        const updated = Object.assign({}, listings.find(x => x.id === editingListingId), { _gallery: allImages });
+        if (si > -1) saved[si] = updated; else saved.push(updated);
+        localStorage.setItem('bairxUserListings', JSON.stringify(saved));
+      } catch(e) {}
+      editingListingId = null;
+    } else {
+      listings.push(newListing);
+      try {
+        var saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]');
+        newListing._gallery = allImages;
+        saved.push(newListing);
+        localStorage.setItem('bairxUserListings', JSON.stringify(saved));
+      } catch(e) {}
+    }
 
     // Refresh all listing surfaces so the new card is visible immediately
     renderHomeListings();
@@ -7396,7 +7555,7 @@
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               Boost
             </button>
-            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();showToast('Засварлах функц удахгүй')">Засах</button>
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();editMyListing(${l.id})">Засах</button>
             <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
           </div>
         </div>
@@ -7404,9 +7563,12 @@
     `).join('');
   }
 
+  let boostTargetId = null;
+
   function openBoostModal(id) {
     const l = listings.find(x => x.id === id);
     if (!l) return;
+    boostTargetId = id;
     document.getElementById('modalContent').innerHTML = `
       <button class="modal-close" onclick="closeModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -7441,6 +7603,14 @@
   }
 
   function confirmBoost(plan, price) {
+    // Add vip badge to the listing
+    if (boostTargetId) {
+      const bl = listings.find(x => x.id === boostTargetId);
+      if (bl && !bl.badges.includes('vip')) bl.badges.push('vip');
+      renderMyListings();
+      renderHomeListings();
+      renderListings(getFilteredListings());
+    }
     closeModal();
     setTimeout(() => {
       document.getElementById('modalContent').innerHTML = `
@@ -7456,6 +7626,7 @@
       document.body.style.overflow = 'hidden';
     }, 250);
     showToast(plan + ' идэвхжлээ!', 'success');
+    boostTargetId = null;
   }
 
   function deleteMyListing(id) {
@@ -9828,13 +9999,25 @@
   // Simulate a live notification after 12 seconds
   setTimeout(simulateLiveNotif, 12000);
 
-  // Initialize page router
+  // Initialize page router + listing hash restore
   (function() {
     const hash = location.hash.replace('#', '');
-    showPage(hash || 'home');
+    if (hash.startsWith('listing-')) {
+      const id = parseInt(hash.replace('listing-', ''), 10);
+      showPage('listings');
+      if (!isNaN(id)) setTimeout(() => openListing(id), 100);
+    } else {
+      showPage(hash || 'home');
+    }
     window.addEventListener('popstate', function() {
       const h = location.hash.replace('#', '');
-      showPage(h || 'home');
+      if (h.startsWith('listing-')) {
+        const id = parseInt(h.replace('listing-', ''), 10);
+        showPage('listings');
+        if (!isNaN(id)) setTimeout(() => openListing(id), 100);
+      } else {
+        showPage(h || 'home');
+      }
     });
   })();
 
