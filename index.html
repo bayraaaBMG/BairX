@@ -214,7 +214,7 @@
   /* ============ HOME PORTAL ============ */
   .home-portal-section { background: var(--paper); padding: 60px 32px 80px; }
   .portal-cats {
-    display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 56px;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 56px;
   }
   .portal-cat-btn {
     display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -228,8 +228,14 @@
   .portal-section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; }
   .portal-section-title { font-size: clamp(26px, 3vw, 38px); }
   .portal-section-title em { font-style: italic; color: var(--primary); }
-  @media (max-width: 768px) {
-    .portal-cats { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 900px) {
+    .portal-cats { grid-template-columns: repeat(5, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .portal-cats { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .portal-cat-btn { padding: 14px 6px; }
+    .portal-cat-icon { font-size: 22px; }
+    .portal-cat-name { font-size: 10px; }
   }
   .listings-section { background: var(--paper); }
   .filter-bar {
@@ -2993,7 +2999,7 @@
         <label>Хайлтын үг</label>
         <div style="position:relative;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
-          <input type="text" id="heroSearch" placeholder="Жнь: Зайсан 2 өрөө…" style="width:100%;padding:10px 12px 10px 38px;border:1.5px solid var(--line-2);border-radius:10px;font-size:14px;font-family:'Manrope',sans-serif;outline:none;background:var(--paper);" />
+          <input type="text" id="heroSearch" placeholder="Жнь: Зайсан 2 өрөө…" onkeydown="if(event.key==='Enter') performSearch()" style="width:100%;padding:10px 12px 10px 38px;border:1.5px solid var(--line-2);border-radius:10px;font-size:14px;font-family:'Manrope',sans-serif;outline:none;background:var(--paper);" />
         </div>
       </div>
 
@@ -3037,7 +3043,7 @@
 <!-- ============ HOME PORTAL ============ -->
 <section class="home-portal-section" id="home-portal">
   <div class="section-inner">
-    <div class="portal-cats" style="grid-template-columns:repeat(5, 1fr);">
+    <div class="portal-cats">
       <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentCat='apartment'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='apartment')); applyListingFilter();}, 100)">
         <div class="portal-cat-icon">🏢</div>
         <div class="portal-cat-name">Орон сууц</div>
@@ -9001,6 +9007,7 @@
   function applyFilters() {
     const results = getFilteredListings();
     renderListings(results);
+    renderFilterTags();
     updateFilterCount();
     if (mapViewOn) renderMiniMap(results);
     showToast(`${results.length} зар олдлоо`, 'success');
