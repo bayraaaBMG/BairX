@@ -2907,6 +2907,14 @@
   <button onclick="document.getElementById('betaBar').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:16px;line-height:1;padding:0;position:absolute;right:16px;">✕</button>
 </div>
 
+<!-- ============ EMAIL VERIFY BANNER ============ -->
+<div id="emailVerifyBanner" style="display:none; background:#FFF8E1; border-bottom:1px solid #FFD54F; color:#7B5E00; font-family:'Manrope',sans-serif; font-size:13px; font-weight:500; padding:9px 20px; display:none; align-items:center; justify-content:center; gap:12px; position:relative; z-index:199;">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C77700" stroke-width="2.5" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+  <span>И-мэйл хаягаа баталгаажуулна уу. Зар нийтлэхийн тулд и-мэйл шаардлагатай.</span>
+  <button id="sendVerifyBtn" onclick="sendVerificationEmail()" style="background:#FFB020;border:none;color:#fff;font-weight:700;font-size:12px;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit;white-space:nowrap;">И-мэйл баталгаажуулах</button>
+  <button onclick="document.getElementById('emailVerifyBanner').style.display='none'" style="background:none;border:none;color:#C77700;cursor:pointer;font-size:16px;position:absolute;right:16px;">✕</button>
+</div>
+
 <!-- ============ NAV ============ -->
 <nav class="nav">
   <div class="nav-inner">
@@ -2965,6 +2973,10 @@
           <a onclick="openFavorites(); toggleUserMenu(null)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
             Хадгалсан зарууд
+          </a>
+          <a onclick="openSavedSearches(); toggleUserMenu(null)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+            Хадгалсан хайлтууд
           </a>
           <a onclick="openAddListing(); toggleUserMenu(null)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
@@ -3749,6 +3761,22 @@
             <option value="4">4+ өрөө</option>
           </select>
         </div>
+        <div class="filter-field">
+          <label>Барилгын он</label>
+          <div class="filter-range">
+            <input type="number" id="fYearMin" placeholder="2000" min="1950" max="2030" />
+            <span>—</span>
+            <input type="number" id="fYearMax" placeholder="2025" min="1950" max="2030" />
+          </div>
+        </div>
+        <div class="filter-field">
+          <label>Давхар</label>
+          <div class="filter-range">
+            <input type="number" id="fFloorMin" placeholder="1" min="1" />
+            <span>—</span>
+            <input type="number" id="fFloorMax" placeholder="20" min="1" />
+          </div>
+        </div>
       </div>
       <div class="filter-toggles">
         <button class="filter-toggle" data-ftoggle="new">Шинэ барилга</button>
@@ -3756,11 +3784,18 @@
         <button class="filter-toggle" data-ftoggle="loan">Зээлд хамрагдах</button>
         <button class="filter-toggle" data-ftoggle="below">Зах зээлээс хямд</button>
         <button class="filter-toggle" data-ftoggle="parking">Паркингтай</button>
+        <button class="filter-toggle" data-ftoggle="furnished">Тавилгатай</button>
+        <button class="filter-toggle" data-ftoggle="vip">⭐ VIP зар</button>
+        <button class="filter-toggle" data-ftoggle="withphoto">Зурагтай</button>
       </div>
       <div class="filter-actions">
         <div class="filter-result-count"><strong id="filterCount">6</strong> зар олдлоо</div>
-        <button class="btn btn-primary" onclick="toggleMapView()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+        <button class="btn btn-ghost" onclick="saveCurrentSearch()" title="Хайлтыг хадгалах" style="font-size:13px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Хадгалах
+        </button>
+        <button class="btn btn-ghost" id="mapToggleBtn" onclick="toggleMapView()" style="font-size:13px;">
+          <svg id="mapToggleIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
           <span id="mapToggleLabel">Газрын зураг</span>
         </button>
         <button class="btn btn-blue" onclick="applyFilters()">
@@ -3788,6 +3823,8 @@
         <option value="price-asc">Үнэ ↑ (хямд)</option>
         <option value="price-desc">Үнэ ↓ (өндөр)</option>
         <option value="area-desc">Талбай (том→жижиг)</option>
+        <option value="vip-first">⭐ VIP эхэндээ</option>
+        <option value="date-asc">Хуучин эхэлсэн</option>
       </select>
     </div>
 
@@ -4965,12 +5002,36 @@
         currentUser = {
           uid: fbUser.uid,
           email: fbUser.email,
+          emailVerified: fbUser.emailVerified,
           name: firstName,
           lastName,
           letter: firstName[0] || 'Х',
           isGoogle: fbUser.providerData.some(p => p.providerId === 'google.com')
         };
         updateNavLoggedIn();
+
+        // Email verify banner
+        const banner = document.getElementById('emailVerifyBanner');
+        if (banner) {
+          if (!fbUser.emailVerified && !currentUser.isGoogle) {
+            banner.style.display = 'flex';
+          } else {
+            banner.style.display = 'none';
+          }
+        }
+
+        // Favorites-г Firestore-с татах
+        try {
+          const fsnap = await db.collection('favorites').where('userId', '==', fbUser.uid).get();
+          const fsIds = [];
+          fsnap.forEach(doc => { const d = doc.data(); if (d.listingId != null) fsIds.push(d.listingId); });
+          if (fsIds.length > 0) {
+            fsIds.forEach(id => { if (!favorites.includes(id)) favorites.push(id); });
+            try { localStorage.setItem('bairxFavorites', JSON.stringify(favorites)); } catch(e) {}
+            updateFavCount();
+          }
+        } catch(e) {}
+
         // Firestore-с хэрэглэгчийн зарнуудыг татаж авна
         try {
           const lsnap = await db.collection('listings').where('ownerId', '==', fbUser.uid).get();
@@ -5005,8 +5066,26 @@
       if (loginBtn) loginBtn.style.display = '';
       if (userAvatar) userAvatar.style.display = 'none';
       if (userAvatarWrap) userAvatarWrap.style.display = 'none';
+      const banner = document.getElementById('emailVerifyBanner');
+      if (banner) banner.style.display = 'none';
     }
   });
+
+  let verifyEmailCooldown = false;
+  async function sendVerificationEmail() {
+    if (!auth.currentUser) { showToast('Эхлээд нэвтэрнэ үү'); return; }
+    if (verifyEmailCooldown) { showToast('Хэтэрхий олон удаа илгээлээ. Түр хүлээнэ үү.'); return; }
+    try {
+      await auth.currentUser.sendEmailVerification();
+      verifyEmailCooldown = true;
+      setTimeout(() => { verifyEmailCooldown = false; }, 60000);
+      const btn = document.getElementById('sendVerifyBtn');
+      if (btn) { btn.textContent = 'Илгээгдлээ ✓'; btn.disabled = true; setTimeout(() => { btn.textContent = 'Дахин илгээх'; btn.disabled = false; }, 60000); }
+      showToast('Баталгаажуулах линк ' + (currentUser?.email || '') + ' рүү илгээгдлээ', 'success');
+    } catch(e) {
+      showToast('И-мэйл илгээхэд алдаа гарлаа');
+    }
+  }
 
   function openAuth() {
     goToAuthStep(1);
@@ -5981,16 +6060,33 @@
   }
 
   // ===== FAVORITE =====
-  function toggleFav(btn, id) {
+  async function toggleFav(btn, id) {
     const idx = favorites.indexOf(id);
     if (idx > -1) {
       favorites.splice(idx, 1);
       btn.classList.remove('faved');
       showToast('Таалагдсанаас хаслаа');
+      if (currentUser) {
+        try {
+          const q = await db.collection('favorites')
+            .where('userId', '==', currentUser.uid)
+            .where('listingId', '==', id).get();
+          q.forEach(doc => doc.ref.delete());
+        } catch(e) {}
+      }
     } else {
       favorites.push(id);
       btn.classList.add('faved');
       showToast('Таалагдсан зар хадгаллаа', 'success');
+      if (currentUser) {
+        try {
+          await db.collection('favorites').add({
+            userId: currentUser.uid,
+            listingId: id,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch(e) {}
+      }
     }
     try { localStorage.setItem('bairxFavorites', JSON.stringify(favorites)); } catch(e) {}
     updateFavCount();
@@ -6581,8 +6677,27 @@
     document.body.style.overflow = 'hidden';
   }
 
-  function submitReport(id, reason) {
+  async function submitReport(id, reason) {
     closeModal();
+    if (currentUser) {
+      try {
+        await db.collection('reports').add({
+          listingId: id,
+          userId: currentUser.uid,
+          userEmail: currentUser.email,
+          reason,
+          status: 'pending',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        // reportCount-г зарт нэмнэ
+        const l = listings.find(x => x.id === id);
+        if (l?.firestoreId) {
+          await db.collection('listings').doc(l.firestoreId).update({
+            reportCount: firebase.firestore.FieldValue.increment(1)
+          });
+        }
+      } catch(e) {}
+    }
     showToast('Мэдээлэл хүлээн авлаа. Баярлалаа!', 'success');
   }
 
@@ -8294,6 +8409,14 @@
     else if (type === 'search') { searchText=''; const f=document.getElementById('fSearch'); if(f)f.value=''; }
     else if (type === 'cat') { currentCat='all'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='all')); }
     else if (type === 'toggle') { const i=activeFilterToggles.indexOf(val); if(i>-1)activeFilterToggles.splice(i,1); document.querySelectorAll('.filter-toggle').forEach(el=>el.classList.toggle('active',activeFilterToggles.includes(el.dataset.ftoggle))); }
+    else if (type === 'priceMin') { const el=document.getElementById('fPriceMin'); if(el)el.value=''; }
+    else if (type === 'priceMax') { const el=document.getElementById('fPriceMax'); if(el)el.value=''; }
+    else if (type === 'areaMin') { const el=document.getElementById('fAreaMin'); if(el)el.value=''; }
+    else if (type === 'areaMax') { const el=document.getElementById('fAreaMax'); if(el)el.value=''; }
+    else if (type === 'yearMin') { const el=document.getElementById('fYearMin'); if(el)el.value=''; }
+    else if (type === 'yearMax') { const el=document.getElementById('fYearMax'); if(el)el.value=''; }
+    else if (type === 'floorMin') { const el=document.getElementById('fFloorMin'); if(el)el.value=''; }
+    else if (type === 'floorMax') { const el=document.getElementById('fFloorMax'); if(el)el.value=''; }
     applyListingFilter();
   }
 
@@ -8310,7 +8433,23 @@
       const catLabels2 = {apartment:'Орон сууц',house:'Хаус',land:'Газар',office:'Оффис',rent:'Түрээс'};
       tags.push({ label: catLabels2[currentCat]||currentCat, onclick: `clearFilterTag('cat','')` });
     }
-    const toggleLabels = {new:'Шинэ барилга',verified:'Баталгаажсан',below:'Зах зээлийн хямд',loan:'Зээлд хамрагдах',parking:'Паркингтай'};
+    const priceMin = document.getElementById('fPriceMin')?.value;
+    const priceMax = document.getElementById('fPriceMax')?.value;
+    if (priceMin) tags.push({ label: priceMin + '+сая ₮', onclick: `clearFilterTag('priceMin','')` });
+    if (priceMax) tags.push({ label: '≤' + priceMax + 'сая ₮', onclick: `clearFilterTag('priceMax','')` });
+    const areaMin = document.getElementById('fAreaMin')?.value;
+    const areaMax = document.getElementById('fAreaMax')?.value;
+    if (areaMin) tags.push({ label: areaMin + '+м²', onclick: `clearFilterTag('areaMin','')` });
+    if (areaMax) tags.push({ label: '≤' + areaMax + 'м²', onclick: `clearFilterTag('areaMax','')` });
+    const yearMin = document.getElementById('fYearMin')?.value;
+    const yearMax = document.getElementById('fYearMax')?.value;
+    if (yearMin) tags.push({ label: yearMin + 'оноос', onclick: `clearFilterTag('yearMin','')` });
+    if (yearMax) tags.push({ label: yearMax + 'он хүртэл', onclick: `clearFilterTag('yearMax','')` });
+    const floorMin = document.getElementById('fFloorMin')?.value;
+    const floorMax = document.getElementById('fFloorMax')?.value;
+    if (floorMin) tags.push({ label: floorMin + '+давхар', onclick: `clearFilterTag('floorMin','')` });
+    if (floorMax) tags.push({ label: '≤' + floorMax + 'давхар', onclick: `clearFilterTag('floorMax','')` });
+    const toggleLabels = {new:'Шинэ барилга',verified:'Баталгаажсан',below:'Зах зээлийн хямд',loan:'Зээлд хамрагдах',parking:'Паркингтай',furnished:'Тавилгатай',vip:'⭐ VIP',withphoto:'Зурагтай'};
     activeFilterToggles.forEach(t => tags.push({ label: toggleLabels[t]||t, onclick: `clearFilterTag('toggle','${t}')` }));
     if (tags.length === 0) { wrap.style.display = 'none'; return; }
     wrap.style.display = 'flex';
@@ -9498,6 +9637,136 @@
     showToast('Зар амжилттай дээшиллээ! Удахгүй илүү олон хүнд харагдана', 'success');
   }
 
+  // ===== SAVED SEARCHES =====
+  async function saveCurrentSearch() {
+    if (!currentUser) { showToast('Хайлт хадгалахын тулд нэвтэрнэ үү'); openAuth(); return; }
+    const district = document.getElementById('fDistrict')?.value || 'all';
+    const priceMin = document.getElementById('fPriceMin')?.value || '';
+    const priceMax = document.getElementById('fPriceMax')?.value || '';
+    const areaMin = document.getElementById('fAreaMin')?.value || '';
+    const areaMax = document.getElementById('fAreaMax')?.value || '';
+    const rooms = document.getElementById('fRooms')?.value || 'all';
+    const keyword = (searchText || document.getElementById('fSearch')?.value || '').trim();
+    const hasFilter = district !== 'all' || priceMin || priceMax || areaMin || areaMax || rooms !== 'all' || keyword || currentCat !== 'all' || activeFilterToggles.length > 0;
+    if (!hasFilter) { showToast('Эхлээд хайлтын нөхцөл тохируулна уу'); return; }
+    const districtLabels = {'khan-uul':'Хан-Уул','sukhbaatar':'Сүхбаатар','chingeltei':'Чингэлтэй','bayanzurkh':'Баянзүрх','bayangol':'Баянгол','songinokhairkhan':'Сонгинохайрхан','nalaikh':'Налайх'};
+    const catLabels = {apartment:'Орон сууц',house:'Хаус',land:'Газар',office:'Оффис',rent:'Түрээс',all:'Бүгд'};
+    const parts = [];
+    if (keyword) parts.push('"' + keyword + '"');
+    if (currentCat !== 'all') parts.push(catLabels[currentCat] || currentCat);
+    if (district !== 'all') parts.push(districtLabels[district] || district);
+    if (rooms !== 'all') parts.push(rooms + ' өрөө');
+    if (priceMin || priceMax) parts.push((priceMin || '0') + '–' + (priceMax || '∞') + ' сая');
+    const label = parts.length > 0 ? parts.join(' · ') : 'Хайлт';
+    document.getElementById('modalContent').innerHTML = `
+      <button class="modal-close" onclick="closeModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <div style="padding:32px 28px;">
+        <span class="al-eyebrow">Хайлт хадгалах</span>
+        <div class="al-title" style="margin-bottom:6px;">Хайлтыг хадгалах</div>
+        <div style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">${label}</div>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:14px;background:var(--paper-2);border-radius:12px;margin-bottom:20px;">
+          <input type="checkbox" id="saveSearchEmail" style="width:16px;height:16px;accent-color:var(--primary);" />
+          <div>
+            <div style="font-weight:700;font-size:14px;">И-мэйлээр мэдэгдэл авах</div>
+            <div style="font-size:12px;color:var(--ink-3);">Шинэ зар орвол ${currentUser.email} руу илгээнэ</div>
+          </div>
+        </label>
+        <button class="btn btn-blue btn-lg" style="width:100%;justify-content:center;" onclick="confirmSaveSearch(${JSON.stringify({ district, priceMin, priceMax, areaMin, areaMax, rooms, keyword, category: currentCat, toggles: activeFilterToggles, label }).replace(/"/g, '&quot;')})">
+          Хадгалах
+        </button>
+      </div>
+    `;
+    document.getElementById('modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  async function confirmSaveSearch(filters) {
+    const emailNotify = document.getElementById('saveSearchEmail')?.checked || false;
+    try {
+      await db.collection('savedSearches').add({
+        userId: currentUser.uid,
+        userEmail: currentUser.email,
+        ...filters,
+        emailNotify,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      closeModal();
+      showToast('Хайлт хадгалагдлаа', 'success');
+    } catch(e) {
+      showToast('Хадгалахад алдаа гарлаа');
+    }
+  }
+
+  async function openSavedSearches() {
+    if (!currentUser) { showToast('Нэвтэрнэ үү'); openAuth(); return; }
+    document.getElementById('modalContent').innerHTML = `
+      <button class="modal-close" onclick="closeModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <div style="padding:32px 28px;">
+        <span class="al-eyebrow">Миний хайлтууд</span>
+        <div class="al-title" style="margin-bottom:20px;">Хадгалсан хайлтууд</div>
+        <div id="savedSearchList" style="display:grid;gap:12px;">
+          <div style="text-align:center;padding:40px;color:var(--ink-3);">Ачааллаж байна…</div>
+        </div>
+      </div>
+    `;
+    document.getElementById('modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    try {
+      const snap = await db.collection('savedSearches').where('userId', '==', currentUser.uid).orderBy('createdAt', 'desc').limit(20).get();
+      const list = document.getElementById('savedSearchList');
+      if (!list) return;
+      if (snap.empty) {
+        list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink-3);">Хадгалсан хайлт алга байна</div>';
+        return;
+      }
+      list.innerHTML = snap.docs.map(doc => {
+        const d = doc.data();
+        return `
+          <div style="display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:12px;cursor:pointer;" onclick="applySavedSearch(${JSON.stringify(d).replace(/"/g, '&quot;')})">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:14px;">${d.label || 'Хайлт'}</div>
+              <div style="font-size:11px;color:var(--ink-3);">${d.emailNotify ? '📧 и-мэйл мэдэгдэлтэй' : 'Мэдэгдэлгүй'}</div>
+            </div>
+            <button onclick="event.stopPropagation();deleteSavedSearch('${doc.id}',this.closest('div[style]'))" style="background:none;border:none;cursor:pointer;color:var(--danger);padding:4px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    } catch(e) {
+      const list = document.getElementById('savedSearchList');
+      if (list) list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger);">Татахад алдаа гарлаа</div>';
+    }
+  }
+
+  function applySavedSearch(d) {
+    if (d.district && document.getElementById('fDistrict')) document.getElementById('fDistrict').value = d.district;
+    if (d.priceMin && document.getElementById('fPriceMin')) document.getElementById('fPriceMin').value = d.priceMin;
+    if (d.priceMax && document.getElementById('fPriceMax')) document.getElementById('fPriceMax').value = d.priceMax;
+    if (d.areaMin && document.getElementById('fAreaMin')) document.getElementById('fAreaMin').value = d.areaMin;
+    if (d.areaMax && document.getElementById('fAreaMax')) document.getElementById('fAreaMax').value = d.areaMax;
+    if (d.rooms && document.getElementById('fRooms')) document.getElementById('fRooms').value = d.rooms;
+    if (d.keyword) { searchText = d.keyword; const f = document.getElementById('fSearch'); if(f) f.value = d.keyword; }
+    if (d.category) { currentCat = d.category; document.querySelectorAll('.filter-pill[data-cat]').forEach(x => x.classList.toggle('active', x.dataset.cat === d.category)); }
+    if (d.toggles) {
+      activeFilterToggles = d.toggles;
+      document.querySelectorAll('.filter-toggle').forEach(t => t.classList.toggle('active', activeFilterToggles.includes(t.dataset.ftoggle)));
+    }
+    closeModal();
+    applyFilters();
+    showPage('listings');
+    showToast('Хайлт ачааллагдлаа', 'success');
+  }
+
+  async function deleteSavedSearch(docId, el) {
+    try {
+      await db.collection('savedSearches').doc(docId).delete();
+      if (el) el.remove();
+      showToast('Хайлт устгагдлаа');
+    } catch(e) { showToast('Устгахад алдаа гарлаа'); }
+  }
+
   // ===== ADVANCED FILTER =====
   let activeFilterToggles = [];
 
@@ -9522,6 +9791,10 @@
     const areaMin = parseFloat(document.getElementById('fAreaMin')?.value) || 0;
     const areaMax = parseFloat(document.getElementById('fAreaMax')?.value) || Infinity;
     const rooms = document.getElementById('fRooms')?.value || 'all';
+    const yearMin = parseInt(document.getElementById('fYearMin')?.value) || 0;
+    const yearMax = parseInt(document.getElementById('fYearMax')?.value) || 9999;
+    const floorMin = parseInt(document.getElementById('fFloorMin')?.value) || 0;
+    const floorMax = parseInt(document.getElementById('fFloorMax')?.value) || 9999;
     const q = (searchText || (document.getElementById('fSearch')?.value) || '').trim().toLowerCase();
 
     if (q) {
@@ -9533,20 +9806,32 @@
     }
 
     if (district !== 'all') results = results.filter(l => l.district === district);
-    // Rent listings use price as monthly ₮ (0.65–3.8 сая) vs sale listings (100+ сая)
-    // Skip the price range filter for rent listings to prevent cross-unit false exclusions
     results = results.filter(l => l.cat === 'rent' || (l.price >= priceMin && l.price <= priceMax));
     results = results.filter(l => l.area >= areaMin && l.area <= areaMax);
     if (rooms !== 'all') {
       const r = parseInt(rooms);
       results = results.filter(l => typeof l.rooms === 'number' && (r === 4 ? l.rooms >= 4 : l.rooms === r));
     }
+    // Year filter
+    if (yearMin > 0 || yearMax < 9999) {
+      results = results.filter(l => !l.year || (l.year >= yearMin && l.year <= yearMax));
+    }
+    // Floor filter (extract floor number from floor string like "8/16")
+    if (floorMin > 0 || floorMax < 9999) {
+      results = results.filter(l => {
+        const f = parseInt(String(l.floor).split('/')[0]);
+        return isNaN(f) || (f >= floorMin && f <= floorMax);
+      });
+    }
     // Toggles
     if (activeFilterToggles.includes('new')) results = results.filter(l => l.badges.includes('new'));
     if (activeFilterToggles.includes('verified')) results = results.filter(l => l.badges.includes('verified'));
-    if (activeFilterToggles.includes('below')) results = results.filter(l => l.tag.type === 'below');
+    if (activeFilterToggles.includes('below')) results = results.filter(l => l.tag && l.tag.type === 'below');
     if (activeFilterToggles.includes('loan')) results = results.filter(l => l.loanType && !l.loanType.includes('Бэлэн'));
     if (activeFilterToggles.includes('parking')) results = results.filter(l => l.parking && !l.parking.includes('Байхгүй') && !l.parking.includes('Хамаарахгүй'));
+    if (activeFilterToggles.includes('furnished')) results = results.filter(l => l.condition && l.condition.toLowerCase().includes('тавилга'));
+    if (activeFilterToggles.includes('vip')) results = results.filter(l => l.badges && l.badges.includes('vip'));
+    if (activeFilterToggles.includes('withphoto')) results = results.filter(l => l.img && !l.img.includes('placeholder'));
 
     // Category filter still applies
     if (currentCat !== 'all') results = results.filter(l => l.cat === currentCat);
@@ -9555,6 +9840,12 @@
     if (currentSort === 'price-asc') results.sort((a, b) => a.price - b.price);
     else if (currentSort === 'price-desc') results.sort((a, b) => b.price - a.price);
     else if (currentSort === 'area-desc') results.sort((a, b) => b.area - a.area);
+    else if (currentSort === 'vip-first') results.sort((a, b) => {
+      const av = a.badges && a.badges.includes('vip') ? 1 : 0;
+      const bv = b.badges && b.badges.includes('vip') ? 1 : 0;
+      return bv - av || b.id - a.id;
+    });
+    else if (currentSort === 'date-asc') results.sort((a, b) => a.id - b.id);
     else results.sort((a, b) => b.id - a.id); // default: newest first
 
     return results;
@@ -9602,12 +9893,9 @@
   }
 
   function resetFilters() {
-    document.getElementById('fDistrict').value = 'all';
-    document.getElementById('fPriceMin').value = '';
-    document.getElementById('fPriceMax').value = '';
-    document.getElementById('fAreaMin').value = '';
-    document.getElementById('fAreaMax').value = '';
-    document.getElementById('fRooms').value = 'all';
+    ['fDistrict'].forEach(id => { const el=document.getElementById(id); if(el)el.value='all'; });
+    ['fRooms'].forEach(id => { const el=document.getElementById(id); if(el)el.value='all'; });
+    ['fPriceMin','fPriceMax','fAreaMin','fAreaMax','fYearMin','fYearMax','fFloorMin','fFloorMax'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
     const fSearch = document.getElementById('fSearch');
     if (fSearch) fSearch.value = '';
     searchText = '';
@@ -9630,13 +9918,19 @@
     mapViewOn = !mapViewOn;
     const mapView = document.getElementById('mapView');
     const label = document.getElementById('mapToggleLabel');
+    const icon = document.getElementById('mapToggleIcon');
+    const btn = document.getElementById('mapToggleBtn');
     if (mapViewOn) {
       mapView.style.display = 'block';
       label.textContent = 'Жагсаалт';
+      if (icon) icon.innerHTML = '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>';
+      if (btn) { btn.style.background = 'var(--primary-soft)'; btn.style.color = 'var(--primary)'; }
       renderMiniMap(getFilteredListings());
     } else {
       mapView.style.display = 'none';
       label.textContent = 'Газрын зураг';
+      if (icon) icon.innerHTML = '<path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"/>';
+      if (btn) { btn.style.background = ''; btn.style.color = ''; }
     }
   }
 
