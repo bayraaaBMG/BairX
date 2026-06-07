@@ -5096,7 +5096,7 @@
       closeAuth();
       showToast('Google-ээр нэвтэрлээ. Тавтай морилно уу!', 'success');
     } catch(e) {
-      if (e.code !== 'auth/popup-closed-by-user') showToast('Google нэвтрэхэд алдаа гарлаа');
+      if (e.code !== 'auth/popup-closed-by-user') showToast('Google алдаа: ' + (e.code || e.message));
     }
   }
 
