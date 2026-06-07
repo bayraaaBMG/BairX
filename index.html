@@ -288,6 +288,8 @@
   .badge.verified { background: var(--accent); color: white; }
   .badge.hot { background: var(--danger); color: white; }
   .badge.new { background: var(--primary); color: white; }
+  .badge.vip { background: #FFB020; color: #1a0f00; }
+  .badge.agent { background: #009878; color: white; }
 
   .listing-fav {
     position: absolute; top: 12px; right: 12px; width: 36px; height: 36px;
@@ -5711,11 +5713,27 @@
       saved.forEach(function(l) {
         if (!listings.find(function(x) { return x.id === l.id; })) {
           listings.push(l);
-          // Restore gallery for carousel if images were saved
           if (l._gallery && l._gallery.length > 0) {
             listingExtras[l.id] = { coords: { x: 50, y: 50 }, gallery: l._gallery };
           }
         }
+      });
+    } catch(e) {}
+
+    // Restore boost (vip) badges from localStorage
+    try {
+      var boosted = JSON.parse(localStorage.getItem('bairxBoostedListings') || '[]');
+      boosted.forEach(function(id) {
+        var l = listings.find(function(x) { return x.id === id; });
+        if (l && !l.badges.includes('vip')) l.badges.push('vip');
+      });
+    } catch(e) {}
+
+    // Restore seller data for user listings from localStorage
+    try {
+      var sellerSaved = JSON.parse(localStorage.getItem('bairxSellerData') || '{}');
+      Object.keys(sellerSaved).forEach(function(id) {
+        sellerData[parseInt(id, 10)] = sellerSaved[id];
       });
     } catch(e) {}
   })();
@@ -5831,9 +5849,8 @@
         <div class="listing-img">
           <img src="${l.img}" alt="${l.title}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';"/>
           <div class="listing-badges">
-            ${l.badges.includes('verified') ? '<span class="badge verified">✓ Баталгаажсан</span>' : ''}
-            ${l.badges.includes('new') ? '<span class="badge new">Шинэ</span>' : ''}
-            ${l.badges.includes('hot') ? '<span class="badge hot">Эрэлттэй</span>' : ''}
+            ${l.badges.includes('vip') ? '<span class="badge vip">⭐ VIP</span>' : (l.badges.includes('hot') ? '<span class="badge hot">Эрэлттэй</span>' : '')}
+            ${l.badges.includes('new') || l.badges.includes('user') ? '<span class="badge new">Шинэ</span>' : ''}
           </div>
           <button class="listing-fav ${favorites.includes(l.id) ? 'faved' : ''}" onclick="event.stopPropagation(); toggleFav(this, ${l.id})">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
@@ -5879,9 +5896,9 @@
         <div class="listing-img">
           <img src="${l.img}" alt="${l.title}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';" />
           <div class="listing-badges">
-            ${l.badges.includes('verified') ? '<span class="badge verified">✓ Баталгаажсан</span>' : ''}
-            ${l.badges.includes('new') ? '<span class="badge new">Шинэ</span>' : ''}
-            ${l.badges.includes('hot') ? '<span class="badge hot">Эрэлттэй</span>' : ''}
+            ${l.badges.includes('vip') ? '<span class="badge vip">⭐ VIP</span>' : (l.badges.includes('hot') ? '<span class="badge hot">Эрэлттэй</span>' : '')}
+            ${l.badges.includes('new') || l.badges.includes('user') ? '<span class="badge new">Шинэ</span>' : ''}
+            ${(sellerData[l.id]?.type === 'Агент') ? '<span class="badge agent">Агент</span>' : ''}
           </div>
           <button class="listing-fav ${favorites.includes(l.id) ? 'faved' : ''}" onclick="event.stopPropagation(); toggleFav(this, ${l.id})">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
@@ -5978,22 +5995,25 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
       <div style="padding:32px;">
-        <span class="al-eyebrow">Миний хадгалсан</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span class="al-eyebrow">Миний хадгалсан</span>
+          <button onclick="clearAllFavs()" style="background:none;border:none;font-size:12px;color:var(--danger);cursor:pointer;font-weight:600;">Бүгдийг хасах</button>
+        </div>
         <div class="al-title" style="margin-bottom:20px;">${favListings.length} таалагдсан зар</div>
         <div style="display:grid; gap:14px;">
           ${favListings.map(l => `
             <div class="dash-listing" onclick="closeModal(); setTimeout(() => openListing(${l.id}), 300)" style="cursor:pointer;">
-              <img class="dash-listing-img" src="${l.img}" alt="" />
+              <img class="dash-listing-img" src="${l.img}" alt="" onerror="this.style.background='var(--paper-2)';this.removeAttribute('src');" />
               <div class="dash-listing-info">
                 <div class="dash-listing-title">${l.title}</div>
                 <div class="dash-listing-price">${fmtPrice(l.price)}</div>
                 <div class="dash-listing-stats">
                   <span class="dash-listing-stat">${l.area} м²</span>
                   <span class="dash-listing-stat">${typeof l.rooms === 'number' ? l.rooms + ' өрөө' : l.rooms}</span>
-                  <span class="dash-listing-stat">${l.loc.split('·')[0]}</span>
+                  <span class="dash-listing-stat">${l.loc.split('·')[0].trim()}</span>
                 </div>
               </div>
-              <button class="compare-bar-remove" onclick="event.stopPropagation(); removeFav(${l.id})" style="width:32px; height:32px; background:var(--paper-2);">
+              <button class="compare-bar-remove" onclick="event.stopPropagation(); removeFav(${l.id})" style="width:32px; height:32px; background:var(--paper-2);" title="Хасах">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
               </button>
             </div>
@@ -6013,8 +6033,17 @@
 
   function removeFav(id) {
     favorites = favorites.filter(x => x !== id);
+    try { localStorage.setItem('bairxFavorites', JSON.stringify(favorites)); } catch(e) {}
     updateFavCount();
-    openFavorites(); // refresh modal
+    openFavorites();
+  }
+
+  function clearAllFavs() {
+    favorites = [];
+    try { localStorage.setItem('bairxFavorites', JSON.stringify([])); } catch(e) {}
+    updateFavCount();
+    closeModal();
+    showToast('Бүх хадгалсан зар хасагдлаа');
   }
 
   function compareFavorites() {
@@ -6466,6 +6495,13 @@
           </div>
         </div>
         ` : ''}
+
+        <!-- REPORT LINK -->
+        <div style="text-align:center;padding:16px 0 8px;">
+          <button onclick="reportListing(${l.id})" style="background:none;border:none;font-size:12px;color:var(--ink-3);cursor:pointer;text-decoration:underline;text-underline-offset:3px;">
+            Зөрчил мэдээлэх
+          </button>
+        </div>
       </div>
     `;
     document.getElementById('modal').classList.add('open');
@@ -6482,6 +6518,35 @@
     } else {
       showToast('Холбоос: ' + url);
     }
+  }
+
+  function reportListing(id) {
+    const reasons = ['Буруу үнэ', 'Хуурамч зар', 'Холбогдохгүй дугаар', 'Давхардсан зар'];
+    document.getElementById('modalContent').innerHTML = `
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <div style="padding:32px 28px;">
+        <span class="al-eyebrow">Зар #${id}</span>
+        <div class="al-title" style="margin-bottom:6px;">Зөрчил мэдээлэх</div>
+        <div style="font-size:13px;color:var(--ink-3);margin-bottom:24px;">Зарын ямар асуудлыг мэдээлэх вэ?</div>
+        <div style="display:grid;gap:10px;">
+          ${reasons.map(r => `
+            <button onclick="submitReport(${id}, '${r}')" style="text-align:left;padding:14px 18px;border:1.5px solid var(--line);border-radius:12px;background:var(--paper-2);cursor:pointer;font-size:14px;font-weight:600;color:var(--ink);transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='var(--line)'">
+              ${r}
+            </button>
+          `).join('')}
+        </div>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:16px;" onclick="closeModal()">Цуцлах</button>
+      </div>
+    `;
+    document.getElementById('modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function submitReport(id, reason) {
+    closeModal();
+    showToast('Мэдээлэл хүлээн авлаа. Баярлалаа!', 'success');
   }
 
   function revealPhone(listingId, phone) {
@@ -7479,6 +7544,8 @@
     if (allImages.length > 0) {
       listingExtras[newId] = { coords: { x: 50, y: 50 }, gallery: allImages };
     }
+    // Capture before editingListingId is cleared below
+    const targetId = editingListingId || newId;
     if (editingListingId) {
       // Update existing listing in place
       const idx = listings.findIndex(x => x.id === editingListingId);
@@ -7499,6 +7566,20 @@
         newListing._gallery = allImages;
         saved.push(newListing);
         localStorage.setItem('bairxUserListings', JSON.stringify(saved));
+      } catch(e) {}
+    }
+
+    // Save seller contact info to sellerData + localStorage so detail modal shows correct data
+    if (s.name || s.phone) {
+      sellerData[targetId] = {
+        phone: s.phone || '9900-0000',
+        name: s.name || 'Хэрэглэгч',
+        type: s.role === 'agent' ? 'Агент' : (s.role === 'company' ? 'Компани' : 'Хувь хүн')
+      };
+      try {
+        const sd = JSON.parse(localStorage.getItem('bairxSellerData') || '{}');
+        sd[targetId] = sellerData[targetId];
+        localStorage.setItem('bairxSellerData', JSON.stringify(sd));
       } catch(e) {}
     }
 
@@ -7534,11 +7615,19 @@
       </div>`;
       return;
     }
-    grid.innerHTML = shown.map(l => `
-      <article class="listing-card" onclick="showPage('listings'); setTimeout(()=>openListing(${l.id}),150)">
+    grid.innerHTML = shown.map(l => {
+      const isVip = l.badges.includes('vip');
+      const isInactive = l._inactive === true;
+      const statusLabel = isInactive ? 'Идэвхгүй' : 'Идэвхтэй';
+      const statusClass = isInactive ? 'badge' : 'badge new';
+      return `
+      <article class="listing-card" onclick="showPage('listings'); setTimeout(()=>openListing(${l.id}),150)" style="${isInactive ? 'opacity:0.65;' : ''}">
         <div class="listing-img">
           <img src="${l.img}" alt="${l.title}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';"/>
-          <div class="listing-badges"><span class="badge new">Идэвхтэй</span></div>
+          <div class="listing-badges">
+            ${isVip ? '<span class="badge vip">⭐ VIP</span>' : ''}
+            <span class="${statusClass}">${statusLabel}</span>
+          </div>
         </div>
         <div class="listing-body">
           <div class="listing-price-row">
@@ -7556,11 +7645,27 @@
               Boost
             </button>
             <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();editMyListing(${l.id})">Засах</button>
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:${isInactive ? 'var(--primary)' : 'var(--ink-3)'};" onclick="event.stopPropagation();toggleListingActive(${l.id})">${isInactive ? 'Идэвхжүүлэх' : 'Идэвхгүй болгох'}</button>
             <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
           </div>
         </div>
       </article>
-    `).join('');
+    `}).join('');
+  }
+
+  function toggleListingActive(id) {
+    const l = listings.find(x => x.id === id);
+    if (!l) return;
+    l._inactive = !l._inactive;
+    try {
+      const saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]');
+      const si = saved.findIndex(x => x.id === id);
+      if (si > -1) { saved[si]._inactive = l._inactive; localStorage.setItem('bairxUserListings', JSON.stringify(saved)); }
+    } catch(e) {}
+    showToast(l._inactive ? 'Зар идэвхгүй болгогдлоо' : 'Зар идэвхжүүлэгдлаа', 'success');
+    renderMyListings();
+    renderListings(getFilteredListings());
+    renderHomeListings();
   }
 
   let boostTargetId = null;
@@ -7603,10 +7708,15 @@
   }
 
   function confirmBoost(plan, price) {
-    // Add vip badge to the listing
+    // Add vip badge to the listing and persist
     if (boostTargetId) {
       const bl = listings.find(x => x.id === boostTargetId);
       if (bl && !bl.badges.includes('vip')) bl.badges.push('vip');
+      try {
+        const boosted = JSON.parse(localStorage.getItem('bairxBoostedListings') || '[]');
+        if (!boosted.includes(boostTargetId)) boosted.push(boostTargetId);
+        localStorage.setItem('bairxBoostedListings', JSON.stringify(boosted));
+      } catch(e) {}
       renderMyListings();
       renderHomeListings();
       renderListings(getFilteredListings());
@@ -9323,7 +9433,7 @@
   });
 
   function getFilteredListings() {
-    let results = [...listings];
+    let results = listings.filter(l => !l._inactive);
     const district = document.getElementById('fDistrict')?.value || 'all';
     const priceMin = parseFloat(document.getElementById('fPriceMin')?.value) || 0;
     const priceMax = parseFloat(document.getElementById('fPriceMax')?.value) || Infinity;
