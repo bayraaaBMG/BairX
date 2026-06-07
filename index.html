@@ -705,6 +705,45 @@
   }
   .modal-close:hover { background: var(--paper-2); }
   .modal-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: var(--radius-xl) var(--radius-xl) 0 0; }
+
+  /* Modal inline gallery carousel */
+  .mc-wrap { position: relative; border-radius: var(--radius-xl) var(--radius-xl) 0 0; overflow: hidden; background: #0A1628; }
+  .mc-main { position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; }
+  .mc-main img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.22s; }
+  .mc-counter { position: absolute; bottom: 12px; left: 14px; background: rgba(10,22,40,0.7); color: #fff; font-size: 12px; font-weight: 700; border-radius: 20px; padding: 3px 10px; font-family: 'JetBrains Mono', monospace; }
+  .mc-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 38px; height: 38px; border-radius: 50%; background: rgba(10,22,40,0.55); backdrop-filter: blur(6px); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; z-index: 2; }
+  .mc-nav:hover { background: rgba(10,22,40,0.85); }
+  .mc-nav.prev { left: 12px; }
+  .mc-nav.next { right: 12px; }
+  .mc-expand { position: absolute; top: 12px; right: 14px; width: 34px; height: 34px; border-radius: 8px; background: rgba(10,22,40,0.6); backdrop-filter: blur(6px); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .mc-expand:hover { background: rgba(30,91,255,0.85); }
+  .mc-thumbs { display: flex; gap: 4px; padding: 6px; background: #0A1628; overflow-x: auto; scrollbar-width: none; }
+  .mc-thumbs::-webkit-scrollbar { display: none; }
+  .mc-thumb { width: 56px; height: 42px; object-fit: cover; border-radius: 5px; cursor: pointer; flex-shrink: 0; opacity: 0.6; border: 2px solid transparent; transition: all 0.15s; }
+  .mc-thumb.active { opacity: 1; border-color: var(--primary); }
+  .mc-thumb:hover { opacity: 0.85; }
+
+  /* Seller card */
+  .seller-card { display: flex; align-items: center; gap: 14px; background: var(--paper-2); border-radius: 14px; padding: 16px 18px; margin-bottom: 0; }
+  .seller-av { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 18px; flex-shrink: 0; }
+  .seller-info { flex: 1; min-width: 0; }
+  .seller-name { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .seller-verified { font-size: 10px; background: #009878; color: #fff; border-radius: 100px; padding: 1px 7px; font-weight: 700; }
+  .seller-meta { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  .seller-stats { display: flex; gap: 16px; font-size: 11px; color: var(--ink-3); margin-top: 6px; }
+  .seller-stats span b { color: var(--ink); font-weight: 700; }
+
+  /* Map placeholder */
+  .map-placeholder { background: linear-gradient(135deg, #E8EFFF 0%, #D0DEFF 100%); border-radius: 14px; padding: 0; overflow: hidden; position: relative; aspect-ratio: 16/7; display: flex; align-items: center; justify-content: center; }
+  .map-placeholder-inner { text-align: center; z-index: 1; }
+  .map-placeholder-grid { position: absolute; inset: 0; background-image: repeating-linear-gradient(0deg, rgba(30,91,255,0.06) 0px, transparent 1px, transparent 39px, rgba(30,91,255,0.06) 40px), repeating-linear-gradient(90deg, rgba(30,91,255,0.06) 0px, transparent 1px, transparent 39px, rgba(30,91,255,0.06) 40px); }
+  .map-pin { width: 40px; height: 40px; background: var(--primary); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; box-shadow: 0 4px 14px rgba(30,91,255,0.4); }
+  .map-pin svg { transform: rotate(45deg); }
+
+  /* Similar listings in modal */
+  .similar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 640px) { .similar-grid { grid-template-columns: 1fr 1fr; } .mc-thumb { width: 44px; height: 34px; } }
+
   .modal-body { padding: 32px; }
   .modal-title { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; margin-bottom: 8px; }
   .modal-loc { color: var(--ink-3); font-size: 14px; margin-bottom: 24px; display: flex; align-items: center; gap: 6px; }
@@ -4085,7 +4124,7 @@
           <div class="boost-banner-inner">
             <h4>Зараа дээшлүүлж, 3 дахин хурдан зараарай</h4>
             <p>Таны "Зайсан 2 өрөө" зар сүүлийн 3 хоногт үзэлт буурсан байна. Boost хийснээр хайлтын эхэнд гарч, өдөрт 5-8 дахин олон хүнд харагдана.</p>
-            <button class="boost-btn" onclick="openBoostModal()">Зар дээшлүүлэх →</button>
+            <button class="boost-btn" onclick="openDashboardBoost()">Зар дээшлүүлэх →</button>
           </div>
         </div>
       </div>
@@ -5649,7 +5688,13 @@
     try {
       var saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]');
       saved.forEach(function(l) {
-        if (!listings.find(function(x) { return x.id === l.id; })) listings.push(l);
+        if (!listings.find(function(x) { return x.id === l.id; })) {
+          listings.push(l);
+          // Restore gallery for carousel if images were saved
+          if (l._gallery && l._gallery.length > 0) {
+            listingExtras[l.id] = { coords: { x: 50, y: 50 }, gallery: l._gallery };
+          }
+        }
       });
     } catch(e) {}
   })();
@@ -5753,7 +5798,15 @@
   function renderListings(items) {
     const grid = document.getElementById('listingsGrid');
     if (items.length === 0) {
-      grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:60px; color:var(--ink-3);"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:16px; opacity:0.4;"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg><div style="font-size:18px; font-weight:600; margin-bottom:6px; color:var(--ink);">Үр дүн олдсонгүй</div><div style="font-size:14px;">Шүүлтүүрээ өөрчилж дахин оролдоно уу</div></div>';
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:72px 24px;color:var(--ink-3);">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="margin-bottom:18px;opacity:0.3;"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;color:var(--ink);margin-bottom:8px;">Тохирох зар олдсонгүй</div>
+        <div style="font-size:14px;max-width:340px;margin:0 auto 24px;">Шүүлтүүрийн нөхцөлийг өөрчлөх эсвэл хайлтыг цэвэрлэж дахин оролдоно уу.</div>
+        <button class="btn btn-blue" onclick="resetFilters()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Шүүлтүүр цэвэрлэх
+        </button>
+      </div>`;
       return;
     }
     grid.innerHTML = items.map(l => `
@@ -6028,11 +6081,49 @@
     if (l.cadastre && l.cadastre.includes('шалгасан')) stability.push({ ok: true, text: 'Кадастрын мэдээлэл шалгасан' });
     else if (l.cadastre && l.cadastre.includes('гарч буй')) stability.push({ ok: false, text: 'Кадастр албажиж гарах хүлээгдэж буй' });
 
+    // Build inline carousel
+    const extras = listingExtras[l.id];
+    mcImages = (extras?.gallery?.length ? extras.gallery : [l.img]);
+    mcIdx = 0;
+    mcListingId = l.id;
+
+    // Similar listings (same cat + district, closest price, max 3)
+    const similar = listings.filter(x => x.id !== l.id && x.cat === l.cat && x.district === l.district)
+      .sort((a, b) => Math.abs(a.price - l.price) - Math.abs(b.price - l.price))
+      .slice(0, 3);
+
+    // Seller demo data
+    const sellerName = l.legalNotes?.includes('Хэрэглэгчийн') ? (l.legalNotes.split('·')[1]?.trim() || 'Хэрэглэгч') : 'Баталгаажсан Агент';
+    const sellerLetter = sellerName[0] || 'А';
+    const sellerStats = l.userSubmitted ? '1 зар · Шинэ гишүүн' : (Math.floor(Math.random() * 40) + 3) + ' зар · ' + (new Date().getFullYear() - (2018 + (l.id % 5))) + ' жил';
+
     document.getElementById('modalContent').innerHTML = `
       <button class="modal-close" onclick="closeModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
-      <img class="modal-img" src="${l.img}" alt="${l.title}" />
+
+      <!-- INLINE GALLERY CAROUSEL -->
+      <div class="mc-wrap">
+        <div class="mc-main">
+          <img id="mcMainImg" src="${mcImages[0]}" alt="${l.title}" style="transition:opacity 0.22s;" />
+          <span class="mc-counter" id="mcCounter">1 / ${mcImages.length}</span>
+          ${mcImages.length > 1 ? `
+          <button class="mc-nav prev" onclick="mcPrev()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <button class="mc-nav next" onclick="mcNext()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </button>` : ''}
+          <button class="mc-expand" onclick="openGallery(${l.id})" title="Том хэмжээгээр харах">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+          </button>
+        </div>
+        ${mcImages.length > 1 ? `
+        <div class="mc-thumbs">
+          ${mcImages.map((img, i) => `<img class="mc-thumb ${i===0?'active':''}" src="${img}" onclick="mcGoto(${i})" alt="" />`).join('')}
+        </div>` : ''}
+      </div>
+
       <div class="modal-body">
         <h2 class="modal-title">${l.title}</h2>
         <div class="modal-loc">
@@ -6062,6 +6153,29 @@
           <div class="info-card">
             <div class="info-card-label">Он/Төлөв</div>
             <div class="info-card-value">${l.year}</div>
+          </div>
+        </div>
+
+        <!-- SELLER CARD -->
+        <div class="modal-section">
+          <div class="seller-card">
+            <div class="seller-av">${sellerLetter}</div>
+            <div class="seller-info">
+              <div class="seller-name">
+                ${sellerName}
+                <span class="seller-verified">✓ Баталгаажсан</span>
+              </div>
+              <div class="seller-meta">Үл хөдлөхийн мэргэжилтэн</div>
+              <div class="seller-stats">
+                <span><b>${sellerStats.split('·')[0].trim()}</b></span>
+                <span>Хариу: <b>&lt;1 цаг</b></span>
+                <span>Гишүүн: <b>${2018 + (l.id % 5)} оноос</b></span>
+              </div>
+            </div>
+            <button class="btn btn-ghost" onclick="revealPhone('${l.id}', '${l.phone || '8811-2233'}')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
+              Залгах
+            </button>
           </div>
         </div>
 
@@ -6124,6 +6238,21 @@
           <div class="legal-notes">
             <div class="legal-notes-label">Нэмэлт тэмдэглэл</div>
             <div class="legal-notes-text">${l.legalNotes || '—'}</div>
+          </div>
+        </div>
+
+        <!-- MAP PLACEHOLDER -->
+        <div class="modal-section">
+          <h4>Байршил</h4>
+          <div class="map-placeholder">
+            <div class="map-placeholder-grid"></div>
+            <div class="map-placeholder-inner">
+              <div class="map-pin">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <div style="font-weight:700;font-size:15px;color:var(--ink);">${l.loc}</div>
+              <div style="font-size:12px;color:var(--ink-3);margin-top:4px;">Demo байршил · Жинхэнэ map удахгүй нэмэгдэнэ</div>
+            </div>
           </div>
         </div>
 
@@ -6227,6 +6356,25 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </button>
         </div>
+
+        ${similar.length > 0 ? `
+        <!-- ИЖИЛ ТӨСТЭЙ ЗАРУУД -->
+        <div class="modal-section">
+          <h4>Ижил төстэй зарууд</h4>
+          <div class="similar-grid">
+            ${similar.map(s => `
+              <div style="cursor:pointer;border-radius:12px;overflow:hidden;border:1.5px solid var(--line);transition:box-shadow 0.15s;" onclick="closeModal(); setTimeout(()=>openListing(${s.id}),200)">
+                <img src="${s.img}" alt="${s.title}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;" onerror="this.style.background='var(--paper-2)';this.style.display='none';" />
+                <div style="padding:10px 12px;">
+                  <div style="font-weight:700;font-size:13px;color:var(--primary);font-family:'Fraunces',serif;">${fmtPrice(s.price)}</div>
+                  <div style="font-size:12px;color:var(--ink-2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.title}</div>
+                  <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${s.area} м² · ${s.rooms} өрөө</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        ` : ''}
       </div>
     `;
     document.getElementById('modal').classList.add('open');
@@ -7181,9 +7329,16 @@
       legalNotes: 'Хэрэглэгчийн нэмсэн зар · ' + (s.name || '') + ' · ' + (s.phone || ''),
       userSubmitted: true
     };
+    // Populate listingExtras so the inline gallery carousel shows uploaded images
+    const allImages = s.images.filter(Boolean);
+    if (allImages.length > 0) {
+      listingExtras[newId] = { coords: { x: 50, y: 50 }, gallery: allImages };
+    }
     listings.push(newListing);
     try {
       var saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]');
+      // Store images array on the listing for refresh persistence
+      newListing._gallery = allImages;
       saved.push(newListing);
       localStorage.setItem('bairxUserListings', JSON.stringify(saved));
     } catch(e) {}
@@ -7236,13 +7391,71 @@
             <span class="listing-meta-item"><strong>${l.area}</strong> м²</span>
             <span class="listing-meta-item"><strong>${l.rooms}</strong> өрөө</span>
           </div>
-          <div style="display:flex;gap:8px;margin-top:12px;">
-            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:12px;" onclick="event.stopPropagation();showToast('Засварлах функц удахгүй')">Засах</button>
-            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:12px;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
+          <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();openBoostModal(${l.id})">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              Boost
+            </button>
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();showToast('Засварлах функц удахгүй')">Засах</button>
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
           </div>
         </div>
       </article>
     `).join('');
+  }
+
+  function openBoostModal(id) {
+    const l = listings.find(x => x.id === id);
+    if (!l) return;
+    document.getElementById('modalContent').innerHTML = `
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <div style="padding:32px 28px;">
+        <div style="text-align:center;margin-bottom:24px;">
+          <div style="font-size:36px;margin-bottom:8px;">⚡</div>
+          <h3 style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;margin-bottom:6px;">Зараа дэмжих</h3>
+          <div style="font-size:13px;color:var(--ink-3);">${l.title}</div>
+        </div>
+        <div style="display:grid;gap:12px;">
+          ${[
+            { icon:'🚀', name:'Boost', price:'9,900 ₮', desc:'7 хоногийн турш хайлтад дээр гарна', color:'var(--primary)' },
+            { icon:'⭐', name:'VIP', price:'19,900 ₮', desc:'30 хоног · Онцгой шошго · 5x илүү үзэлт', color:'#FFB020' },
+            { icon:'💎', name:'Онцлох зар', price:'29,900 ₮', desc:'Нүүр хуудас · Email хэвлэл · Агентын санал', color:'#009878' }
+          ].map(p => `
+            <div style="border:2px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color 0.15s;" onclick="confirmBoost('${p.name}', '${p.price}')">
+              <div style="font-size:28px;">${p.icon}</div>
+              <div style="flex:1;">
+                <div style="font-weight:700;color:${p.color};">${p.name} — ${p.price}</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">${p.desc}</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:16px;" onclick="closeModal()">Цуцлах</button>
+      </div>
+    `;
+    document.getElementById('modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function confirmBoost(plan, price) {
+    closeModal();
+    setTimeout(() => {
+      document.getElementById('modalContent').innerHTML = `
+        <button class="modal-close" onclick="closeModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        <div style="padding:40px 28px;text-align:center;">
+          <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+          <h3 style="font-family:'Fraunces',serif;font-size:22px;margin-bottom:8px;">${plan} идэвхжлээ!</h3>
+          <div style="font-size:14px;color:var(--ink-3);margin-bottom:24px;">${price} төлбөр баталгаажлаа (Demo горим)</div>
+          <button class="btn btn-blue btn-lg" onclick="closeModal()">Ойлголоо</button>
+        </div>
+      `;
+      document.getElementById('modal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }, 250);
+    showToast(plan + ' идэвхжлээ!', 'success');
   }
 
   function deleteMyListing(id) {
@@ -8854,9 +9067,9 @@
     `).join('');
   }
 
-  // ===== BOOST MODAL =====
+  // ===== BOOST MODAL (dashboard) =====
   let selectedBoost = 'vip';
-  function openBoostModal() {
+  function openDashboardBoost() {
     document.getElementById('modalContent').innerHTML = `
       <button class="modal-close" onclick="closeModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -8900,7 +9113,7 @@
           <strong>Boost юу хийдэг вэ?</strong> Таны зар хайлтын үр дүнгийн эхэнд, Feed-ийн "Онцлох" хэсэгт, нүүр хуудсанд харагдана. Дунджаар boost хийсэн зарууд 60-75% хурдан зарагддаг.
         </div>
 
-        <button class="btn btn-blue btn-lg" style="width:100%; justify-content:center;" onclick="confirmBoost()">
+        <button class="btn btn-blue btn-lg" style="width:100%; justify-content:center;" onclick="confirmDashboardBoost()">
           Сонгосон багцаар дээшлүүлэх
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </button>
@@ -8917,7 +9130,7 @@
     });
   }
 
-  function confirmBoost() {
+  function confirmDashboardBoost() {
     closeModal();
     showToast('Зар амжилттай дээшиллээ! Удахгүй илүү олон хүнд харагдана', 'success');
   }
@@ -9230,6 +9443,23 @@
   // ===== GALLERY =====
   let galleryImages = [];
   let galleryIndex = 0;
+
+  // In-modal carousel (different from fullscreen gallery)
+  let mcImages = [];
+  let mcIdx = 0;
+  let mcListingId = 0;
+
+  function mcUpdate() {
+    const img = document.getElementById('mcMainImg');
+    const counter = document.getElementById('mcCounter');
+    const thumbs = document.querySelectorAll('.mc-thumb');
+    if (img) { img.style.opacity = '0'; setTimeout(() => { img.src = mcImages[mcIdx]; img.style.opacity = '1'; }, 120); }
+    if (counter) counter.textContent = (mcIdx + 1) + ' / ' + mcImages.length;
+    thumbs.forEach((t, i) => t.classList.toggle('active', i === mcIdx));
+  }
+  function mcPrev() { mcIdx = (mcIdx - 1 + mcImages.length) % mcImages.length; mcUpdate(); }
+  function mcNext() { mcIdx = (mcIdx + 1) % mcImages.length; mcUpdate(); }
+  function mcGoto(i) { mcIdx = i; mcUpdate(); }
 
   function openGallery(id) {
     const extra = listingExtras[id];
