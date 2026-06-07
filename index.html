@@ -5691,13 +5691,13 @@
             <span class="listing-meta-item"><strong>${l.floor}</strong></span>
             <span class="listing-meta-item"><strong>${l.year}</strong></span>
           </div>
-          <div class="listing-loan-strip">
+          ${l.cat !== 'rent' ? `<div class="listing-loan-strip">
             <div>
               <div class="loan-strip-label">${l.loanType} сар бүр</div>
               <div class="loan-strip-amt">${typeof l.monthly === 'number' ? l.monthly.toFixed(2) + ' сая ₮' : l.monthly}</div>
             </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary-deep)" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>
-          </div>
+          </div>` : `<div class="listing-loan-strip"><div><div class="loan-strip-label">Барьцаа</div><div class="loan-strip-amt">${l.legalNotes.split('·')[0].trim()}</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary-deep)" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></div>`}
         </div>
       </article>
     `).join('');
@@ -6984,9 +6984,10 @@
     const s = addListingState;
     const districtLabels = {
       'khan-uul': 'Хан-Уул', 'sukhbaatar': 'Сүхбаатар', 'chingeltei': 'Чингэлтэй',
-      'bayanzurkh': 'Баянзүрх', 'bayangol': 'Баянгол', 'songinokhairkhan': 'Сонгинохайрхан', 'nalaikh': 'Налайх'
+      'bayanzurkh': 'Баянзүрх', 'bayangol': 'Баянгол', 'songinokhairkhan': 'Сонгинохайрхан',
+      'nalaikh': 'Налайх', 'bagakhangai': 'Багахангай', 'baganuur': 'Багануур'
     };
-    const newId = Math.max(...listings.map(function(l) { return l.id; })) + 1;
+    const newId = listings.reduce(function(m, l) { return l.id > m ? l.id : m; }, 0) + 1;
     const p = parseFloat(s.price) || 0;
     const a = parseFloat(s.area) || 0;
     const newListing = {
@@ -7018,6 +7019,11 @@
       saved.push(newListing);
       localStorage.setItem('bairxUserListings', JSON.stringify(saved));
     } catch(e) {}
+
+    // Refresh all listing surfaces so the new card is visible immediately
+    renderHomeListings();
+    renderListings(getFilteredListings());
+    updateCatPillCounts();
 
     addListingState.step = 6;
     document.getElementById('modalContent').innerHTML = renderAddListing();
@@ -7471,20 +7477,7 @@
     const filtered = getFilteredListings();
     renderListings(filtered);
     updateFilterCount();
-  }
-
-  function changeSorting() {
-    const sorts = ['default', 'price-asc', 'price-desc', 'area-desc'];
-    const labels = {
-      'default': 'Эрэмбэлэх',
-      'price-asc': 'Үнэ ↑',
-      'price-desc': 'Үнэ ↓',
-      'area-desc': 'Талбай ↓'
-    };
-    const idx = sorts.indexOf(currentSort);
-    currentSort = sorts[(idx + 1) % sorts.length];
-    document.getElementById('sortLabel').textContent = labels[currentSort];
-    applyListingFilter();
+    if (mapViewOn) renderMiniMap(filtered);
   }
 
   // ===== SEARCH =====
@@ -7509,14 +7502,8 @@
       });
     }
 
-    let results = [...listings];
-    if (type !== 'all') results = results.filter(l => l.cat === type);
-    if (loc !== 'all') results = results.filter(l => l.district === loc);
-    if (rooms !== 'all') {
-      const r = parseInt(rooms);
-      results = results.filter(l => typeof l.rooms === 'number' && (r === 4 ? l.rooms >= 4 : l.rooms === r));
-    }
-    results = results.filter(l => l.price >= min && l.price <= max);
+    // Let getFilteredListings() handle all filtering + sorting via the synced filter panel
+    const results = getFilteredListings();
 
     renderListings(results);
     updateFilterCount();
@@ -8690,7 +8677,9 @@
     const rooms = document.getElementById('fRooms')?.value || 'all';
 
     if (district !== 'all') results = results.filter(l => l.district === district);
-    results = results.filter(l => l.price >= priceMin && l.price <= priceMax);
+    // Rent listings use price as monthly ₮ (0.65–3.8 сая) vs sale listings (100+ сая)
+    // Skip the price range filter for rent listings to prevent cross-unit false exclusions
+    results = results.filter(l => l.cat === 'rent' || (l.price >= priceMin && l.price <= priceMax));
     results = results.filter(l => l.area >= areaMin && l.area <= areaMax);
     if (rooms !== 'all') {
       const r = parseInt(rooms);
@@ -8726,6 +8715,15 @@
     if (el) el.textContent = count;
   }
 
+  function updateCatPillCounts() {
+    ['all', 'apartment', 'house', 'land', 'office', 'rent'].forEach(function(cat) {
+      const el = document.getElementById('cnt-' + cat);
+      if (el) el.textContent = cat === 'all' ? listings.length : listings.filter(function(l) { return l.cat === cat; }).length;
+    });
+    const tlc = document.getElementById('totalListingCount');
+    if (tlc) tlc.textContent = listings.length;
+  }
+
   function applyFilters() {
     const results = getFilteredListings();
     renderListings(results);
@@ -8755,7 +8753,10 @@
     document.getElementById('fRooms').value = 'all';
     document.querySelectorAll('.filter-toggle').forEach(t => t.classList.remove('active'));
     activeFilterToggles = [];
-    renderListings(listings);
+    const sel = document.getElementById('sortSelect');
+    if (sel) sel.value = 'default';
+    currentSort = 'default';
+    renderListings(getFilteredListings());
     updateFilterCount();
     showToast('Шүүлтүүр цэвэрлэгдлээ');
   }
@@ -9291,11 +9292,7 @@
   renderListings(listings);
   renderHomeListings();
   // Update filter pill counts
-  ['all','apartment','house','land','office','rent'].forEach(cat => {
-    const el = document.getElementById('cnt-' + cat);
-    if (el) el.textContent = cat === 'all' ? listings.length : listings.filter(l => l.cat === cat).length;
-  });
-  const tlc = document.getElementById('totalListingCount'); if(tlc) tlc.textContent = listings.length;
+  updateCatPillCounts();
   calculate();
   renderRentListings('all');
   calculateCompare();
