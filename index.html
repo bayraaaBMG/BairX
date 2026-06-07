@@ -9829,9 +9829,16 @@
     if (activeFilterToggles.includes('below')) results = results.filter(l => l.tag && l.tag.type === 'below');
     if (activeFilterToggles.includes('loan')) results = results.filter(l => l.loanType && !l.loanType.includes('Бэлэн'));
     if (activeFilterToggles.includes('parking')) results = results.filter(l => l.parking && !l.parking.includes('Байхгүй') && !l.parking.includes('Хамаарахгүй'));
-    if (activeFilterToggles.includes('furnished')) results = results.filter(l => l.condition && l.condition.toLowerCase().includes('тавилга'));
+    if (activeFilterToggles.includes('furnished')) results = results.filter(l =>
+      (l.condition && l.condition.toLowerCase().includes('тавилга')) ||
+      (Array.isArray(l.features) && l.features.some(f => f.toLowerCase().includes('тавилга')))
+    );
     if (activeFilterToggles.includes('vip')) results = results.filter(l => l.badges && l.badges.includes('vip'));
-    if (activeFilterToggles.includes('withphoto')) results = results.filter(l => l.img && !l.img.includes('placeholder'));
+    if (activeFilterToggles.includes('withphoto')) results = results.filter(l =>
+      (Array.isArray(l.images) && l.images.length > 0) ||
+      (Array.isArray(l._gallery) && l._gallery.length > 0) ||
+      (l.img && l.img.startsWith('http'))
+    );
 
     // Category filter still applies
     if (currentCat !== 'all') results = results.filter(l => l.cat === currentCat);
