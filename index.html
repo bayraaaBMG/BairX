@@ -1984,6 +1984,65 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         Үргэлжлүүлэх
       </button>
+
+      <div class="auth-divider"><span>эсвэл</span></div>
+      <button class="btn btn-ghost auth-submit-btn" style="justify-content:center;" onclick="goToAuthStep('phone')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
+        Утасны дугаараар нэвтрэх
+      </button>
+    </div>
+
+    <!-- STEP PHONE: Утасны дугаар оруулах -->
+    <div class="auth-step" id="authStepPhone" style="display:none">
+      <div class="auth-header">
+        <button class="auth-back-btn" onclick="goToAuthStep(1)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Буцах
+        </button>
+        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="auth-title">Утасны дугаараар нэвтрэх</div>
+      <div class="auth-sub">Танд баталгаажуулах код бүхий SMS илгээх болно.</div>
+
+      <div class="auth-field">
+        <label>Утасны дугаар</label>
+        <div class="phone-input-group">
+          <div class="phone-prefix">+976</div>
+          <input type="tel" class="form-input" id="authPhoneNumber" placeholder="88112233" maxlength="8" onkeydown="if(event.key==='Enter') sendAuthPhoneOtp()"/>
+        </div>
+      </div>
+
+      <button class="btn btn-blue auth-submit-btn" id="authSendOtpBtn" onclick="sendAuthPhoneOtp()">Код илгээх</button>
+      <div id="authRecaptchaContainer"></div>
+    </div>
+
+    <!-- STEP PHONE OTP: Баталгаажуулах код -->
+    <div class="auth-step" id="authStepPhoneOtp" style="display:none">
+      <div class="auth-header">
+        <button class="auth-back-btn" onclick="goToAuthStep('phone')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Буцах
+        </button>
+        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="auth-title">Баталгаажуулах код</div>
+      <div class="auth-sub" style="color:var(--ink-3);font-size:13px;"><strong>+976 <span id="authPhoneDisplay"></span></strong> дугаарт 6 оронтой код илгээлээ</div>
+
+      <div class="otp-input-group">
+        <input type="text" class="otp-input" maxlength="1" id="authOtp0"/>
+        <input type="text" class="otp-input" maxlength="1" id="authOtp1"/>
+        <input type="text" class="otp-input" maxlength="1" id="authOtp2"/>
+        <input type="text" class="otp-input" maxlength="1" id="authOtp3"/>
+        <input type="text" class="otp-input" maxlength="1" id="authOtp4"/>
+        <input type="text" class="otp-input" maxlength="1" id="authOtp5"/>
+      </div>
+      <div class="resend-row">Код ирээгүй юу? <a onclick="sendAuthPhoneOtp(true)">Дахин илгээх</a></div>
+
+      <button class="btn btn-blue auth-submit-btn" onclick="confirmAuthPhoneOtp()">Баталгаажуулах</button>
     </div>
 
     <!-- STEP 3A: Нууц үг (бүртгэлтэй хэрэглэгч) -->

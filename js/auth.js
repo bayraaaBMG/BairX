@@ -8,23 +8,26 @@
       try {
         const snap = await db.collection('users').doc(fbUser.uid).get();
         const data = snap.data() || {};
+        const isPhone = fbUser.providerData.some(p => p.providerId === 'phone');
         const firstName = data.firstName || fbUser.displayName?.split(' ')[0] || 'Хэрэглэгч';
         const lastName = data.lastName || fbUser.displayName?.split(' ').slice(1).join(' ') || '';
         currentUser = {
           uid: fbUser.uid,
           email: fbUser.email,
+          phoneNumber: fbUser.phoneNumber,
           emailVerified: fbUser.emailVerified,
           name: firstName,
           lastName,
           letter: firstName[0] || 'Х',
-          isGoogle: fbUser.providerData.some(p => p.providerId === 'google.com')
+          isGoogle: fbUser.providerData.some(p => p.providerId === 'google.com'),
+          isPhone
         };
         updateNavLoggedIn();
 
-        // Email verify banner
+        // Email verify banner (not applicable to phone-only accounts, which have no email)
         const banner = document.getElementById('emailVerifyBanner');
         if (banner) {
-          if (!fbUser.emailVerified && !currentUser.isGoogle) {
+          if (!fbUser.emailVerified && !currentUser.isGoogle && !isPhone) {
             banner.style.display = 'flex';
           } else {
             banner.style.display = 'none';
@@ -114,14 +117,97 @@
   }
 
   function goToAuthStep(step) {
-    ['authStep1','authStep3Login','authStep3Register','authStepForgot'].forEach(id => {
+    ['authStep1','authStep3Login','authStep3Register','authStepForgot','authStepPhone','authStepPhoneOtp'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
-    const map = { 1:'authStep1', '3login':'authStep3Login', '3register':'authStep3Register', 'forgot':'authStepForgot' };
+    const map = { 1:'authStep1', '3login':'authStep3Login', '3register':'authStep3Register', 'forgot':'authStepForgot', 'phone':'authStepPhone', 'phoneOtp':'authStepPhoneOtp' };
     const target = document.getElementById(map[step]);
     if (target) { target.style.display = 'flex'; target.style.animation = 'none'; void target.offsetWidth; target.style.animation = ''; }
   }
+
+  // ===== PHONE-NUMBER AUTH (real Firebase Phone Authentication) =====
+  let authRecaptchaVerifier = null;
+  let authConfirmationResult = null;
+  let authPhoneOtpCooldown = false;
+
+  function getAuthRecaptcha() {
+    if (!authRecaptchaVerifier) {
+      authRecaptchaVerifier = new firebase.auth.RecaptchaVerifier('authRecaptchaContainer', { size: 'invisible' });
+    }
+    return authRecaptchaVerifier;
+  }
+
+  async function sendAuthPhoneOtp(isResend) {
+    const phone = document.getElementById('authPhoneNumber').value.trim();
+    if (phone.length !== 8) { showToast('Утасны дугаар 8 оронтой байх ёстой'); return; }
+    if (authPhoneOtpCooldown) { showToast('Түр хүлээгээд дахин оролдоно уу'); return; }
+    const fullNumber = '+976' + phone;
+    try {
+      authConfirmationResult = await auth.signInWithPhoneNumber(fullNumber, getAuthRecaptcha());
+      document.getElementById('authPhoneDisplay').textContent = phone;
+      goToAuthStep('phoneOtp');
+      authPhoneOtpCooldown = true;
+      setTimeout(() => { authPhoneOtpCooldown = false; }, 30000);
+      setTimeout(() => document.getElementById('authOtp0')?.focus(), 100);
+      showToast(isResend ? 'Код дахин илгээгдлээ' : 'Баталгаажуулах код илгээгдлээ', 'success');
+    } catch(e) {
+      const msgs = {
+        'auth/invalid-phone-number': 'Утасны дугаар буруу байна',
+        'auth/too-many-requests': 'Хэт олон оролдлого. Түр хүлээнэ үү.'
+      };
+      showToast(msgs[e.code] || 'Код илгээхэд алдаа гарлаа');
+      if (authRecaptchaVerifier) { authRecaptchaVerifier.clear(); authRecaptchaVerifier = null; }
+    }
+  }
+
+  async function confirmAuthPhoneOtp() {
+    const code = ['authOtp0','authOtp1','authOtp2','authOtp3','authOtp4','authOtp5'].map(id => document.getElementById(id).value).join('');
+    if (code.length !== 6 || !authConfirmationResult) { showToast('6 оронтой кодоо бүрэн оруулна уу'); return; }
+    try {
+      const cred = await authConfirmationResult.confirm(code);
+      const fbUser = cred.user;
+      const userDoc = await db.collection('users').doc(fbUser.uid).get();
+      if (!userDoc.exists) {
+        await db.collection('users').doc(fbUser.uid).set({
+          uid: fbUser.uid,
+          firstName: 'Хэрэглэгч',
+          lastName: '',
+          phoneNumber: fbUser.phoneNumber,
+          role: 'user',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+      closeAuth();
+      showToast('Амжилттай нэвтэрлээ!', 'success');
+    } catch(e) {
+      const msgs = { 'auth/invalid-verification-code': 'Код буруу байна', 'auth/code-expired': 'Кодын хугацаа дууссан байна' };
+      showToast(msgs[e.code] || 'Баталгаажуулахад алдаа гарлаа');
+      ['authOtp0','authOtp1','authOtp2','authOtp3','authOtp4','authOtp5'].forEach(id => {
+        const el = document.getElementById(id);
+        el.value = ''; el.classList.remove('filled');
+      });
+      document.getElementById('authOtp0')?.focus();
+    }
+  }
+
+  document.addEventListener('input', (e) => {
+    if (!e.target.id || !e.target.id.startsWith('authOtp')) return;
+    const i = parseInt(e.target.id.replace('authOtp', ''), 10);
+    if (e.target.value.length === 1) {
+      e.target.classList.add('filled');
+      const next = document.getElementById('authOtp' + (i + 1));
+      if (next) next.focus(); else confirmAuthPhoneOtp();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (!e.target.id || !e.target.id.startsWith('authOtp')) return;
+    if (e.key === 'Backspace' && !e.target.value) {
+      const i = parseInt(e.target.id.replace('authOtp', ''), 10);
+      const prev = document.getElementById('authOtp' + (i - 1));
+      if (prev) prev.focus();
+    }
+  });
 
   async function submitEmail() {
     const email = (document.getElementById('authEmail')?.value || '').trim().toLowerCase();
@@ -249,7 +335,7 @@
       if (letterEl) letterEl.textContent = currentUser.letter;
     }
     if (userDropName) userDropName.textContent = (currentUser.lastName ? currentUser.lastName + ' ' : '') + currentUser.name;
-    if (userDropPhone) userDropPhone.textContent = currentUser.isGoogle ? 'Google хэрэглэгч' : (currentUser.email || '');
+    if (userDropPhone) userDropPhone.textContent = currentUser.isGoogle ? 'Google хэрэглэгч' : (currentUser.isPhone ? (currentUser.phoneNumber || '') : (currentUser.email || ''));
   }
 
   function toggleUserMenu(e) {
