@@ -88,3 +88,146 @@
     showToast('Зар амжилттай дээшиллээ! Удахгүй илүү олон хүнд харагдана', 'success');
   }
 
+  // ===== ACCOUNT SIDEBAR (support + quick links, shown on Dashboard / My Listings) =====
+  const ACCT_SUPPORT_EMAIL = 'bbayraaa20@gmail.com';
+
+  function renderAccountSidebar() {
+    const html = `
+      <div class="acct-support">
+        <div class="acct-support-label">Техникийн тусламж</div>
+        <a class="acct-support-email" href="mailto:${ACCT_SUPPORT_EMAIL}">${ACCT_SUPPORT_EMAIL}</a>
+      </div>
+      <div class="acct-nav-list">
+        <a onclick="showPage('my-listings')">Миний зарууд</a>
+        <a onclick="openPaymentHistory()">Төлбөр</a>
+        <a onclick="openAccountSettings()">Миний тохиргоо</a>
+        <a onclick="openFavorites()">Таалагдсан зарууд <span class="acct-nav-count">${favorites.length}</span></a>
+        <a onclick="openSavedSearches()">Таалагдсан хайлтууд <span class="acct-nav-count">${typeof savedSearchesCount !== 'undefined' ? savedSearchesCount : 0}</span></a>
+      </div>
+    `;
+    ['acctSidebarDash', 'acctSidebarMyListings'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    });
+  }
+
+  // ===== МИНИЙ ТОХИРГОО (account settings) =====
+  function openAccountSettings() {
+    if (!currentUser) { showToast('Нэвтэрнэ үү'); openAuth(); return; }
+    const canChangePassword = !currentUser.isGoogle && !currentUser.isPhone;
+    document.getElementById('modalContent').innerHTML = `
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <div style="padding:32px 28px;">
+        <span class="al-eyebrow">Тохиргоо</span>
+        <div class="al-title" style="margin-bottom:20px;">Миний тохиргоо</div>
+
+        <div class="form-grid-2">
+          <div>
+            <label class="form-label">Овог</label>
+            <input class="form-input" id="acctLastName" value="${esc(currentUser.lastName || '')}" />
+          </div>
+          <div>
+            <label class="form-label">Нэр</label>
+            <input class="form-input" id="acctFirstName" value="${esc(currentUser.name || '')}" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Холбоо барих</label>
+          <input class="form-input" value="${esc(currentUser.isPhone ? (currentUser.phoneNumber || '') : (currentUser.email || ''))}" disabled />
+        </div>
+        <button class="btn btn-blue btn-lg" style="width:100%;justify-content:center;margin-top:8px;" onclick="saveAccountSettings()">Хадгалах</button>
+
+        ${canChangePassword ? `
+        <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--line);">
+          <div class="step-section-title" style="margin-bottom:12px;">Нууц үг солих</div>
+          <div class="form-row"><label class="form-label">Одоогийн нууц үг</label><input class="form-input" type="password" id="acctCurPw" autocomplete="current-password" /></div>
+          <div class="form-row"><label class="form-label">Шинэ нууц үг</label><input class="form-input" type="password" id="acctNewPw" placeholder="Хамгийн багадаа 6 тэмдэгт" autocomplete="new-password" /></div>
+          <button class="btn btn-ghost" style="width:100%;justify-content:center;" onclick="changeAccountPassword()">Нууц үг солих</button>
+        </div>` : ''}
+
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:20px;color:var(--danger);" onclick="closeModal(); logout();">Гарах</button>
+      </div>
+    `;
+    document.getElementById('modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  async function saveAccountSettings() {
+    const firstName = document.getElementById('acctFirstName').value.trim();
+    const lastName = document.getElementById('acctLastName').value.trim();
+    if (!firstName) { showToast('Нэрээ оруулна уу'); return; }
+    try {
+      await db.collection('users').doc(currentUser.uid).set({ firstName, lastName }, { merge: true });
+      if (auth.currentUser) await auth.currentUser.updateProfile({ displayName: firstName + (lastName ? ' ' + lastName : '') });
+      currentUser.name = firstName;
+      currentUser.lastName = lastName;
+      currentUser.letter = firstName[0] || 'Х';
+      updateNavLoggedIn();
+      showToast('Мэдээлэл шинэчлэгдлээ', 'success');
+    } catch(e) {
+      showToast('Хадгалахад алдаа гарлаа');
+    }
+  }
+
+  async function changeAccountPassword() {
+    const curPw = document.getElementById('acctCurPw').value;
+    const newPw = document.getElementById('acctNewPw').value;
+    if (!curPw || newPw.length < 6) { showToast('Нууц үгээ зөв оруулна уу (шинэ нь 6+ тэмдэгт)'); return; }
+    try {
+      const cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, curPw);
+      await auth.currentUser.reauthenticateWithCredential(cred);
+      await auth.currentUser.updatePassword(newPw);
+      showToast('Нууц үг солигдлоо', 'success');
+      document.getElementById('acctCurPw').value = '';
+      document.getElementById('acctNewPw').value = '';
+    } catch(e) {
+      const msgs = { 'auth/wrong-password': 'Одоогийн нууц үг буруу байна', 'auth/weak-password': 'Шинэ нууц үг хэт энгийн байна' };
+      showToast(msgs[e.code] || 'Нууц үг солиход алдаа гарлаа');
+    }
+  }
+
+  // ===== ТӨЛБӨР (payment / boost transaction history) =====
+  async function openPaymentHistory() {
+    if (!currentUser) { showToast('Нэвтэрнэ үү'); openAuth(); return; }
+    document.getElementById('modalContent').innerHTML = `
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <div style="padding:32px 28px;">
+        <span class="al-eyebrow">Төлбөр</span>
+        <div class="al-title" style="margin-bottom:20px;">Төлбөрийн түүх</div>
+        <div id="paymentHistoryList" style="text-align:center;padding:40px;color:var(--ink-3);">Ачааллаж байна…</div>
+      </div>
+    `;
+    document.getElementById('modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    let txns = [];
+    try {
+      const snap = await db.collection('transactions').where('userId', '==', currentUser.uid).orderBy('createdAt', 'desc').limit(50).get();
+      txns = snap.docs.map(d => d.data());
+    } catch(e) {
+      try { txns = JSON.parse(localStorage.getItem('bairxTransactions') || '[]'); } catch(e2) {}
+    }
+    const list = document.getElementById('paymentHistoryList');
+    if (!list) return;
+    if (txns.length === 0) {
+      list.innerHTML = `<div style="text-align:center;padding:20px;color:var(--ink-3);">Одоогоор төлбөрийн түүх алга байна. Зараа Boost хийхэд эндээс харагдана.</div>`;
+      return;
+    }
+    list.innerHTML = txns.map(t => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;text-align:left;">
+        <div>
+          <div style="font-weight:700;font-size:14px;">${esc(t.plan)}</div>
+          <div style="font-size:12px;color:var(--ink-3);">${esc(t.listingTitle || '')}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:700;color:var(--primary);">${esc(t.price)}</div>
+          <div style="font-size:11px;color:var(--ink-3);">Demo горим</div>
+        </div>
+      </div>
+    `).join('');
+  }
+

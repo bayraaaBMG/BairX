@@ -1,4 +1,17 @@
 ﻿  // ===== SAVED SEARCHES =====
+  let savedSearchesCount = 0;
+
+  async function refreshSavedSearchesCount() {
+    if (!currentUser) { savedSearchesCount = 0; if (typeof renderAccountSidebar === 'function') renderAccountSidebar(); return; }
+    try {
+      const snap = await db.collection('savedSearches').where('userId', '==', currentUser.uid).get();
+      savedSearchesCount = snap.size;
+    } catch(e) {
+      savedSearchesCount = 0;
+    }
+    if (typeof renderAccountSidebar === 'function') renderAccountSidebar();
+  }
+
   async function saveCurrentSearch() {
     if (!currentUser) { showToast('Хайлт хадгалахын тулд нэвтэрнэ үү'); openAuth(); return; }
     const district = document.getElementById('fDistrict')?.value || 'all';
@@ -53,6 +66,7 @@
       });
       closeModal();
       showToast('Хайлт хадгалагдлаа', 'success');
+      refreshSavedSearchesCount();
     } catch(e) {
       showToast('Хадгалахад алдаа гарлаа');
     }
@@ -125,6 +139,7 @@
       await db.collection('savedSearches').doc(docId).delete();
       if (el) el.remove();
       showToast('Хайлт устгагдлаа');
+      refreshSavedSearchesCount();
     } catch(e) { showToast('Устгахад алдаа гарлаа'); }
   }
 

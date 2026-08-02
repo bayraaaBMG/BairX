@@ -42,6 +42,7 @@
       if (favorites.length > 0) { mbnBadge.textContent = favorites.length; mbnBadge.style.display = 'flex'; }
       else mbnBadge.style.display = 'none';
     }
+    if (typeof renderAccountSidebar === 'function') renderAccountSidebar();
   }
 
   function openFavorites() {

@@ -1276,11 +1276,20 @@
     if (boostTargetId) {
       const bl = listings.find(x => x.id === boostTargetId);
       if (bl && !bl.badges.includes('vip')) bl.badges.push('vip');
+      const txn = { listingId: boostTargetId, listingTitle: bl?.title || '', plan, price, date: Date.now() };
       try {
         const boosted = JSON.parse(localStorage.getItem('bairxBoostedListings') || '[]');
         if (!boosted.includes(boostTargetId)) boosted.push(boostTargetId);
         localStorage.setItem('bairxBoostedListings', JSON.stringify(boosted));
+        const txns = JSON.parse(localStorage.getItem('bairxTransactions') || '[]');
+        txns.unshift(txn);
+        localStorage.setItem('bairxTransactions', JSON.stringify(txns));
       } catch(e) {}
+      if (currentUser) {
+        db.collection('transactions').add(Object.assign({}, txn, {
+          userId: currentUser.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        })).catch(() => {});
+      }
       renderMyListings();
       renderHomeListings();
       renderListings(getFilteredListings());

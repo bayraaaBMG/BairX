@@ -1312,6 +1312,7 @@
         </div>
       </div>
 
+      <div style="display:flex;flex-direction:column;gap:24px;">
       <div class="dash-panel">
         <div class="dash-panel-title">Миний зарууд</div>
         <div class="dash-panel-sub">3 идэвхтэй зар</div>
@@ -1381,6 +1382,9 @@
           <span class="dash-listing-status pending">Хянагдаж буй</span>
         </div>
       </div>
+
+      <div class="dash-panel acct-sidebar" id="acctSidebarDash"></div>
+      </div>
     </div>
   </div>
 </section>
@@ -1399,13 +1403,19 @@
       </button>
     </div>
 
-    <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
-      <button class="mytab active" id="myTab-active" onclick="renderMyListings('active')">Идэвхтэй</button>
-      <button class="mytab" id="myTab-pending" onclick="renderMyListings('pending')">Хүлээгдэж буй</button>
-      <button class="mytab" id="myTab-ended" onclick="renderMyListings('ended')">Дууссан</button>
-    </div>
+    <div class="dash-main-grid">
+      <div>
+        <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
+          <button class="mytab active" id="myTab-active" onclick="renderMyListings('active')">Идэвхтэй</button>
+          <button class="mytab" id="myTab-pending" onclick="renderMyListings('pending')">Хүлээгдэж буй</button>
+          <button class="mytab" id="myTab-ended" onclick="renderMyListings('ended')">Дууссан</button>
+        </div>
 
-    <div id="myListingsGrid" class="listings-grid"></div>
+        <div id="myListingsGrid" class="listings-grid"></div>
+      </div>
+
+      <div class="dash-panel acct-sidebar" id="acctSidebarMyListings"></div>
+    </div>
   </div>
 </section>
 

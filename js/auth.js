@@ -73,6 +73,8 @@
         } catch(e) {}
 
         if (typeof subscribeMyChats === 'function') subscribeMyChats();
+        if (typeof refreshSavedSearchesCount === 'function') refreshSavedSearchesCount();
+        if (typeof renderAccountSidebar === 'function') renderAccountSidebar();
       } catch(e) {
         currentUser = null;
       }
@@ -87,6 +89,8 @@
       const banner = document.getElementById('emailVerifyBanner');
       if (banner) banner.style.display = 'none';
       if (typeof subscribeMyChats === 'function') subscribeMyChats();
+      if (typeof refreshSavedSearchesCount === 'function') refreshSavedSearchesCount();
+      if (typeof renderAccountSidebar === 'function') renderAccountSidebar();
     }
   });
 
