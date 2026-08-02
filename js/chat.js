@@ -1,5 +1,8 @@
   // ===== REAL CHAT SYSTEM (Firestore-backed) =====
-  // Schema: chats/{listingFirestoreId_uidA_uidB} { listingId, listingTitle, listingImg,
+  // Every listing — demo or user-submitted — has an ownerId (demo listings get a stable
+  // synthetic 'demo-{id}'), so chatting works identically everywhere; a demo seller just
+  // never happens to write back.
+  // Schema: chats/{listingKey_uidA_uidB} { listingKey, listingTitle, listingImg,
   //   participants: [uid, uid], participantNames: {uid: name}, lastMessage, lastMessageAt,
   //   unread: {uid: count} } and chats/{id}/messages/{msgId} { senderId, text, createdAt }
   let myChats = [];
@@ -24,13 +27,14 @@
   }
 
   async function getOrCreateChat(l) {
-    if (!currentUser || !l.ownerId) return null;
-    const chatId = l.firestoreId + '_' + [currentUser.uid, l.ownerId].sort().join('_');
+    if (!currentUser || !l.ownerId || l.ownerId === currentUser.uid) return null;
+    const listingKey = l.firestoreId ? ('fs-' + l.firestoreId) : ('local-' + l.id);
+    const chatId = listingKey + '_' + [currentUser.uid, l.ownerId].sort().join('_');
     const ref = db.collection('chats').doc(chatId);
     try {
       const snap = await ref.get();
       const chatData = {
-        listingId: l.firestoreId, listingTitle: l.title, listingImg: l.img,
+        listingKey, listingTitle: l.title, listingImg: l.img,
         participants: [currentUser.uid, l.ownerId],
         participantNames: { [currentUser.uid]: currentUser.name, [l.ownerId]: sellerData[l.id]?.name || 'Хэрэглэгч' },
         lastMessage: '', unread: { [currentUser.uid]: 0, [l.ownerId]: 0 }
@@ -52,9 +56,7 @@
     let targetChatId = null;
     if (listingLocalId) {
       const l = listings.find(x => x.id === listingLocalId);
-      if (l && l.userSubmitted && l.ownerId && l.ownerId !== currentUser.uid) {
-        targetChatId = await getOrCreateChat(l);
-      }
+      if (l) targetChatId = await getOrCreateChat(l);
     }
     if (!targetChatId) targetChatId = myChats[0]?.id || null;
     renderChatShell();
@@ -139,8 +141,8 @@
           <div class="chat-header-name">${esc(otherName)}</div>
         </div>
       </div>
-      ${chat.listingId ? `
-        <div class="chat-property-ref" onclick="openChatListingRef('${chat.listingId}')">
+      ${chat.listingKey ? `
+        <div class="chat-property-ref" onclick="openChatListingRef('${chat.listingKey}')">
           <img src="${esc(chat.listingImg || '')}" alt="" />
           <div class="chat-property-ref-info">
             <div class="chat-property-ref-title">${esc(chat.listingTitle || '')}</div>
@@ -158,10 +160,12 @@
     `;
   }
 
-  function openChatListingRef(firestoreListingId) {
+  function openChatListingRef(listingKey) {
     closeModal();
     setTimeout(() => {
-      const ll = listings.find(x => x.firestoreId === firestoreListingId);
+      let ll = null;
+      if (listingKey.startsWith('fs-')) ll = listings.find(x => x.firestoreId === listingKey.slice(3));
+      else if (listingKey.startsWith('local-')) ll = listings.find(x => x.id === parseInt(listingKey.slice(6), 10));
       if (ll) openListing(ll.id);
     }, 300);
   }

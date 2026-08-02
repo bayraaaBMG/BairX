@@ -537,7 +537,7 @@
     const l = listings.find(x => x.id === id);
     if (!l) return;
     if (!currentUser) { closeModal(); showToast('Чат бичихийн тулд нэвтэрнэ үү'); openAuth(); return; }
-    if (!l.userSubmitted || !l.ownerId) { openDemoListingChat(id, title); return; }
+    if (!l.ownerId) { openDemoListingChat(id, title); return; } // safety net only — every listing gets an ownerId
     if (l.ownerId === currentUser.uid) { showToast('Энэ бол таны өөрийн зар'); return; }
     closeModal();
     const chatId = await getOrCreateChat(l);

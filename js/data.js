@@ -565,6 +565,11 @@
       condition: 'Засвартай, хэсэгчлэн тавилгатай', legalNotes: '1 сарын барьцаа' }
   ];
 
+  // Give every demo listing a stable synthetic owner id so chat treats them the same
+  // real way as user-submitted listings — messages actually persist to Firestore instead
+  // of a scripted fake compose box; a demo seller just never happens to reply.
+  listings.forEach(function(l) { if (!l.ownerId) l.ownerId = 'demo-' + l.id; });
+
   // Load any user-submitted listings from localStorage
   (function() {
     try {
