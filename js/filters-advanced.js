@@ -87,7 +87,7 @@
       return bv - av || b.id - a.id;
     });
     else if (currentSort === 'date-asc') results.sort((a, b) => a.id - b.id);
-    else results.sort((a, b) => b.id - a.id); // default: newest first
+    else results.sort((a, b) => (b._bumpedAt || b.id) - (a._bumpedAt || a.id)); // default: newest/bumped first
 
     return results;
   }

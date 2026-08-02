@@ -922,8 +922,14 @@
     const p = parseFloat(s.price) || 0;
     const a = parseFloat(s.area) || 0;
     const allImages = s.images.filter(Boolean);
+    const planDays = { basic: 30, vip: 60, featured: 90 };
+    const now = Date.now();
+    const expiresAt = now + (planDays[s.plan] || 30) * 86400000;
     const newListing = {
       id: newId,
+      ownerId: currentUser?.uid || null,
+      sellerVerified: !!(currentUser && currentUser.emailVerified),
+      expiresAt, _bumpedAt: now,
       cat: s.intent === 'rent' ? 'rent' : (s.propertyType || 'apartment'),
       propertyType: s.propertyType || 'apartment',
       title: s.title || ((districtLabels[s.district] || s.district) + ', ' + (isLand ? 'газар' : (s.rooms || '?') + ' өрөө')),
@@ -961,7 +967,11 @@
       const fsDoc = {
         ownerId: currentUser.uid,
         ownerEmail: currentUser.email,
+        sellerVerified: newListing.sellerVerified,
+        expiresAt: newListing.expiresAt,
+        bumpedAt: newListing._bumpedAt,
         category: newListing.cat,
+        propertyType: newListing.propertyType,
         title: newListing.title,
         loc: newListing.loc,
         district: newListing.district,
@@ -1070,8 +1080,59 @@
     document.getElementById('modalContent').innerHTML = renderAddListing();
   }
 
+  // Sweeps every user-submitted listing and auto-marks anything past its plan duration as expired.
+  function checkExpiredListings() {
+    const now = Date.now();
+    let changed = false;
+    listings.forEach(l => {
+      if (l.userSubmitted && l.expiresAt && now > l.expiresAt && !l._expired) {
+        l._expired = true;
+        l._inactive = true;
+        changed = true;
+      }
+    });
+    return changed;
+  }
+
+  function bumpMyListing(id) {
+    const l = listings.find(x => x.id === id);
+    if (!l) return;
+    const now = Date.now();
+    if (l._bumpedAt && now - l._bumpedAt < 86400000) {
+      const hoursLeft = Math.ceil((86400000 - (now - l._bumpedAt)) / 3600000);
+      showToast(`Дараагийн үнэгүй дээшлүүлэлт ${hoursLeft} цагийн дараа боломжтой`);
+      return;
+    }
+    l._bumpedAt = now;
+    if (l.firestoreId) db.collection('listings').doc(l.firestoreId).update({ bumpedAt: now }).catch(() => {});
+    showToast('Зар дээшлүүлэгдлээ', 'success');
+    renderMyListings();
+    renderListings(getFilteredListings());
+    renderHomeListings();
+  }
+
+  async function renewMyListing(id) {
+    const l = listings.find(x => x.id === id);
+    if (!l) return;
+    const now = Date.now();
+    l.expiresAt = now + 30 * 86400000;
+    l._expired = false;
+    l._inactive = false;
+    l._bumpedAt = now;
+    if (l.firestoreId) {
+      try {
+        await db.collection('listings').doc(l.firestoreId).update({ expiresAt: l.expiresAt, status: 'active', bumpedAt: now });
+      } catch(e) {}
+    }
+    showToast('Зар 30 хоногоор сунгагдлаа', 'success');
+    renderMyListings('active');
+    renderListings(getFilteredListings());
+    renderHomeListings();
+  }
+
   let myListingsTab = 'active';
   function renderMyListings(tab) {
+    checkExpiredListings();
     myListingsTab = tab || myListingsTab;
     // Highlight active tab
     ['active','pending','ended'].forEach(t => {
@@ -1081,8 +1142,11 @@
     const grid = document.getElementById('myListingsGrid');
     if (!grid) return;
     const userListings = listings.filter(l => l.userSubmitted || l.badges.includes('user'));
-    // Simulate tabs: active = all user listings, pending = none (demo), ended = none (demo)
-    const shown = myListingsTab === 'active' ? userListings : [];
+    // active = not auto-expired (may still be manually deactivated, shown with a badge)
+    // ended = auto-expired past its plan duration; pending has no real workflow yet
+    const shown = myListingsTab === 'active' ? userListings.filter(l => !l._expired)
+      : myListingsTab === 'ended' ? userListings.filter(l => l._expired)
+      : [];
     if (shown.length === 0) {
       grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 24px;color:var(--ink-3);">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.4;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
@@ -1095,8 +1159,11 @@
     grid.innerHTML = shown.map(l => {
       const isVip = l.badges.includes('vip');
       const isInactive = l._inactive === true;
-      const statusLabel = isInactive ? 'Идэвхгүй' : 'Идэвхтэй';
+      const isExpired = l._expired === true;
+      const statusLabel = isExpired ? 'Дууссан' : (isInactive ? 'Идэвхгүй' : 'Идэвхтэй');
       const statusClass = isInactive ? 'badge' : 'badge new';
+      const daysLeft = l.expiresAt ? Math.ceil((l.expiresAt - Date.now()) / 86400000) : null;
+      const canBump = !isExpired && (!l._bumpedAt || Date.now() - l._bumpedAt >= 86400000);
       return `
       <article class="listing-card" onclick="showPage('listings'); setTimeout(()=>openListing(${l.id}),150)" style="${isInactive ? 'opacity:0.65;' : ''}">
         <div class="listing-img">
@@ -1115,8 +1182,19 @@
           <div class="listing-meta">
             <span class="listing-meta-item"><strong>${l.area}</strong> м²</span>
             <span class="listing-meta-item"><strong>${l.rooms}</strong> өрөө</span>
+            <span class="listing-meta-item">👁 <strong>${l.viewCount || 0}</strong></span>
           </div>
+          ${!isExpired && daysLeft !== null ? `<div style="font-size:11px;color:var(--ink-3);margin-top:6px;">${daysLeft > 0 ? daysLeft + ' хоногийн дараа дуусна' : 'Өнөөдөр дуусна'}</div>` : ''}
           <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
+            ${isExpired ? `
+            <button class="btn btn-blue" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();renewMyListing(${l.id})">Сунгах</button>
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();editMyListing(${l.id})">Засах</button>
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
+            ` : `
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:${canBump ? 'var(--primary)' : 'var(--ink-3)'};" onclick="event.stopPropagation();bumpMyListing(${l.id})" title="24 цагт нэг удаа үнэгүй">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              Дээшлүүлэх
+            </button>
             <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();openBoostModal(${l.id})">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               Boost
@@ -1124,6 +1202,7 @@
             <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();editMyListing(${l.id})">Засах</button>
             <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:${isInactive ? 'var(--primary)' : 'var(--ink-3)'};" onclick="event.stopPropagation();toggleListingActive(${l.id})">${isInactive ? 'Идэвхжүүлэх' : 'Идэвхгүй болгох'}</button>
             <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
+            `}
           </div>
         </div>
       </article>

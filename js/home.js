@@ -19,7 +19,7 @@
           <div class="listing-price-row">
             <div>
               <div class="listing-price">${l.price >= 1000 ? (l.price/1000).toFixed(1) : l.price}<span style="font-size:14px; color:var(--ink-3); font-weight:500;"> ${l.price >= 1000 ? 'тэрбум' : 'сая'} ₮${l.cat === 'rent' ? '/сар' : ''}</span></div>
-              <div class="listing-price-sub">${l.cat === 'rent' ? 'Сарын түрээс' : (typeof l.pricePerSqm === 'number' ? l.pricePerSqm + ' сая ₮/м²' : (l.pricePerSqm || ''))}</div>
+              <div class="listing-price-sub">${l.cat === 'rent' ? 'Сарын түрээс' : (typeof l.pricePerSqm === 'number' ? l.pricePerSqm + ' сая ₮/м²' : (l.pricePerSqm || ''))}${Array.isArray(l.features) && l.features.includes('negotiable') ? ' · <span class="negotiable-tag">Тохиролцоно</span>' : ''}</div>
             </div>
             <span class="price-tag ${l.tag.type === 'normal' ? '' : l.tag.type}">${l.tag.text}</span>
           </div>

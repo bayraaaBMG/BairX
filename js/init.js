@@ -1,4 +1,5 @@
 ﻿  // ===== INIT =====
+  checkExpiredListings();
   renderListings(listings);
   renderHomeListings();
   // Update filter pill counts
@@ -17,6 +18,7 @@
   updateFavCount();
   renderMyListings();
   renderBuyerDocs();
+  loadPublicListings();
 
   // Simulate a live notification after 12 seconds
   setTimeout(simulateLiveNotif, 12000);

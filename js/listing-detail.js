@@ -13,6 +13,11 @@
   function openListing(id) {
     const l = listings.find(x => x.id === id);
     if (!l) return;
+    // View count: bump locally right away, best-effort sync to Firestore for real listings
+    l.viewCount = (l.viewCount || 0) + 1;
+    if (l.firestoreId) {
+      db.collection('listings').doc(l.firestoreId).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(() => {});
+    }
     const monthly = typeof l.monthly === 'number' ? l.monthly.toFixed(2) + ' сая ₮' : l.monthly;
     const growth = districtGrowth[l.district] || { yearly: 5.0, label: 'Дүүрэг', note: '' };
 
@@ -123,14 +128,16 @@
       .slice(0, 3);
 
     // Seller data from lookup table (deterministic, no Math.random)
-    const seller = l.userSubmitted
-      ? { phone: currentUser?.email || '9900-0000', name: currentUser?.name || 'Хэрэглэгч', type: 'Хувь хүн' }
-      : (sellerData[l.id] || { phone: '9911-2233', name: 'Баталгаажсан Агент', type: 'Агент' });
+    const seller = sellerData[l.id] || { phone: '9911-2233', name: 'Баталгаажсан Агент', type: 'Агент' };
     const sellerName = seller.name;
     const sellerLetter = sellerName[0] || 'А';
-    const totalListings = l.userSubmitted ? 1 : 3 + (l.id % 12);
+    const ownerOtherListings = l.userSubmitted && l.ownerId ? listings.filter(x => x.ownerId === l.ownerId && !x._inactive) : null;
+    const totalListings = ownerOtherListings ? ownerOtherListings.length : 3 + (l.id % 12);
     const responseTime = l.id % 2 === 0 ? '10 минут' : '30 минут';
     const memberSince = l.userSubmitted ? new Date().getFullYear() : 2020 + (l.id % 5);
+    // Only real accounts with an email-verified owner earn the verified badge — demo listings are pre-vetted
+    const isVerified = l.userSubmitted ? !!l.sellerVerified : true;
+    const sellerClickable = !!ownerOtherListings;
 
     document.getElementById('modalContent').innerHTML = `
       <button class="modal-close" onclick="closeModal()">
@@ -167,6 +174,10 @@
         <div class="modal-loc">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           ${esc(l.loc)}
+          <span style="margin-left:10px;color:var(--ink-3);font-size:12px;display:inline-flex;align-items:center;gap:3px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            ${l.viewCount || 1} үзсэн
+          </span>
         </div>
         <div class="modal-price-row">
           <div>
@@ -197,15 +208,15 @@
         <!-- SELLER CARD -->
         <div class="modal-section">
           <div class="seller-card">
-            <div class="seller-av">${sellerLetter}</div>
+            <div class="seller-av" ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}', '${esc(sellerName)}')" style="cursor:pointer;"` : ''}>${sellerLetter}</div>
             <div class="seller-info">
-              <div class="seller-name">
+              <div class="seller-name" ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}', '${esc(sellerName)}')" style="cursor:pointer;"` : ''}>
                 ${esc(sellerName)}
-                <span class="seller-verified">✓ Баталгаажсан</span>
+                ${isVerified ? '<span class="seller-verified">✓ Баталгаажсан</span>' : ''}
               </div>
               <div class="seller-meta">${esc(seller.type)}</div>
               <div class="seller-stats">
-                <span><b>${totalListings} зар</b></span>
+                <span ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}', '${esc(sellerName)}')" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;"` : ''}><b>${totalListings} зар</b></span>
                 <span>Хариу: <b>${responseTime}</b></span>
                 <span>Гишүүн: <b>${memberSince} оноос</b></span>
               </div>
@@ -522,19 +533,37 @@
     `;
   }
 
-  function openListingChat(id, title) {
+  async function openListingChat(id, title) {
     const l = listings.find(x => x.id === id);
+    if (!l) return;
+    if (!currentUser) { closeModal(); showToast('Чат бичихийн тулд нэвтэрнэ үү'); openAuth(); return; }
+    if (!l.userSubmitted || !l.ownerId) { openDemoListingChat(id, title); return; }
+    if (l.ownerId === currentUser.uid) { showToast('Энэ бол таны өөрийн зар'); return; }
+    closeModal();
+    const chatId = await getOrCreateChat(l);
+    if (!chatId) return;
+    setTimeout(() => {
+      document.getElementById('modalContent').className = 'modal chat-modal';
+      renderChatShell();
+      document.getElementById('modal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      openChatThread(chatId);
+    }, 200);
+  }
+
+  // Demo listings have no real counterpart account to chat with — kept as a scripted preview only.
+  function openDemoListingChat(id, title) {
     closeModal();
     setTimeout(() => {
-      const msg = encodeURIComponent(`Сайн байна уу! "${title}" зарт сонирхсон байна. Дэлгэрэнгүй мэдээлэл авах боломжтой юу?`);
+      const msg = `Сайн байна уу! "${title}" зарт сонирхсон байна. Дэлгэрэнгүй мэдээлэл авах боломжтой юу?`;
       document.getElementById('modalContent').innerHTML = `
         <button class="modal-close" onclick="closeModal()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
         <div style="padding:32px 28px;">
           <h3 style="font-family:'Fraunces',serif;margin-bottom:6px;">Зар дахь чат</h3>
-          <div style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">${title}</div>
-          <textarea id="chatMsgInput" rows="5" style="width:100%;padding:12px;border:1.5px solid var(--line-2);border-radius:12px;font-size:14px;font-family:'Manrope',sans-serif;resize:vertical;outline:none;">${decodeURIComponent(msg)}</textarea>
+          <div style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">${esc(title)}</div>
+          <textarea id="chatMsgInput" rows="5" style="width:100%;padding:12px;border:1.5px solid var(--line-2);border-radius:12px;font-size:14px;font-family:'Manrope',sans-serif;resize:vertical;outline:none;">${esc(msg)}</textarea>
           <div style="display:flex;gap:10px;margin-top:14px;">
             <button class="btn btn-blue btn-lg" style="flex:1;justify-content:center;" onclick="showToast('Мессеж илгээгдлээ!','success');closeModal();">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -554,5 +583,40 @@
     document.getElementById('modalContent').className = 'modal';
     document.body.style.overflow = '';
     if (history.pushState && location.hash.startsWith('#listing-')) history.pushState(null, '', ' ');
+    if (typeof unsubscribeActiveChat === 'function') unsubscribeActiveChat();
+  }
+
+  // ===== SELLER PROFILE =====
+  function openSellerProfile(ownerId, name) {
+    if (!ownerId) return;
+    const sellerListings = listings.filter(x => x.ownerId === ownerId && !x._inactive);
+    document.getElementById('modalContent').innerHTML = `
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <div style="padding:32px 28px;">
+        <span class="al-eyebrow">Худалдагчийн профайл</span>
+        <div class="al-title" style="margin-bottom:6px;">${esc(name)}</div>
+        <div style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">${sellerListings.length} идэвхтэй зар</div>
+        <div class="listings-grid" id="sellerProfileGrid"></div>
+      </div>
+    `;
+    document.getElementById('modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    const grid = document.getElementById('sellerProfileGrid');
+    grid.innerHTML = sellerListings.map(l => `
+      <article class="listing-card" onclick="closeModal(); setTimeout(()=>openListing(${l.id}),200)">
+        <div class="listing-img">
+          <img src="${esc(l.img)}" alt="${esc(l.title)}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';" />
+        </div>
+        <div class="listing-body">
+          <div class="listing-price-row">
+            <div class="listing-price">${fmtPrice(l.price)}</div>
+          </div>
+          <h3 class="listing-title">${esc(l.title)}</h3>
+          <div class="listing-loc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${esc(l.loc)}</div>
+        </div>
+      </article>
+    `).join('');
   }
 
