@@ -283,8 +283,25 @@
         'garage': 'Гараажтай зарууд',
         'below': 'Ашигтай үнэтэй зарууд'
       };
-      if (c.classList.contains('active')) {
+      // Map hero quick-filter chips onto the real filter-toggle keys used by getFilteredListings()
+      const toggleMap = { loan8: 'loan', new: 'new', furnished: 'furnished', garage: 'parking', below: 'below' };
+      const ftoggle = toggleMap[filter];
+      const active = c.classList.contains('active');
+      if (ftoggle) {
+        if (active) {
+          if (!activeFilterToggles.includes(ftoggle)) activeFilterToggles.push(ftoggle);
+        } else {
+          activeFilterToggles = activeFilterToggles.filter(x => x !== ftoggle);
+        }
+        document.querySelectorAll(`.filter-toggle[data-ftoggle="${ftoggle}"]`).forEach(t => t.classList.toggle('active', active));
+      }
+      if (active) {
         showToast('Шүүлт нэмэгдлээ: ' + filterNames[filter]);
+        showPage('listings');
+        applyListingFilter();
+      } else {
+        showToast('Шүүлт хасагдлаа: ' + filterNames[filter]);
+        updateFilterCount();
       }
     });
   });

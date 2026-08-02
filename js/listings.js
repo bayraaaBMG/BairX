@@ -16,7 +16,7 @@
     grid.innerHTML = items.map(l => `
       <article class="listing-card" onclick="openListing(${l.id})">
         <div class="listing-img">
-          <img src="${l.img}" alt="${l.title}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';" />
+          <img src="${esc(l.img)}" alt="${esc(l.title)}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';" />
           <div class="listing-badges">
             ${l.badges.includes('vip') ? '<span class="badge vip">⭐ VIP</span>' : (l.badges.includes('hot') ? '<span class="badge hot">Эрэлттэй</span>' : '')}
             ${l.badges.includes('new') || l.badges.includes('user') ? '<span class="badge new">Шинэ</span>' : ''}
@@ -42,10 +42,10 @@
             </div>
             <span class="price-tag ${l.tag.type === 'normal' ? '' : l.tag.type}">${l.tag.text}</span>
           </div>
-          <h3 class="listing-title">${l.title}</h3>
+          <h3 class="listing-title">${esc(l.title)}</h3>
           <div class="listing-loc">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            ${l.loc}
+            ${esc(l.loc)}
           </div>
           <div class="listing-meta">
             <span class="listing-meta-item"><strong>${l.area}</strong> м²</span>

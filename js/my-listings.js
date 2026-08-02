@@ -14,7 +14,7 @@
       step: 2,
       phoneVerified: true,
       intent: l.cat === 'rent' ? 'rent' : 'sell',
-      propertyType: l.cat === 'rent' ? 'apartment' : l.cat,
+      propertyType: l.propertyType || (l.cat === 'rent' ? 'apartment' : l.cat),
       title: l.title,
       district: districtKeys[l.district] || l.district,
       khoroo: '',
@@ -29,7 +29,7 @@
       heating: l.heating || '',
       condition: l.condition || '',
       description: '',
-      features: [],
+      features: Array.isArray(l.features) ? l.features.slice() : [],
       images: listingExtras[l.id]?.gallery || (l.img ? [l.img] : []),
       phone: '',
       name: ''
@@ -603,10 +603,12 @@
           <div class="success-icon">
             <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
-          <div class="success-title">Зар амжилттай нийтлэгдлээ</div>
+          <div class="success-title">${addListingState._syncFailed ? 'Зар энэ төхөөрөмж дээр хадгалагдлаа' : 'Зар амжилттай нийтлэгдлээ'}</div>
           <div class="success-id">Зарын дугаар: ${listingId}</div>
           <div class="success-info">
-            Таны зар одоо BairX дээр идэвхтэй боллоо. Бид AI системээр зөв байгаа эсэхийг шалгах ба ${addListingState.plan === 'basic' ? '5-10 минутын' : 'хэдхэн минутын'} дотор бүх хэрэглэгчдэд харагдаж эхэлнэ. Зар үзэгчид холбогдох үед утсанд тань мэдэгдэл ирнэ.
+            ${addListingState._syncFailed
+              ? 'Таны зар одоогоор зөвхөн энэ төхөөрөмж дээр харагдаж байна — сервер лүү илгээхэд алдаа гарлаа (сүлжээ эсвэл зургийн хэмжээнээс шалтгаалж болзошгүй). Дахин оролдоно уу эсвэл интернэт холболтоо шалгаад дараа дахин нийтэлнэ үү.'
+              : `Таны зар одоо BairX дээр идэвхтэй боллоо. Бид AI системээр зөв байгаа эсэхийг шалгах ба ${addListingState.plan === 'basic' ? '5-10 минутын' : 'хэдхэн минутын'} дотор бүх хэрэглэгчдэд харагдаж эхэлнэ. Зар үзэгчид холбогдох үед утсанд тань мэдэгдэл ирнэ.`}
           </div>
           <div style="display:flex; gap:10px; justify-content:center;">
             <button class="btn btn-ghost btn-lg" onclick="closeModal()">Хаах</button>
@@ -909,30 +911,43 @@
       'bayanzurkh': 'Баянзүрх', 'bayangol': 'Баянгол', 'songinokhairkhan': 'Сонгинохайрхан',
       'nalaikh': 'Налайх', 'bagakhangai': 'Багахангай', 'baganuur': 'Багануур'
     };
+    const zoningLabels = { residential: 'Орон сууцны', commercial: 'Худалдаа үйлчилгээний', industrial: 'Үйлдвэрлэлийн', agricultural: 'Хөдөө аж ахуйн' };
+    const infraLabels = { full: 'Цахилгаан, ус, дулаан', electric: 'Зөвхөн цахилгаан', none: 'Дэд бүтэцгүй' };
+    const conditionLabels = {
+      'white-box': 'Засваргүй (white box)', basic: 'Энгийн засвартай', renovated: 'Үндсэн засвартай',
+      premium: 'Premium засвартай', furnished: 'Тавилгатай, бүрэн засвартай'
+    };
+    const isLand = s.propertyType === 'land';
     const newId = listings.reduce(function(m, l) { return l.id > m ? l.id : m; }, 0) + 1;
     const p = parseFloat(s.price) || 0;
     const a = parseFloat(s.area) || 0;
     const allImages = s.images.filter(Boolean);
     const newListing = {
       id: newId,
-      cat: s.propertyType || 'apartment',
-      title: s.title || ((districtLabels[s.district] || s.district) + ', ' + (s.rooms || '?') + ' өрөө'),
+      cat: s.intent === 'rent' ? 'rent' : (s.propertyType || 'apartment'),
+      propertyType: s.propertyType || 'apartment',
+      title: s.title || ((districtLabels[s.district] || s.district) + ', ' + (isLand ? 'газар' : (s.rooms || '?') + ' өрөө')),
       loc: (districtLabels[s.district] || s.district) + (s.khoroo ? ' · ' + s.khoroo + '-р хороо' : ''),
       district: s.district || 'sukhbaatar',
       price: p,
       pricePerSqm: (a && p) ? parseFloat((p / a).toFixed(2)) : 0,
       area: a,
-      rooms: parseInt(s.rooms) || 1,
-      floor: s.floor ? s.floor + '/' + (s.totalFloors || '?') : '?',
-      year: parseInt(s.year) || new Date().getFullYear(),
+      rooms: isLand ? (a ? (a / 10000).toFixed(2) + ' га' : '—') : (parseInt(s.rooms) || 1),
+      floor: isLand ? 'Эзэмшил' : (s.floor ? s.floor + '/' + (s.totalFloors || '?') : '?'),
+      year: isLand ? (infraLabels[s.year] || 'Тодорхойгүй') : (parseInt(s.year) || new Date().getFullYear()),
       tag: { type: 'new', text: 'Шинэ зар' },
       badges: ['new', 'user'],
       loanType: 'Тохиролцоно',
       monthly: 0,
       img: allImages[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
-      buildingType: s.buildingType || '', insulation: '', heating: s.heating || '',
-      parking: '', elevator: '', utilityCost: '', ownership: 'Хувийн өмчлөл',
-      cadastre: '', collateral: '', taxDebt: '', condition: s.condition || '',
+      buildingType: isLand ? ('Газар (' + (zoningLabels[s.rooms] || 'Тодорхойгүй') + ')') : (s.buildingType || ''),
+      insulation: '', heating: s.heating || '',
+      parking: s.features.includes('parking') ? 'Паркинг бий' : '',
+      elevator: s.features.includes('elevator') ? 'Лифттэй' : '',
+      utilityCost: '', ownership: 'Хувийн өмчлөл',
+      cadastre: '', collateral: '', taxDebt: '',
+      condition: conditionLabels[s.condition] || s.condition || '',
+      features: s.features.slice(),
       legalNotes: 'Хэрэглэгчийн нэмсэн зар · ' + (s.name || '') + ' · ' + (s.phone || ''),
       userSubmitted: true
     };
@@ -941,6 +956,7 @@
     const targetId = editingListingId || newId;
 
     // ===== FIRESTORE SAVE =====
+    let firestoreSaveFailed = false;
     if (currentUser) {
       const fsDoc = {
         ownerId: currentUser.uid,
@@ -954,6 +970,8 @@
         rooms: newListing.rooms,
         floor: newListing.floor,
         year: newListing.year,
+        condition: newListing.condition,
+        features: newListing.features,
         img: newListing.img,
         images: allImages,
         sellerName: s.name || currentUser.name || 'Хэрэглэгч',
@@ -965,6 +983,12 @@
         userSubmitted: true,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
+      // Firestore documents cap out around 1MiB and base64 photos blow past that fast —
+      // keep only the cover photo server-side so the write doesn't silently fail;
+      // the full gallery still renders locally via listingExtras/localStorage.
+      if (JSON.stringify(fsDoc).length > 900000) {
+        fsDoc.images = allImages.slice(0, 1);
+      }
       try {
         if (editingListingId) {
           const existingFsId = listings.find(x => x.id === editingListingId)?.firestoreId;
@@ -975,13 +999,16 @@
           const docRef = await db.collection('listings').add(fsDoc);
           newListing.firestoreId = docRef.id;
         }
-      } catch(e) { showToast('Firestore хадгалахад алдаа гарлаа'); }
+      } catch(e) {
+        firestoreSaveFailed = true;
+        showToast('Сервер лүү илгээхэд алдаа гарлаа — зар зөвхөн энэ төхөөрөмж дээр хадгалагдлаа');
+      }
     }
     // ===== END FIRESTORE =====
 
     if (editingListingId) {
       const idx = listings.findIndex(x => x.id === editingListingId);
-      if (idx > -1) Object.assign(listings[idx], newListing, { id: editingListingId, badges: listings[idx].badges, userSubmitted: true });
+      if (idx > -1) Object.assign(listings[idx], newListing, { id: editingListingId, badges: listings[idx].badges, userSubmitted: true, _gallery: allImages });
       if (allImages.length > 0) listingExtras[editingListingId] = { coords: { x: 50, y: 50 }, gallery: allImages };
       try {
         var saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]');
@@ -992,13 +1019,32 @@
       } catch(e) {}
       editingListingId = null;
     } else {
+      newListing._gallery = allImages;
       listings.push(newListing);
       try {
         var saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]');
-        newListing._gallery = allImages;
         saved.push(newListing);
         localStorage.setItem('bairxUserListings', JSON.stringify(saved));
       } catch(e) {}
+    }
+
+    // Mirror rent-intent submissions into the dedicated Rent section's data source too
+    if (s.intent === 'rent' && typeof rentListings !== 'undefined') {
+      const rentFeatureLabels = { furnished: 'Тавилгатай', parking: 'Гараж', elevator: 'Лифттэй', balcony: 'Тагттай', negotiable: 'Үнэ хэлэлцэх боломжтой' };
+      const rentFeatures = s.features.map(f => rentFeatureLabels[f]).filter(Boolean);
+      const rentId = 'u' + targetId;
+      const rentEntry = {
+        id: rentId, type: 'monthly',
+        title: newListing.title, loc: newListing.loc,
+        price: p, deposit: parseFloat((p * 2).toFixed(1)),
+        area: a, rooms: isLand ? 0 : (parseInt(s.rooms) || 1),
+        features: rentFeatures.length ? rentFeatures : ['Хэрэглэгчийн зар'],
+        protected: true, img: newListing.img
+      };
+      const ridx = rentListings.findIndex(x => x.id === rentId);
+      if (ridx > -1) rentListings[ridx] = rentEntry; else rentListings.push(rentEntry);
+      const activeRentTab = document.querySelector('.rent-tab.active');
+      if (typeof renderRentListings === 'function') renderRentListings(activeRentTab?.dataset.rentType || 'all');
     }
 
     if (s.name || s.phone) {
@@ -1019,6 +1065,7 @@
     updateCatPillCounts();
     renderMyListings();
 
+    addListingState._syncFailed = firestoreSaveFailed;
     addListingState.step = 6;
     document.getElementById('modalContent').innerHTML = renderAddListing();
   }
@@ -1053,7 +1100,7 @@
       return `
       <article class="listing-card" onclick="showPage('listings'); setTimeout(()=>openListing(${l.id}),150)" style="${isInactive ? 'opacity:0.65;' : ''}">
         <div class="listing-img">
-          <img src="${l.img}" alt="${l.title}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';"/>
+          <img src="${esc(l.img)}" alt="${esc(l.title)}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';"/>
           <div class="listing-badges">
             ${isVip ? '<span class="badge vip">⭐ VIP</span>' : ''}
             <span class="${statusClass}">${statusLabel}</span>
@@ -1063,8 +1110,8 @@
           <div class="listing-price-row">
             <div class="listing-price">${fmtPrice(l.price)}</div>
           </div>
-          <h3 class="listing-title">${l.title}</h3>
-          <div class="listing-loc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${l.loc}</div>
+          <h3 class="listing-title">${esc(l.title)}</h3>
+          <div class="listing-loc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${esc(l.loc)}</div>
           <div class="listing-meta">
             <span class="listing-meta-item"><strong>${l.area}</strong> м²</span>
             <span class="listing-meta-item"><strong>${l.rooms}</strong> өрөө</span>
@@ -1120,7 +1167,7 @@
         <div style="text-align:center;margin-bottom:24px;">
           <div style="font-size:36px;margin-bottom:8px;">⚡</div>
           <h3 style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;margin-bottom:6px;">Зараа дэмжих</h3>
-          <div style="font-size:13px;color:var(--ink-3);">${l.title}</div>
+          <div style="font-size:13px;color:var(--ink-3);">${esc(l.title)}</div>
         </div>
         <div style="display:grid;gap:12px;">
           ${[

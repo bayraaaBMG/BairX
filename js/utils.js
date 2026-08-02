@@ -1,5 +1,8 @@
 ﻿
   // ===== UTILITIES =====
+  function esc(str) {
+    return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
   function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
   function fmtPrice(p) {
     if (p >= 1000) return (p/1000).toFixed(1) + ' тэрбум ₮';

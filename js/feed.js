@@ -96,7 +96,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
             </button>
           </div>
-          <div class="post-text">${p.text.replace(/#(\S+)/g, '<span class="tag">#$1</span>')}</div>
+          <div class="post-text">${esc(p.text).replace(/#(\S+)/g, '<span class="tag">#$1</span>')}</div>
           ${mediaHtml}
           <div class="post-stats">
             <span>${p.likes} таалагдсан</span>

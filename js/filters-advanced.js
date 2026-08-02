@@ -59,10 +59,13 @@
     if (activeFilterToggles.includes('verified')) results = results.filter(l => l.badges.includes('verified'));
     if (activeFilterToggles.includes('below')) results = results.filter(l => l.tag && l.tag.type === 'below');
     if (activeFilterToggles.includes('loan')) results = results.filter(l => l.loanType && !l.loanType.includes('Бэлэн'));
-    if (activeFilterToggles.includes('parking')) results = results.filter(l => l.parking && !l.parking.includes('Байхгүй') && !l.parking.includes('Хамаарахгүй'));
+    if (activeFilterToggles.includes('parking')) results = results.filter(l =>
+      (l.parking && !l.parking.includes('Байхгүй') && !l.parking.includes('Хамаарахгүй')) ||
+      (Array.isArray(l.features) && l.features.includes('parking'))
+    );
     if (activeFilterToggles.includes('furnished')) results = results.filter(l =>
       (l.condition && l.condition.toLowerCase().includes('тавилга')) ||
-      (Array.isArray(l.features) && l.features.some(f => f.toLowerCase().includes('тавилга')))
+      (Array.isArray(l.features) && l.features.some(f => f === 'furnished' || (typeof f === 'string' && f.toLowerCase().includes('тавилга'))))
     );
     if (activeFilterToggles.includes('vip')) results = results.filter(l => l.badges && l.badges.includes('vip'));
     if (activeFilterToggles.includes('withphoto')) results = results.filter(l =>

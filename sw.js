@@ -31,7 +31,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
   // Don't cache Google Fonts or other CDN requests
-  if (!url.origin.includes(self.location.hostname) && !url.origin.includes('fonts.googleapis.com') === false) {
+  if (!url.origin.includes(self.location.hostname) && !url.origin.includes('fonts.googleapis.com')) {
     return;
   }
 

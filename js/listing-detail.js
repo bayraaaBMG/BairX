@@ -136,14 +136,14 @@
       <button class="modal-close" onclick="closeModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
-      <button class="modal-share-btn" onclick="shareListingModal(${l.id}, '${l.title.replace(/'/g, '&#39;')}')" title="Хуваалцах">
+      <button class="modal-share-btn" onclick="shareListingModal(${l.id}, '${esc(l.title)}')" title="Хуваалцах">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       </button>
 
       <!-- INLINE GALLERY CAROUSEL -->
       <div class="mc-wrap">
         <div class="mc-main">
-          <img id="mcMainImg" src="${mcImages[0]}" alt="${l.title}" style="transition:opacity 0.22s;" />
+          <img id="mcMainImg" src="${esc(mcImages[0])}" alt="${esc(l.title)}" style="transition:opacity 0.22s;" />
           <span class="mc-counter" id="mcCounter">1 / ${mcImages.length}</span>
           ${mcImages.length > 1 ? `
           <button class="mc-nav prev" onclick="mcPrev()">
@@ -158,15 +158,15 @@
         </div>
         ${mcImages.length > 1 ? `
         <div class="mc-thumbs">
-          ${mcImages.map((img, i) => `<img class="mc-thumb ${i===0?'active':''}" src="${img}" onclick="mcGoto(${i})" alt="" />`).join('')}
+          ${mcImages.map((img, i) => `<img class="mc-thumb ${i===0?'active':''}" src="${esc(img)}" onclick="mcGoto(${i})" alt="" />`).join('')}
         </div>` : ''}
       </div>
 
       <div class="modal-body">
-        <h2 class="modal-title">${l.title}</h2>
+        <h2 class="modal-title">${esc(l.title)}</h2>
         <div class="modal-loc">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          ${l.loc}
+          ${esc(l.loc)}
         </div>
         <div class="modal-price-row">
           <div>
@@ -200,10 +200,10 @@
             <div class="seller-av">${sellerLetter}</div>
             <div class="seller-info">
               <div class="seller-name">
-                ${sellerName}
+                ${esc(sellerName)}
                 <span class="seller-verified">✓ Баталгаажсан</span>
               </div>
-              <div class="seller-meta">${seller.type}</div>
+              <div class="seller-meta">${esc(seller.type)}</div>
               <div class="seller-stats">
                 <span><b>${totalListings} зар</b></span>
                 <span>Хариу: <b>${responseTime}</b></span>
@@ -275,7 +275,7 @@
           </div>
           <div class="legal-notes">
             <div class="legal-notes-label">Нэмэлт тэмдэглэл</div>
-            <div class="legal-notes-text">${l.legalNotes || '—'}</div>
+            <div class="legal-notes-text">${esc(l.legalNotes) || '—'}</div>
           </div>
         </div>
 
@@ -389,7 +389,7 @@
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn-primary btn-lg" onclick="openListingChat(${l.id}, '${l.title.replace(/'/g, '&#39;')}')">
+          <button class="btn btn-primary btn-lg" onclick="openListingChat(${l.id}, '${esc(l.title)}')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             Чат бичих
           </button>
@@ -406,7 +406,7 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
               Залгах
             </button>
-            <button class="btn btn-primary btn-lg" style="justify-content:center;" onclick="openListingChat(${l.id}, '${l.title.replace(/'/g, '&#39;')}')">
+            <button class="btn btn-primary btn-lg" style="justify-content:center;" onclick="openListingChat(${l.id}, '${esc(l.title)}')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               Чат
             </button>
@@ -420,10 +420,10 @@
           <div class="similar-grid">
             ${similar.map(s => `
               <div style="cursor:pointer;border-radius:12px;overflow:hidden;border:1.5px solid var(--line);transition:box-shadow 0.15s;" onclick="closeModal(); setTimeout(()=>openListing(${s.id}),200)">
-                <img src="${s.img}" alt="${s.title}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;" onerror="this.style.background='var(--paper-2)';this.style.display='none';" />
+                <img src="${esc(s.img)}" alt="${esc(s.title)}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;" onerror="this.style.background='var(--paper-2)';this.style.display='none';" />
                 <div style="padding:10px 12px;">
                   <div style="font-weight:700;font-size:13px;color:var(--primary);font-family:'Fraunces',serif;">${fmtPrice(s.price)}</div>
-                  <div style="font-size:12px;color:var(--ink-2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.title}</div>
+                  <div style="font-size:12px;color:var(--ink-2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.title)}</div>
                   <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${s.area} м² · ${s.rooms} өрөө</div>
                 </div>
               </div>

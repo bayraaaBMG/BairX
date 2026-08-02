@@ -96,7 +96,7 @@
             ${conv.messages.map(m => `
               <div class="chat-msg ${m.sent ? 'sent' : 'received'}">
                 <div>
-                  <div class="chat-bubble">${m.text}</div>
+                  <div class="chat-bubble">${esc(m.text)}</div>
                   <div class="chat-msg-time">${m.time}</div>
                 </div>
               </div>

@@ -28,6 +28,9 @@
       const id = parseInt(hash.replace('listing-', ''), 10);
       showPage('listings');
       if (!isNaN(id)) setTimeout(() => openListing(id), 100);
+    } else if (hash === 'add') {
+      showPage('home');
+      setTimeout(() => openAddListing(), 100);
     } else {
       showPage(hash || 'home');
     }
@@ -37,6 +40,9 @@
         const id = parseInt(h.replace('listing-', ''), 10);
         showPage('listings');
         if (!isNaN(id)) setTimeout(() => openListing(id), 100);
+      } else if (h === 'add') {
+        showPage('home');
+        setTimeout(() => openAddListing(), 100);
       } else {
         showPage(h || 'home');
       }
