@@ -5,7 +5,10 @@
     { name: 'Худалдаа Хөгжлийн', short: 'ХХБ', color: '#003F87', rateAdj: 0, note: 'Урт хугацаа дэмжсэн' },
     { name: 'Голомт Банк', short: 'ГБ', color: '#E31E24', rateAdj: 0.1, note: 'Хурдан шийдвэр' },
     { name: 'Төрийн Банк', short: 'ТБ', color: '#FFB81C', rateAdj: 0.2, dark: true, note: 'Төрийн ажилтанд хөнгөлөлттэй' },
-    { name: 'Хас Банк', short: 'ХА', color: '#00A651', rateAdj: 0.5, note: 'Залуу гэр бүлд хөнгөлөлттэй' }
+    { name: 'Хас Банк', short: 'ХА', color: '#00A651', rateAdj: 0.5, note: 'Залуу гэр бүлд хөнгөлөлттэй' },
+    { name: 'Капитрон', short: 'КБ', color: '#7B2CBF', rateAdj: 0.6, note: 'Уян хатан нөхцөл' },
+    { name: 'Богд Банк', short: 'ББ', color: '#0A1628', rateAdj: 0.6, note: 'Стандарт нөхцөл' },
+    { name: 'Ариг Банк', short: 'АБ', color: '#FF6B35', rateAdj: 1.1, note: 'Стандарт нөхцөл' }
   ];
 
   let currentRate = 14.4;
