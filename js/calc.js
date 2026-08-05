@@ -1,18 +1,27 @@
 ﻿  // ===== CALCULATOR =====
-  // Бодит зах зээлийн хүү: ХАСН-ы 8% хязгаарлагдмал тул бараг ижил, бусад зээлд бага зэрэг хэлбэлзэлтэй
+  // Суурь хүү (currentRate, доор) Монголбанкны нийтэлсэн шинээр олгосон орон сууцны
+  // ипотекийн зээлийн системийн дундаж хүүнд (17.5%, 2026 оны 4-р сарын байдлаар) үндэслэсэн.
+  // Эх сурвалж: mongolbank.mn статистик. Банк тус бүрийн rateAdj нь ХАРЬЦАНГУЙ, ойролцоо
+  // байршил үзүүлэх зорилготой — яг одоогийн бодит хүүг тухайн банкны сайтаас (url) шалгана уу.
   const banks = [
-    { name: 'Хаан Банк', short: 'ХБ', color: '#0066B3', rateAdj: 0, note: 'Стандарт нөхцөл' },
-    { name: 'Худалдаа Хөгжлийн', short: 'ХХБ', color: '#003F87', rateAdj: 0, note: 'Урт хугацаа дэмжсэн' },
-    { name: 'Голомт Банк', short: 'ГБ', color: '#E31E24', rateAdj: 0.1, note: 'Хурдан шийдвэр' },
-    { name: 'Төрийн Банк', short: 'ТБ', color: '#FFB81C', rateAdj: 0.2, dark: true, note: 'Төрийн ажилтанд хөнгөлөлттэй' },
-    { name: 'Хас Банк', short: 'ХА', color: '#00A651', rateAdj: 0.5, note: 'Залуу гэр бүлд хөнгөлөлттэй' },
-    { name: 'Капитрон', short: 'КБ', color: '#7B2CBF', rateAdj: 0.6, note: 'Уян хатан нөхцөл' },
-    { name: 'Богд Банк', short: 'ББ', color: '#0A1628', rateAdj: 0.6, note: 'Стандарт нөхцөл' },
-    { name: 'Ариг Банк', short: 'АБ', color: '#FF6B35', rateAdj: 1.1, note: 'Стандарт нөхцөл' }
+    { name: 'Хаан Банк', short: 'ХБ', color: '#0066B3', rateAdj: 0, note: 'Стандарт нөхцөл', url: 'https://www.khanbank.com/personal/product/detail/personal-6-mortgage-loan/' },
+    { name: 'Худалдаа Хөгжлийн', short: 'ХХБ', color: '#003F87', rateAdj: 0, note: 'Урт хугацаа дэмжсэн', url: 'https://www.tdbm.mn/en/retail/loans/oron-suutsnii-zeel' },
+    { name: 'Голомт Банк', short: 'ГБ', color: '#E31E24', rateAdj: 0.1, note: 'Хурдан шийдвэр', url: 'https://www.golomtbank.com/retail/loans/786' },
+    { name: 'Төрийн Банк', short: 'ТБ', color: '#FFB81C', rateAdj: 0.2, dark: true, note: 'Төрийн ажилтанд хөнгөлөлттэй', url: 'https://www.statebank.mn/product/813' },
+    { name: 'Хас Банк', short: 'ХА', color: '#00A651', rateAdj: 0.5, note: 'Залуу гэр бүлд хөнгөлөлттэй', url: 'https://xacbank.mn/mortgage' },
+    { name: 'Капитрон', short: 'КБ', color: '#7B2CBF', rateAdj: 0.6, note: 'Уян хатан нөхцөл', url: 'https://www.capitronbank.mn/c/%D0%BE%D1%80%D0%BE%D0%BD-%D1%81%D1%83%D1%83%D1%86%D0%BD%D1%8B-%D0%B7%D1%8D%D1%8D%D0%BB' },
+    { name: 'Богд Банк', short: 'ББ', color: '#0A1628', rateAdj: 0.6, note: 'Стандарт нөхцөл', url: 'https://www.bogdbank.com/personal/product/23' },
+    { name: 'Ариг Банк', short: 'АБ', color: '#FF6B35', rateAdj: 1.1, note: 'Стандарт нөхцөл', url: 'https://loan.arigbank.mn/' }
   ];
 
-  let currentRate = 14.4;
-  let currentLoanName = 'Энгийн ипотек 14.4%';
+  let currentRate = 17.5;
+  let currentLoanName = 'Энгийн ипотек 17.5%';
+  let bestBankUrl = null;
+
+  function applyToBestBank() {
+    if (bestBankUrl) window.open(bestBankUrl, '_blank', 'noopener');
+    else showToast('Зарын эзэнтэй холбогдоно уу');
+  }
 
   function calculate() {
     const price = parseInt(document.getElementById('priceSlider').value);
@@ -76,6 +85,7 @@
       document.getElementById('loanAmt').textContent = '0 ₮';
       document.getElementById('bestBankTitle').textContent = 'Бэлэн мөнгөөр';
       document.getElementById('applyBtnText').textContent = 'Зарын эзэнтэй холбогдох';
+      bestBankUrl = null;
       document.getElementById('bankList').innerHTML = '<div style="text-align:center; color:rgba(255,255,255,0.5); padding:20px; font-size:13px;">Бэлэн мөнгөөр худалдан авахад зээл шаардахгүй</div>';
       // Hide early payoff for cash
       document.querySelector('.early-payoff').style.opacity = '0.4';
@@ -110,18 +120,19 @@
 
     document.getElementById('bestBankTitle').textContent = `${bankResults[0].name} — хамгийн ашигтай`;
     document.getElementById('applyBtnText').textContent = `${bankResults[0].name}-ны зээлд хүсэлт гаргах`;
+    bestBankUrl = bankResults[0].url;
 
     document.getElementById('bankList').innerHTML = bankResults.map((b, i) => `
-      <div class="bank-row${i === 0 ? ' best' : ''}">
+      <div class="bank-row${i === 0 ? ' best' : ''}" onclick="window.open('${b.url}', '_blank', 'noopener')" style="cursor:pointer;" title="${esc(b.name)} — банкны хуудас руу очих">
         <div class="bank-name">
           <div class="bank-logo" style="background:${b.color};${b.dark ? 'color:#0A1628;' : ''}">${b.short}</div>
           ${b.name}
         </div>
-        <div class="bank-rate">${b.rate.toFixed(1)}%</div>
+        <div class="bank-rate">~${b.rate.toFixed(1)}%</div>
         <div class="bank-monthly">${fmt(b.monthly)} ₮</div>
         <div>${i === 0 ? '<span class="best-tag">★ Хамгийн сайн</span>' : ''}</div>
       </div>
-    `).join('');
+    `).join('') + '<div style="text-align:center;font-size:11px;color:rgba(255,255,255,0.45);margin-top:12px;">Ойролцоо тооцоолол — яг одоогийн хүүг тухайн банкны хуудаснаас (дарж орох) шалгана уу</div>';
 
     // Update early payoff calculation
     calculateEarlyPayoff(loanAmt * 1000000, monthlyRate, monthly, months);
