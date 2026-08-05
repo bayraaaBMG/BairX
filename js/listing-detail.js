@@ -18,7 +18,22 @@
     if (l.firestoreId) {
       db.collection('listings').doc(l.firestoreId).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(() => {});
     }
-    const monthly = typeof l.monthly === 'number' ? l.monthly.toFixed(2) + ' сая ₮' : l.monthly;
+    // Compute the monthly mortgage payment live from the loan type's stated annual rate
+    // (30% down, 20yr term — same amortization formula as the /#calc page) instead of trusting
+    // a hand-typed per-listing number, which for real user-submitted listings was always 0.
+    const loanRateMatch = (l.loanType || '').match(/(\d+(\.\d+)?)\s*%/);
+    const loanRate = loanRateMatch ? parseFloat(loanRateMatch[1]) : null;
+    let monthly;
+    if (loanRate !== null && typeof l.price === 'number') {
+      const loanAmt = (l.price * 0.7) * 1000000;
+      const r = loanRate / 100 / 12, n = 240;
+      const m = (loanAmt * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      monthly = (m / 1000000).toFixed(2) + ' сая ₮';
+    } else if (typeof l.monthly === 'string') {
+      monthly = l.monthly; // land listings show an appreciation estimate instead, e.g. "+18% / 5 жил"
+    } else {
+      monthly = null; // negotiable rate — no honest number to show
+    }
     const growth = districtGrowth[l.district] || { yearly: 5.0, label: 'Дүүрэг', note: '' };
 
     // Бодит compound growth тооцоолол
@@ -290,36 +305,35 @@
           </div>
         </div>
 
-        <!-- MAP PLACEHOLDER -->
+        <!-- БАЙРШИЛ (бодит Google Maps) -->
         <div class="modal-section">
           <h4>Байршил</h4>
-          <div class="map-placeholder">
-            <div class="map-placeholder-grid"></div>
-            <div class="map-placeholder-inner">
-              <div class="map-pin">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              </div>
-              <div style="font-weight:700;font-size:15px;color:var(--ink);">${l.district} дүүрэг, ${(l.id % 10) + 1}-р хороо</div>
-              <div style="font-size:13px;color:var(--ink-2);margin-top:3px;">${l.loc}</div>
-              <div style="font-size:11px;color:var(--ink-3);margin-top:6px;display:flex;align-items:center;gap:5px;">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Байршил ойролцоогоор · ${ ['Дэлгүүр', 'Сургууль', 'Эмнэлэг', 'Цэцэрлэгт хүрээлэн', 'Метроны буудал'][l.id % 5] } ойролцоо
-              </div>
-            </div>
+          <div style="border-radius:14px;overflow:hidden;border:1px solid var(--line);">
+            <iframe
+              width="100%" height="220" style="border:0;display:block;"
+              loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+              src="https://www.google.com/maps?q=${encodeURIComponent(l.loc + ', ' + growth.label + ' дүүрэг, Улаанбаатар, Монгол улс')}&output=embed">
+            </iframe>
+          </div>
+          <div style="font-size:13px;color:var(--ink-2);margin-top:8px;display:flex;align-items:center;gap:5px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            ${esc(l.loc)}
           </div>
         </div>
 
         <!-- ЗЭЭЛИЙН САНАЛ -->
+        ${l.cat !== 'rent' ? `
         <div class="modal-section">
           <h4>Зээлийн санал (зах зээлийн одоогийн хүү)</h4>
           <div style="background:var(--primary-soft); padding:18px; border-radius:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <div style="font-size:13px; color:var(--primary-deep); font-weight:600;">${l.loanType}, сар бүр</div>
-              <div style="font-family:'Fraunces', serif; font-size:22px; font-weight:700; color:var(--primary-deep);">${monthly}</div>
+              <div style="font-size:13px; color:var(--primary-deep); font-weight:600;">${esc(l.loanType)}${monthly ? ', сар бүр' : ''}</div>
+              ${monthly ? `<div style="font-family:'Fraunces', serif; font-size:22px; font-weight:700; color:var(--primary-deep);">${monthly}</div>` : ''}
             </div>
-            <div style="font-size:12px; color:var(--primary-deep); opacity:0.8;">Урьдчилгаа 30% (${Math.round(l.price * 0.3)} сая ₮), хугацаа 20 жил. Тооцоолол хэлбэлзэх боломжтой.</div>
+            <div style="font-size:12px; color:var(--primary-deep); opacity:0.8;">${loanRate !== null ? `Урьдчилгаа 30% (${Math.round(l.price * 0.3)} сая ₮), хугацаа 20 жил. ${loanRate}% жилийн хүүгээр сар бүрийн тооцоолол — бодит нөхцөл банк, зээлдэгчээс хамаарч хэлбэлзэнэ.` : 'Зээлийн нөхцөлийг зарын эзэн/банктай шууд тохиролцоно уу.'}</div>
           </div>
         </div>
+        ` : ''}
 
         ${priceHistoryHtml}
 
