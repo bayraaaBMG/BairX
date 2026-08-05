@@ -5,79 +5,92 @@
   // onAuthStateChanged — page load болгонд Firebase session сэргээнэ
   auth.onAuthStateChanged(async (fbUser) => {
     if (fbUser) {
+      // Set currentUser from the Firebase Auth user object FIRST, unconditionally.
+      // Everything below (Firestore profile/favorites/listings) is enrichment —
+      // if Firestore rules block a read, login must not silently roll back to
+      // "not logged in" just because a secondary fetch failed.
+      const isPhone = fbUser.providerData.some(p => p.providerId === 'phone');
+      const isGoogle = fbUser.providerData.some(p => p.providerId === 'google.com');
+      const fallbackFirst = fbUser.displayName?.split(' ')[0] || 'Хэрэглэгч';
+      const fallbackLast = fbUser.displayName?.split(' ').slice(1).join(' ') || '';
+      currentUser = {
+        uid: fbUser.uid,
+        email: fbUser.email,
+        phoneNumber: fbUser.phoneNumber,
+        emailVerified: fbUser.emailVerified,
+        name: fallbackFirst,
+        lastName: fallbackLast,
+        letter: fallbackFirst[0] || 'Х',
+        isGoogle,
+        isPhone
+      };
+      updateNavLoggedIn();
+
+      // Email verify banner (not applicable to phone-only accounts, which have no email)
+      const banner = document.getElementById('emailVerifyBanner');
+      if (banner) {
+        if (!fbUser.emailVerified && !isGoogle && !isPhone) {
+          banner.style.display = 'flex';
+        } else {
+          banner.style.display = 'none';
+        }
+      }
+
+      // Profile name override from Firestore — best-effort only
       try {
         const snap = await db.collection('users').doc(fbUser.uid).get();
-        const data = snap.data() || {};
-        const isPhone = fbUser.providerData.some(p => p.providerId === 'phone');
-        const firstName = data.firstName || fbUser.displayName?.split(' ')[0] || 'Хэрэглэгч';
-        const lastName = data.lastName || fbUser.displayName?.split(' ').slice(1).join(' ') || '';
-        currentUser = {
-          uid: fbUser.uid,
-          email: fbUser.email,
-          phoneNumber: fbUser.phoneNumber,
-          emailVerified: fbUser.emailVerified,
-          name: firstName,
-          lastName,
-          letter: firstName[0] || 'Х',
-          isGoogle: fbUser.providerData.some(p => p.providerId === 'google.com'),
-          isPhone
-        };
-        updateNavLoggedIn();
-
-        // Email verify banner (not applicable to phone-only accounts, which have no email)
-        const banner = document.getElementById('emailVerifyBanner');
-        if (banner) {
-          if (!fbUser.emailVerified && !currentUser.isGoogle && !isPhone) {
-            banner.style.display = 'flex';
-          } else {
-            banner.style.display = 'none';
-          }
+        const data = snap.data();
+        if (data) {
+          currentUser.name = data.firstName || currentUser.name;
+          currentUser.lastName = data.lastName || currentUser.lastName;
+          currentUser.letter = currentUser.name[0] || 'Х';
+          updateNavLoggedIn();
         }
-
-        // Favorites-г Firestore-с татах
-        try {
-          const fsnap = await db.collection('favorites').where('userId', '==', fbUser.uid).get();
-          const fsIds = [];
-          fsnap.forEach(doc => { const d = doc.data(); if (d.listingId != null) fsIds.push(d.listingId); });
-          if (fsIds.length > 0) {
-            fsIds.forEach(id => { if (!favorites.includes(id)) favorites.push(id); });
-            try { localStorage.setItem('bairxFavorites', JSON.stringify(favorites)); } catch(e) {}
-            updateFavCount();
-          }
-        } catch(e) {}
-
-        // Firestore-с хэрэглэгчийн зарнуудыг татаж авна
-        try {
-          const lsnap = await db.collection('listings').where('ownerId', '==', fbUser.uid).get();
-          lsnap.forEach(doc => {
-            if (listings.some(l => l.firestoreId === doc.id)) return;
-            const d = doc.data();
-            const numId = listings.reduce((m, l) => l.id > m ? l.id : m, 0) + 1;
-            const entry = {
-              id: numId, firestoreId: doc.id, ownerId: d.ownerId, sellerVerified: !!d.sellerVerified,
-              cat: d.category || 'apartment', propertyType: d.propertyType || d.category || 'apartment',
-              title: d.title, loc: d.loc,
-              district: d.district, price: d.price, area: d.area, rooms: d.rooms,
-              floor: d.floor, year: d.year, condition: d.condition || '', features: d.features || [],
-              img: (d.images && d.images[0]) || d.img || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
-              tag: { type: 'new', text: 'Шинэ зар' }, badges: d.badges || ['user'],
-              loanType: 'Тохиролцоно', monthly: 0,
-              userSubmitted: true, _inactive: d.status === 'inactive',
-              viewCount: d.viewCount || 0, expiresAt: d.expiresAt || null, _bumpedAt: d.bumpedAt || numId
-            };
-            listings.push(entry);
-            if (d.images && d.images.length > 0) listingExtras[numId] = { coords: { x: 50, y: 50 }, gallery: d.images };
-            sellerData[numId] = { phone: d.sellerPhone || '', name: d.sellerName || 'Хэрэглэгч', type: d.sellerType || 'Хувь хүн' };
-          });
-          renderMyListings(); renderHomeListings(); renderListings(getFilteredListings());
-        } catch(e) {}
-
-        if (typeof subscribeMyChats === 'function') subscribeMyChats();
-        if (typeof refreshSavedSearchesCount === 'function') refreshSavedSearchesCount();
-        if (typeof renderAccountSidebar === 'function') renderAccountSidebar();
       } catch(e) {
-        currentUser = null;
+        showToast('Профайл мэдээлэл татахад алдаа гарлаа (Firestore зөвшөөрөл шалгана уу)');
       }
+
+      // Favorites-г Firestore-с татах
+      try {
+        const fsnap = await db.collection('favorites').where('userId', '==', fbUser.uid).get();
+        const fsIds = [];
+        fsnap.forEach(doc => { const d = doc.data(); if (d.listingId != null) fsIds.push(d.listingId); });
+        if (fsIds.length > 0) {
+          fsIds.forEach(id => { if (!favorites.includes(id)) favorites.push(id); });
+          try { localStorage.setItem('bairxFavorites', JSON.stringify(favorites)); } catch(e) {}
+          updateFavCount();
+        }
+      } catch(e) {}
+
+      // Firestore-с хэрэглэгчийн зарнуудыг татаж авна
+      try {
+        const lsnap = await db.collection('listings').where('ownerId', '==', fbUser.uid).get();
+        lsnap.forEach(doc => {
+          if (listings.some(l => l.firestoreId === doc.id)) return;
+          const d = doc.data();
+          const numId = listings.reduce((m, l) => l.id > m ? l.id : m, 0) + 1;
+          const entry = {
+            id: numId, firestoreId: doc.id, ownerId: d.ownerId, sellerVerified: !!d.sellerVerified,
+            cat: d.category || 'apartment', propertyType: d.propertyType || d.category || 'apartment',
+            title: d.title, loc: d.loc,
+            district: d.district, price: d.price, area: d.area, rooms: d.rooms,
+            floor: d.floor, year: d.year, condition: d.condition || '', features: d.features || [],
+            img: (d.images && d.images[0]) || d.img || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
+            tag: { type: 'new', text: 'Шинэ зар' }, badges: d.badges || ['user'],
+            loanType: 'Тохиролцоно', monthly: 0,
+            userSubmitted: true, _inactive: d.status === 'inactive',
+            viewCount: d.viewCount || 0, expiresAt: d.expiresAt || null, _bumpedAt: d.bumpedAt || numId
+          };
+          listings.push(entry);
+          if (d.images && d.images.length > 0) listingExtras[numId] = { coords: { x: 50, y: 50 }, gallery: d.images };
+          sellerData[numId] = { phone: d.sellerPhone || '', name: d.sellerName || 'Хэрэглэгч', type: d.sellerType || 'Хувь хүн' };
+        });
+        renderMyListings(); renderHomeListings(); renderListings(getFilteredListings());
+      } catch(e) {}
+
+      if (typeof subscribeMyChats === 'function') subscribeMyChats();
+      if (typeof refreshSavedSearchesCount === 'function') refreshSavedSearchesCount();
+      if (typeof renderAccountSidebar === 'function') renderAccountSidebar();
     } else {
       currentUser = null;
       const loginBtn = document.getElementById('loginBtn');
