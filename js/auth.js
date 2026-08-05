@@ -181,9 +181,26 @@
   async function confirmAuthPhoneOtp() {
     const code = ['authOtp0','authOtp1','authOtp2','authOtp3','authOtp4','authOtp5'].map(id => document.getElementById(id).value).join('');
     if (code.length !== 6 || !authConfirmationResult) { showToast('6 оронтой кодоо бүрэн оруулна уу'); return; }
+    let fbUser;
     try {
       const cred = await authConfirmationResult.confirm(code);
-      const fbUser = cred.user;
+      fbUser = cred.user;
+    } catch(e) {
+      const msgs = { 'auth/invalid-verification-code': 'Код буруу байна', 'auth/code-expired': 'Кодын хугацаа дууссан байна' };
+      console.error('Phone OTP confirm failed:', e.code, e.message);
+      showToast(msgs[e.code] || ('Баталгаажуулахад алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : '')));
+      ['authOtp0','authOtp1','authOtp2','authOtp3','authOtp4','authOtp5'].forEach(id => {
+        const el = document.getElementById(id);
+        el.value = ''; el.classList.remove('filled');
+      });
+      document.getElementById('authOtp0')?.focus();
+      return;
+    }
+    // The code was actually correct and the phone sign-in succeeded — confirm it
+    // regardless of whether the Firestore profile-doc write below works or not.
+    closeAuth();
+    showToast('Амжилттай нэвтэрлээ!', 'success');
+    try {
       const userDoc = await db.collection('users').doc(fbUser.uid).get();
       if (!userDoc.exists) {
         await db.collection('users').doc(fbUser.uid).set({
@@ -195,16 +212,8 @@
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
       }
-      closeAuth();
-      showToast('Амжилттай нэвтэрлээ!', 'success');
     } catch(e) {
-      const msgs = { 'auth/invalid-verification-code': 'Код буруу байна', 'auth/code-expired': 'Кодын хугацаа дууссан байна' };
-      showToast(msgs[e.code] || 'Баталгаажуулахад алдаа гарлаа');
-      ['authOtp0','authOtp1','authOtp2','authOtp3','authOtp4','authOtp5'].forEach(id => {
-        const el = document.getElementById(id);
-        el.value = ''; el.classList.remove('filled');
-      });
-      document.getElementById('authOtp0')?.focus();
+      console.error('Phone profile doc write failed:', e.code, e.message);
     }
   }
 
@@ -274,8 +283,22 @@
     if (!lastName || !firstName) { showToast('Овог нэрээ оруулна уу'); return; }
     if (pw.length < 6) { showToast('Нууц үг хамгийн багадаа 6 тэмдэгт байна'); return; }
     if (pw !== pw2) { showToast('Нууц үгнүүд таарахгүй байна'); return; }
+    let cred;
     try {
-      const cred = await auth.createUserWithEmailAndPassword(authCurrentEmail, pw);
+      cred = await auth.createUserWithEmailAndPassword(authCurrentEmail, pw);
+    } catch(e) {
+      const msgs = {
+        'auth/email-already-in-use': 'Энэ имэйл аль хэдийн бүртгэлтэй байна',
+        'auth/weak-password': 'Нууц үг хэтэрхий энгийн байна'
+      };
+      console.error('createAccount failed:', e.code, e.message);
+      showToast(msgs[e.code] || ('Бүртгэл үүсгэхэд алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : '')));
+      return;
+    }
+    // Account creation itself succeeded — close the modal regardless of the profile-doc write below
+    closeAuth();
+    showToast(`Бүртгэл амжилттай! Тавтай морилно уу, ${firstName}!`, 'success');
+    try {
       await cred.user.updateProfile({ displayName: firstName + ' ' + lastName });
       await db.collection('users').doc(cred.user.uid).set({
         uid: cred.user.uid,
@@ -285,23 +308,31 @@
         role: 'user',
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-      closeAuth();
-      showToast(`Бүртгэл амжилттай! Тавтай морилно уу, ${firstName}!`, 'success');
     } catch(e) {
-      const msgs = {
-        'auth/email-already-in-use': 'Энэ имэйл аль хэдийн бүртгэлтэй байна',
-        'auth/weak-password': 'Нууц үг хэтэрхий энгийн байна'
-      };
-      showToast(msgs[e.code] || 'Бүртгэл үүсгэхэд алдаа гарлаа');
+      console.error('createAccount profile write failed:', e.code, e.message);
+      showToast('Профайл мэдээлэл хадгалахад алдаа гарлаа (Firestore зөвшөөрөл шалгана уу)');
     }
   }
 
   async function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
+    let fbUser;
     try {
       const result = await auth.signInWithPopup(provider);
-      const fbUser = result.user;
+      fbUser = result.user;
+    } catch(e) {
+      if (e.code !== 'auth/popup-closed-by-user') {
+        console.error('Google sign-in failed:', e.code, e.message);
+        showToast('Google нэвтрэхэд алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : ''));
+      }
+      return;
+    }
+    // The actual Google sign-in already succeeded — close the modal and confirm it
+    // regardless of whether the Firestore profile-doc write below works or not.
+    closeAuth();
+    showToast('Google-ээр нэвтэрлээ. Тавтай морилно уу!', 'success');
+    try {
       const userDoc = await db.collection('users').doc(fbUser.uid).get();
       if (!userDoc.exists) {
         const parts = (fbUser.displayName || 'Хэрэглэгч').split(' ');
@@ -314,10 +345,8 @@
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
       }
-      closeAuth();
-      showToast('Google-ээр нэвтэрлээ. Тавтай морилно уу!', 'success');
     } catch(e) {
-      if (e.code !== 'auth/popup-closed-by-user') showToast('Google нэвтрэхэд алдаа гарлаа');
+      console.error('Google profile doc write failed:', e.code, e.message);
     }
   }
 
