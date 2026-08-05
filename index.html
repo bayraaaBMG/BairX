@@ -22,7 +22,7 @@
 <div id="betaBar" style="background:#1E5BFF;color:#fff;font-family:'Manrope',sans-serif;font-size:13px;font-weight:500;text-align:center;padding:8px 16px;display:flex;align-items:center;justify-content:center;gap:10px;position:relative;z-index:200;">
   <span style="background:rgba(255,255,255,0.2);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;letter-spacing:.5px;">BETA</span>
   <span>Туршилтын хувилбар — дата болон нөхцөлүүд demo горимд байна</span>
-  <button onclick="document.getElementById('betaBar').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:16px;line-height:1;padding:0;position:absolute;right:16px;">✕</button>
+  <button onclick="document.getElementById('betaBar').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:16px;line-height:1;padding:0;position:absolute;right:16px;" aria-label="Хаах">✕</button>
 </div>
 
 <!-- ============ EMAIL VERIFY BANNER ============ -->
@@ -30,7 +30,7 @@
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C77700" stroke-width="2.5" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
   <span>И-мэйл хаягаа баталгаажуулна уу. Зар нийтлэхийн тулд и-мэйл шаардлагатай.</span>
   <button id="sendVerifyBtn" onclick="sendVerificationEmail()" style="background:#FFB020;border:none;color:#fff;font-weight:700;font-size:12px;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit;white-space:nowrap;">И-мэйл баталгаажуулах</button>
-  <button onclick="document.getElementById('emailVerifyBanner').style.display='none'" style="background:none;border:none;color:#C77700;cursor:pointer;font-size:16px;position:absolute;right:16px;">✕</button>
+  <button onclick="document.getElementById('emailVerifyBanner').style.display='none'" style="background:none;border:none;color:#C77700;cursor:pointer;font-size:16px;position:absolute;right:16px;" aria-label="Хаах">✕</button>
 </div>
 
 <!-- ============ NAV ============ -->
@@ -48,16 +48,16 @@
       <a onclick="currentUser ? showPage('dashboard') : openAuth()">Миний самбар</a>
     </div>
     <div class="nav-actions">
-      <button class="notif-trigger" onclick="openFavorites()" style="margin-right:-2px;">
+      <button class="notif-trigger" onclick="openFavorites()" style="margin-right:-2px;" aria-label="Хадгалсан зарууд">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
         <span class="notif-badge-count" id="favCount" style="background:var(--danger); display:none;">0</span>
       </button>
-      <button class="notif-trigger" onclick="openChat()" style="margin-right:-2px;">
+      <button class="notif-trigger" onclick="openChat()" style="margin-right:-2px;" aria-label="Зурвас">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         <span class="notif-badge-count" id="chatCount" style="background:var(--accent);">2</span>
       </button>
       <div style="position:relative;">
-        <button class="notif-trigger" onclick="toggleNotif(event)">
+        <button class="notif-trigger" onclick="toggleNotif(event)" aria-label="Мэдэгдэл">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <span class="notif-badge-count" id="notifCount">3</span>
         </button>
@@ -107,7 +107,7 @@
         </div>
       </div>
       <a class="btn btn-blue" id="addListingBtn" onclick="openAddListing()">Зар нэмэх</a>
-      <button class="mobile-toggle" onclick="toggleMobileMenu()">
+      <button class="mobile-toggle" onclick="toggleMobileMenu()" aria-label="Цэс нээх">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
       </button>
     </div>
@@ -142,7 +142,7 @@
           <div class="hero-stat-label">Demo зар</div>
         </div>
         <div>
-          <div class="hero-stat-num">12</div>
+          <div class="hero-stat-num">8</div>
           <div class="hero-stat-label">Банкны тооцоолуур</div>
         </div>
         <div>
@@ -161,7 +161,7 @@
 
       <div class="search-fields">
         <div class="field-group">
-          <label>Хөрөнгийн төрөл</label>
+          <label for="searchType">Хөрөнгийн төрөл</label>
           <select id="searchType">
             <option value="all">Бүгд</option>
             <option value="apartment">Орон сууц (байр)</option>
@@ -171,7 +171,7 @@
           </select>
         </div>
         <div class="field-group">
-          <label>Байршил</label>
+          <label for="searchLocation">Байршил</label>
           <select id="searchLocation">
             <option value="all">Бүх дүүрэг</option>
             <option value="khan-uul">Хан-Уул дүүрэг</option>
@@ -185,7 +185,7 @@
       </div>
 
       <div class="field-group" style="margin-bottom:0;">
-        <label>Хайлтын үг</label>
+        <label for="heroSearch">Хайлтын үг</label>
         <div style="position:relative;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
           <input type="text" id="heroSearch" placeholder="Жнь: Зайсан 2 өрөө…" onkeydown="if(event.key==='Enter') performSearch()" style="width:100%;padding:10px 12px 10px 38px;border:1.5px solid var(--line-2);border-radius:10px;font-size:14px;font-family:'Manrope',sans-serif;outline:none;background:var(--paper);" />
@@ -194,7 +194,7 @@
 
       <div class="search-fields">
         <div class="field-group">
-          <label>Өрөөний тоо</label>
+          <label for="searchRooms">Өрөөний тоо</label>
           <select id="searchRooms">
             <option value="all">Бүгд</option>
             <option value="1">1 өрөө</option>
@@ -206,8 +206,8 @@
         <div class="field-group">
           <label>Үнэ (сая ₮)</label>
           <div class="price-range-inputs">
-            <input type="number" id="priceMin" placeholder="Доод" />
-            <input type="number" id="priceMax" placeholder="Дээд" />
+            <input type="number" id="priceMin" aria-label="Үнэ, доод (сая ₮)" placeholder="Доод" />
+            <input type="number" id="priceMax" aria-label="Үнэ, дээд (сая ₮)" placeholder="Дээд" />
           </div>
         </div>
       </div>
@@ -836,12 +836,12 @@
         <label>Хайх (гарчиг, байршил, өрөө…)</label>
         <div style="position:relative;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
-          <input type="text" id="fSearch" class="form-input" placeholder="Жнь: Зайсан 2 өрөө, шинэ барилга…" oninput="searchText=this.value; applyListingFilter();" style="padding-left:38px;" />
+          <input type="text" id="fSearch" class="form-input" aria-label="Хайлтын үг" placeholder="Жнь: Зайсан 2 өрөө, шинэ барилга…" oninput="searchText=this.value; applyListingFilter();" style="padding-left:38px;" />
         </div>
       </div>
       <div class="filter-grid">
         <div class="filter-field">
-          <label>Дүүрэг</label>
+          <label for="fDistrict">Дүүрэг</label>
           <select id="fDistrict">
             <option value="all">Бүх дүүрэг</option>
             <option value="khan-uul">Хан-Уул</option>
@@ -856,21 +856,21 @@
         <div class="filter-field">
           <label>Үнэ (сая ₮)</label>
           <div class="filter-range">
-            <input type="number" id="fPriceMin" placeholder="Доод" />
+            <input type="number" id="fPriceMin" aria-label="Үнэ, доод (сая ₮)" placeholder="Доод" />
             <span>—</span>
-            <input type="number" id="fPriceMax" placeholder="Дээд" />
+            <input type="number" id="fPriceMax" aria-label="Үнэ, дээд (сая ₮)" placeholder="Дээд" />
           </div>
         </div>
         <div class="filter-field">
           <label>Талбай (м²)</label>
           <div class="filter-range">
-            <input type="number" id="fAreaMin" placeholder="Доод" />
+            <input type="number" id="fAreaMin" aria-label="Талбай, доод (м²)" placeholder="Доод" />
             <span>—</span>
-            <input type="number" id="fAreaMax" placeholder="Дээд" />
+            <input type="number" id="fAreaMax" aria-label="Талбай, дээд (м²)" placeholder="Дээд" />
           </div>
         </div>
         <div class="filter-field">
-          <label>Өрөөний тоо</label>
+          <label for="fRooms">Өрөөний тоо</label>
           <select id="fRooms">
             <option value="all">Бүгд</option>
             <option value="1">1 өрөө</option>
@@ -882,17 +882,17 @@
         <div class="filter-field">
           <label>Барилгын он</label>
           <div class="filter-range">
-            <input type="number" id="fYearMin" placeholder="2000" min="1950" max="2030" />
+            <input type="number" id="fYearMin" aria-label="Барилгын он, доод" placeholder="2000" min="1950" max="2030" />
             <span>—</span>
-            <input type="number" id="fYearMax" placeholder="2025" min="1950" max="2030" />
+            <input type="number" id="fYearMax" aria-label="Барилгын он, дээд" placeholder="2025" min="1950" max="2030" />
           </div>
         </div>
         <div class="filter-field">
           <label>Давхар</label>
           <div class="filter-range">
-            <input type="number" id="fFloorMin" placeholder="1" min="1" />
+            <input type="number" id="fFloorMin" aria-label="Давхар, доод" placeholder="1" min="1" />
             <span>—</span>
-            <input type="number" id="fFloorMax" placeholder="20" min="1" />
+            <input type="number" id="fFloorMax" aria-label="Давхар, дээд" placeholder="20" min="1" />
           </div>
         </div>
       </div>
@@ -936,7 +936,7 @@
       <button class="filter-pill" data-cat="office">Оффис <span class="count" id="cnt-office"></span></button>
       <button class="filter-pill" data-cat="rent">Түрээс <span class="count" id="cnt-rent"></span></button>
       <div style="flex:1"></div>
-      <select id="sortSelect" onchange="setSorting(this.value)" style="border:1px solid var(--line-2);border-radius:20px;padding:6px 12px;font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;color:var(--ink);background:var(--paper);cursor:pointer;outline:none;">
+      <select id="sortSelect" onchange="setSorting(this.value)" aria-label="Эрэмбэлэх" style="border:1px solid var(--line-2);border-radius:20px;padding:6px 12px;font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;color:var(--ink);background:var(--paper);cursor:pointer;outline:none;">
         <option value="default">Шинэ эхлэх</option>
         <option value="price-asc">Үнэ ↑ (хямд)</option>
         <option value="price-desc">Үнэ ↓ (өндөр)</option>
@@ -1613,15 +1613,15 @@
           <p class="afford-sub">Орлого, зээлийн түүх, урьдчилгаа мөнгөн дүнгээ оруулахад л болоо. Бид танд зориулсан хамгийн их зээлийн дүнг тооцоолон, ямар үнэтэй байр сонгож болохыг харуулна.</p>
 
           <div class="afford-form">
-            <input class="afford-input" type="number" id="affIncome" placeholder="Сарын цэвэр орлого (₮)" value="3500000" />
-            <input class="afford-input" type="number" id="affDown" placeholder="Хадгаламж / Урьдчилгаа (₮)" value="85000000" />
-            <select class="afford-input" id="affHistory" style="cursor:pointer;">
+            <input class="afford-input" type="number" id="affIncome" aria-label="Сарын цэвэр орлого (₮)" placeholder="Сарын цэвэр орлого (₮)" value="3500000" />
+            <input class="afford-input" type="number" id="affDown" aria-label="Хадгаламж / Урьдчилгаа (₮)" placeholder="Хадгаламж / Урьдчилгаа (₮)" value="85000000" />
+            <select class="afford-input" id="affHistory" aria-label="Зээлийн түүх" style="cursor:pointer;">
               <option value="A">Зээлийн түүх — Маш сайн (А)</option>
               <option value="B">Зээлийн түүх — Сайн (Б)</option>
               <option value="C">Зээлийн түүх — Дунд (В)</option>
               <option value="N">Зээлийн түүх — Анх удаа</option>
             </select>
-            <select class="afford-input" id="affOther" style="cursor:pointer;">
+            <select class="afford-input" id="affOther" aria-label="Бусад сарын зээлийн төлбөр" style="cursor:pointer;">
               <option value="0">Бусад зээлгүй</option>
               <option value="500000">Машины зээлтэй</option>
               <option value="1000000">Бусад зээлтэй</option>
@@ -1973,7 +1973,7 @@
       <div class="auth-header">
         <div class="auth-logo-mark">B</div>
         <div class="auth-title">Нэвтрэх</div>
-        <button class="auth-close-btn" onclick="closeAuth()">
+        <button class="auth-close-btn" onclick="closeAuth()" aria-label="Хаах">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
@@ -1987,7 +1987,7 @@
       <div class="auth-divider"><span>эсвэл имэйлээр</span></div>
 
       <div class="auth-field">
-        <input type="email" id="authEmail" placeholder="tanii@email.com" autocomplete="email" onkeydown="if(event.key==='Enter') submitEmail()"/>
+        <input type="email" id="authEmail" aria-label="Имэйл хаяг" placeholder="tanii@email.com" autocomplete="email" onkeydown="if(event.key==='Enter') submitEmail()"/>
       </div>
 
       <button class="btn btn-blue auth-submit-btn" onclick="submitEmail()">
@@ -2009,7 +2009,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           Буцах
         </button>
-        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto">
+        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto" aria-label="Хаах">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
@@ -2017,7 +2017,7 @@
       <div class="auth-sub">Танд баталгаажуулах код бүхий SMS илгээх болно.</div>
 
       <div class="auth-field">
-        <label>Утасны дугаар</label>
+        <label for="authPhoneNumber">Утасны дугаар</label>
         <div class="phone-input-group">
           <div class="phone-prefix">+976</div>
           <input type="tel" class="form-input" id="authPhoneNumber" placeholder="88112233" maxlength="8" onkeydown="if(event.key==='Enter') sendAuthPhoneOtp()"/>
@@ -2035,7 +2035,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           Буцах
         </button>
-        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto">
+        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto" aria-label="Хаах">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
@@ -2043,12 +2043,12 @@
       <div class="auth-sub" style="color:var(--ink-3);font-size:13px;"><strong>+976 <span id="authPhoneDisplay"></span></strong> дугаарт 6 оронтой код илгээлээ</div>
 
       <div class="otp-input-group">
-        <input type="text" class="otp-input" maxlength="1" id="authOtp0"/>
-        <input type="text" class="otp-input" maxlength="1" id="authOtp1"/>
-        <input type="text" class="otp-input" maxlength="1" id="authOtp2"/>
-        <input type="text" class="otp-input" maxlength="1" id="authOtp3"/>
-        <input type="text" class="otp-input" maxlength="1" id="authOtp4"/>
-        <input type="text" class="otp-input" maxlength="1" id="authOtp5"/>
+        <input type="text" class="otp-input" maxlength="1" id="authOtp0" aria-label="Баталгаажуулах кодын 1-р орон"/>
+        <input type="text" class="otp-input" maxlength="1" id="authOtp1" aria-label="Баталгаажуулах кодын 2-р орон"/>
+        <input type="text" class="otp-input" maxlength="1" id="authOtp2" aria-label="Баталгаажуулах кодын 3-р орон"/>
+        <input type="text" class="otp-input" maxlength="1" id="authOtp3" aria-label="Баталгаажуулах кодын 4-р орон"/>
+        <input type="text" class="otp-input" maxlength="1" id="authOtp4" aria-label="Баталгаажуулах кодын 5-р орон"/>
+        <input type="text" class="otp-input" maxlength="1" id="authOtp5" aria-label="Баталгаажуулах кодын 6-р орон"/>
       </div>
       <div class="resend-row">Код ирээгүй юу? <a onclick="sendAuthPhoneOtp(true)">Дахин илгээх</a></div>
 
@@ -2062,7 +2062,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           Буцах
         </button>
-        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto">
+        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto" aria-label="Хаах">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
@@ -2070,7 +2070,7 @@
       <div class="auth-sub" style="word-break:break-all;color:var(--ink-3);font-size:13px;" id="loginEmailDisplay"></div>
 
       <div class="auth-field">
-        <label>Нууц үг</label>
+        <label for="authPassword">Нууц үг</label>
         <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') loginWithEmail()"/>
       </div>
       <div class="auth-forgot-link" onclick="startForgotPassword()">Нууц үгээ мартсан уу?</div>
@@ -2085,7 +2085,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           Буцах
         </button>
-        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto">
+        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto" aria-label="Хаах">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
@@ -2094,20 +2094,20 @@
 
       <div class="auth-field-row">
         <div class="auth-field">
-          <label>Овог</label>
+          <label for="authLastName">Овог</label>
           <input type="text" id="authLastName" placeholder="Дорж" autocomplete="family-name"/>
         </div>
         <div class="auth-field">
-          <label>Нэр</label>
+          <label for="authFirstName">Нэр</label>
           <input type="text" id="authFirstName" placeholder="Батаа" autocomplete="given-name"/>
         </div>
       </div>
       <div class="auth-field">
-        <label>Нууц үг</label>
+        <label for="authNewPassword">Нууц үг</label>
         <input type="password" id="authNewPassword" placeholder="Хамгийн багадаа 6 тэмдэгт" autocomplete="new-password"/>
       </div>
       <div class="auth-field">
-        <label>Нууц үг давтах</label>
+        <label for="authNewPassword2">Нууц үг давтах</label>
         <input type="password" id="authNewPassword2" placeholder="Нууц үгийг дахин оруулна уу" autocomplete="new-password" onkeydown="if(event.key==='Enter') createAccount()"/>
       </div>
 
@@ -2121,7 +2121,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           Буцах
         </button>
-        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto">
+        <button class="auth-close-btn" onclick="closeAuth()" style="margin-left:auto" aria-label="Хаах">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
