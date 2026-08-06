@@ -76,14 +76,14 @@
         <div style="display:grid; gap:14px;">
           ${favListings.map(l => `
             <div class="dash-listing" onclick="closeModal(); setTimeout(() => openListing(${l.id}), 300)" style="cursor:pointer;">
-              <img class="dash-listing-img" src="${l.img}" alt="" onerror="this.style.background='var(--paper-2)';this.removeAttribute('src');" />
+              <img class="dash-listing-img" src="${esc(l.img)}" alt="" onerror="this.style.background='var(--paper-2)';this.removeAttribute('src');" />
               <div class="dash-listing-info">
-                <div class="dash-listing-title">${l.title}</div>
+                <div class="dash-listing-title">${!l.userSubmitted ? '<span class="badge demo" style="position:static;display:inline-block;font-size:9px;padding:2px 6px;margin-right:6px;vertical-align:middle;">Жишээ</span>' : ''}${esc(l.title)}</div>
                 <div class="dash-listing-price">${fmtPrice(l.price)}</div>
                 <div class="dash-listing-stats">
                   <span class="dash-listing-stat">${l.area} м²</span>
                   <span class="dash-listing-stat">${typeof l.rooms === 'number' ? l.rooms + ' өрөө' : l.rooms}</span>
-                  <span class="dash-listing-stat">${l.loc.split('·')[0].trim()}</span>
+                  <span class="dash-listing-stat">${esc(l.loc.split('·')[0].trim())}</span>
                 </div>
               </div>
               <button class="compare-bar-remove" onclick="event.stopPropagation(); removeFav(${l.id})" style="width:32px; height:32px; background:var(--paper-2);" title="Хасах">

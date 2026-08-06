@@ -481,7 +481,7 @@
             <div style="font-size:13px; color:var(--ink-3); margin-bottom:14px;">Зар оруулагч хүн бүр утасны дугаараар бүртгүүлэх шаардлагатай. Энэ нь хуурамч зар, давхар зарын эрсдлээс сэргийлдэг.</div>
 
             <div id="phoneStep1">
-              <label class="form-label">Утасны дугаар</label>
+              <label class="form-label" for="alPhone">Утасны дугаар</label>
               <div class="phone-input-group">
                 <div class="phone-prefix">+976</div>
                 <input type="tel" class="form-input" id="alPhone" placeholder="88112233" maxlength="8" value="${addListingState.phone}" />
@@ -489,17 +489,20 @@
                   Код илгээх
                 </button>
               </div>
+              <div id="listingRecaptchaContainer"></div>
             </div>
 
             <div id="phoneStep2" style="display:none;">
               <div style="font-size:13px; color:var(--ink-2); margin-bottom:8px;">
-                <strong>+976 <span id="phoneDisplay"></span></strong> дугаарт 4 оронтой код илгээлээ
+                <strong>+976 <span id="phoneDisplay"></span></strong> дугаарт 6 оронтой код илгээлээ
               </div>
               <div class="otp-input-group">
                 <input type="text" class="otp-input" maxlength="1" id="otp0" />
                 <input type="text" class="otp-input" maxlength="1" id="otp1" />
                 <input type="text" class="otp-input" maxlength="1" id="otp2" />
                 <input type="text" class="otp-input" maxlength="1" id="otp3" />
+                <input type="text" class="otp-input" maxlength="1" id="otp4" />
+                <input type="text" class="otp-input" maxlength="1" id="otp5" />
               </div>
               <div class="resend-row">
                 Код ирээгүй юу? <a onclick="resendOtp()">Дахин илгээх</a>
@@ -670,13 +673,13 @@
     if (priceInput) priceInput.addEventListener('input', updatePriceSuggestion);
 
     // OTP auto-advance
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
       const el = document.getElementById('otp' + i);
       if (!el) continue;
       el.addEventListener('input', () => {
         if (el.value.length === 1) {
           el.classList.add('filled');
-          if (i < 3) document.getElementById('otp' + (i + 1)).focus();
+          if (i < 5) document.getElementById('otp' + (i + 1)).focus();
           else checkOtp();
         }
       });
@@ -856,39 +859,98 @@
     document.getElementById('imageGrid').innerHTML = renderImageBoxes();
   }
 
-  function sendOtp() {
+  // ===== REAL PHONE VERIFICATION (Firebase Phone Auth — same mechanism as login) =====
+  let listingRecaptchaVerifier = null;
+  let listingOtpConfirmation = null;
+
+  function getListingRecaptcha() {
+    if (listingRecaptchaVerifier) { try { listingRecaptchaVerifier.clear(); } catch(e) {} }
+    listingRecaptchaVerifier = new firebase.auth.RecaptchaVerifier('listingRecaptchaContainer', { size: 'invisible' });
+    return listingRecaptchaVerifier;
+  }
+
+  function markListingPhoneVerified(phone) {
+    addListingState.phone = phone;
+    addListingState.phoneVerified = true;
+    const box = document.getElementById('phoneVerifyBox');
+    if (box) box.innerHTML = `
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:50%; background:var(--accent); display:grid; place-items:center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:700; color:#009878;">Утас амжилттай баталгаажлаа</div>
+          <div style="font-size:13px; color:var(--ink-3);">+976 ${esc(phone)}</div>
+        </div>
+      </div>
+    `;
+    showToast('Утас амжилттай баталгаажлаа', 'success');
+  }
+
+  async function sendOtp() {
     const phone = document.getElementById('alPhone').value.trim();
     if (phone.length !== 8) {
       showToast('Утасны дугаар 8 оронтой байх ёстой');
       return;
     }
-    addListingState.phone = phone;
-    document.getElementById('phoneStep1').style.display = 'none';
-    document.getElementById('phoneStep2').style.display = 'block';
-    document.getElementById('phoneDisplay').textContent = phone;
-    setTimeout(() => document.getElementById('otp0').focus(), 100);
-    showToast('Баталгаажуулах код илгээгдлээ (демо: 1234)', 'success');
+    const fullNumber = '+976' + phone;
+    const btn = document.getElementById('sendOtpBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Илгээж байна...'; }
+    try {
+      // Already-logged-in user re-verifying the exact number already on their account
+      if (auth.currentUser && auth.currentUser.phoneNumber === fullNumber) {
+        markListingPhoneVerified(phone);
+        return;
+      }
+      if (auth.currentUser) {
+        // Verify this number without switching the user's signed-in identity
+        try {
+          listingOtpConfirmation = await auth.currentUser.linkWithPhoneNumber(fullNumber, getListingRecaptcha());
+        } catch(e) {
+          if (e.code === 'auth/provider-already-linked') {
+            // Account already has a different phone linked — swap it for the one being verified now
+            await auth.currentUser.unlink(firebase.auth.PhoneAuthProvider.PROVIDER_ID);
+            listingOtpConfirmation = await auth.currentUser.linkWithPhoneNumber(fullNumber, getListingRecaptcha());
+          } else if (e.code === 'auth/credential-already-in-use') {
+            showToast('Энэ дугаар өөр бүртгэлд аль хэдийн ашиглагдаж байна');
+            return;
+          } else {
+            throw e;
+          }
+        }
+      } else {
+        // Not logged in yet — verifying the phone signs them in (matches "phone-verified poster" requirement)
+        listingOtpConfirmation = await auth.signInWithPhoneNumber(fullNumber, getListingRecaptcha());
+      }
+      addListingState.phone = phone;
+      document.getElementById('phoneStep1').style.display = 'none';
+      document.getElementById('phoneStep2').style.display = 'block';
+      document.getElementById('phoneDisplay').textContent = phone;
+      setTimeout(() => document.getElementById('otp0').focus(), 100);
+      showToast('Баталгаажуулах код илгээгдлээ', 'success');
+    } catch(e) {
+      const msgs = {
+        'auth/invalid-phone-number': 'Утасны дугаар буруу байна',
+        'auth/too-many-requests': 'Хэт олон оролдлого. Түр хүлээнэ үү.'
+      };
+      console.error('Listing phone verification failed:', e.code, e.message);
+      showToast(msgs[e.code] || ('Код илгээхэд алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : '')));
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Код илгээх'; }
+    }
   }
 
-  function checkOtp() {
-    const code = ['otp0', 'otp1', 'otp2', 'otp3'].map(id => document.getElementById(id).value).join('');
-    if (code === '1234') {
-      addListingState.phoneVerified = true;
-      document.getElementById('phoneVerifyBox').innerHTML = `
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div style="width:40px; height:40px; border-radius:50%; background:var(--accent); display:grid; place-items:center;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <div>
-            <div style="font-weight:700; color:#009878;">Утас амжилттай баталгаажлаа</div>
-            <div style="font-size:13px; color:var(--ink-3);">+976 ${addListingState.phone}</div>
-          </div>
-        </div>
-      `;
-      showToast('Утас амжилттай баталгаажлаа', 'success');
-    } else {
-      showToast('Код буруу байна. Демо-д 1234 оруулна уу');
-      ['otp0', 'otp1', 'otp2', 'otp3'].forEach(id => {
+  async function checkOtp() {
+    const code = ['otp0', 'otp1', 'otp2', 'otp3', 'otp4', 'otp5'].map(id => document.getElementById(id).value).join('');
+    if (code.length !== 6 || !listingOtpConfirmation) { showToast('6 оронтой кодоо бүрэн оруулна уу'); return; }
+    try {
+      await listingOtpConfirmation.confirm(code);
+      markListingPhoneVerified(addListingState.phone);
+    } catch(e) {
+      const msgs = { 'auth/invalid-verification-code': 'Код буруу байна', 'auth/code-expired': 'Кодын хугацаа дууссан байна' };
+      console.error('Listing OTP confirm failed:', e.code, e.message);
+      showToast(msgs[e.code] || 'Код буруу байна');
+      ['otp0', 'otp1', 'otp2', 'otp3', 'otp4', 'otp5'].forEach(id => {
         const el = document.getElementById(id);
         el.value = '';
         el.classList.remove('filled');
@@ -898,7 +960,7 @@
   }
 
   function resendOtp() {
-    showToast('Код дахин илгээгдлээ (демо: 1234)', 'success');
+    sendOtp();
   }
 
   async function submitListing() {
@@ -1341,6 +1403,7 @@
         heating: '', condition: '', description: '', features: [], images: [],
         phone: '', name: '', role: 'owner', plan: 'basic'
       };
+      listingOtpConfirmation = null;
       return;
     }
     if (confirm('Зар нэмэх процессоос гарвал оруулсан мэдээлэл устгагдана. Үргэлжлүүлэх үү?')) {
@@ -1352,6 +1415,7 @@
         heating: '', condition: '', description: '', features: [], images: [],
         phone: '', name: '', role: 'owner', plan: 'basic'
       };
+      listingOtpConfirmation = null;
     }
   }
 

@@ -273,6 +273,7 @@
   .badge.new { background: var(--primary); color: white; }
   .badge.vip { background: #FFB020; color: #1a0f00; }
   .badge.agent { background: #009878; color: white; }
+  .badge.demo { background: rgba(10, 22, 40, 0.75); color: white; }
 
   .listing-fav {
     position: absolute; top: 12px; right: 12px; width: 36px; height: 36px;
