@@ -141,12 +141,14 @@
   }
 
   // ===== ACCOUNT SIDEBAR (support + quick links, shown on Dashboard / My Listings) =====
-  const ACCT_SUPPORT_EMAIL = 'bbayraaa20@gmail.com';
+  const ACCT_SUPPORT_EMAIL = 'press@bairx.mn';
+  const ACCT_SUPPORT_PHONE = '7211-9435';
 
   function renderAccountSidebar() {
     const html = `
       <div class="acct-support">
         <div class="acct-support-label">Техникийн тусламж</div>
+        <div class="acct-support-phone">${ACCT_SUPPORT_PHONE}</div>
         <a class="acct-support-email" href="mailto:${ACCT_SUPPORT_EMAIL}">${ACCT_SUPPORT_EMAIL}</a>
       </div>
       <div class="acct-nav-list">
