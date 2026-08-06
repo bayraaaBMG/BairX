@@ -79,13 +79,15 @@
             tag: { type: 'new', text: 'Шинэ зар' }, badges: d.badges || ['user'],
             loanType: 'Тохиролцоно', monthly: 0,
             userSubmitted: true, _inactive: d.status === 'inactive',
-            viewCount: d.viewCount || 0, expiresAt: d.expiresAt || null, _bumpedAt: d.bumpedAt || numId
+            viewCount: d.viewCount || 0, favoriteCount: d.favoriteCount || 0, contactCount: d.contactCount || 0,
+            expiresAt: d.expiresAt || null, _bumpedAt: d.bumpedAt || numId
           };
           listings.push(entry);
           if (d.images && d.images.length > 0) listingExtras[numId] = { coords: { x: 50, y: 50 }, gallery: d.images };
           sellerData[numId] = { phone: d.sellerPhone || '', name: d.sellerName || 'Хэрэглэгч', type: d.sellerType || 'Хувь хүн' };
         });
         renderMyListings(); renderHomeListings(); renderListings(getFilteredListings());
+        if (typeof renderDashboard === 'function') renderDashboard();
       } catch(e) {}
 
       if (typeof subscribeMyChats === 'function') subscribeMyChats();

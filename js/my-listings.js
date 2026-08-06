@@ -1136,6 +1136,7 @@
     renderListings(getFilteredListings());
     updateCatPillCounts();
     renderMyListings();
+    if (typeof renderDashboard === 'function') renderDashboard();
 
     addListingState._syncFailed = firestoreSaveFailed;
     addListingState.step = 6;
@@ -1169,6 +1170,7 @@
     if (l.firestoreId) db.collection('listings').doc(l.firestoreId).update({ bumpedAt: now }).catch(() => {});
     showToast('Зар дээшлүүлэгдлээ', 'success');
     renderMyListings();
+    if (typeof renderDashboard === 'function') renderDashboard();
     renderListings(getFilteredListings());
     renderHomeListings();
   }
@@ -1290,6 +1292,7 @@
     } catch(e) {}
     showToast(l._inactive ? 'Зар идэвхгүй болгогдлоо' : 'Зар идэвхжүүлэгдлаа', 'success');
     renderMyListings();
+    if (typeof renderDashboard === 'function') renderDashboard();
     renderListings(getFilteredListings());
     renderHomeListings();
   }
@@ -1353,6 +1356,7 @@
         })).catch(() => {});
       }
       renderMyListings();
+    if (typeof renderDashboard === 'function') renderDashboard();
       renderHomeListings();
       renderListings(getFilteredListings());
     }
@@ -1387,6 +1391,7 @@
       localStorage.setItem('bairxUserListings', JSON.stringify(saved));
     } catch(e) {}
     renderMyListings();
+    if (typeof renderDashboard === 'function') renderDashboard();
     renderHomeListings();
     renderListings(getFilteredListings());
     updateCatPillCounts();

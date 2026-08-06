@@ -37,6 +37,7 @@
     const activeLink = document.querySelector(`.nav-links a[onclick*="'${target}'"]`);
     if (activeLink) activeLink.classList.add('active');
     window.scrollTo(0, 0);
+    if (target === 'dashboard' && typeof renderDashboard === 'function') renderDashboard();
   }
 
   function scrollToSection(id) {

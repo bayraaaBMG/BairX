@@ -533,6 +533,14 @@
   function revealPhone(listingId, phone) {
     const box = document.getElementById('contactBox_' + listingId);
     if (!box) return;
+    const l = listings.find(x => String(x.id) === String(listingId));
+    if (l) {
+      l.contactCount = (l.contactCount || 0) + 1;
+      if (l.firestoreId) {
+        db.collection('listings').doc(l.firestoreId).update({ contactCount: firebase.firestore.FieldValue.increment(1) }).catch(() => {});
+      }
+      if (typeof renderDashboard === 'function') renderDashboard();
+    }
     box.innerHTML = `
       <div style="font-size:22px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--ink);letter-spacing:2px;margin-bottom:16px;">${phone}</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">

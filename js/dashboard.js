@@ -1,21 +1,73 @@
-﻿  // ===== DASHBOARD VIEWS CHART =====
-  function renderViewsChart() {
+﻿  // ===== DASHBOARD (real, per-logged-in-user data) =====
+  function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  function renderDashboard() {
+    if (!currentUser) return;
+    const myListings = listings.filter(l => l.userSubmitted && l.ownerId === currentUser.uid);
+    const activeListings = myListings.filter(l => !l._inactive);
+    const totalViews = myListings.reduce((s, l) => s + (l.viewCount || 0), 0);
+    const totalContacts = myListings.reduce((s, l) => s + (l.contactCount || 0), 0);
+    const totalFavorites = myListings.reduce((s, l) => s + (l.favoriteCount || 0), 0);
+
+    setText('dashGreeting', `Сайн байна уу, ${currentUser.name}!`);
+    setText('dashSub', myListings.length > 0
+      ? `Танд ${activeListings.length} идэвхтэй зар байна. Нийт ${fmt(totalViews)} үзэлт авсан байна.`
+      : 'Та одоогоор зар нэмээгүй байна.');
+    setText('dashStatViews', fmt(totalViews));
+    setText('dashStatContacts', fmt(totalContacts));
+    setText('dashStatFavorites', fmt(totalFavorites));
+    setText('dashStatActive', activeListings.length);
+    setText('dashListingsSub', `${activeListings.length} идэвхтэй зар`);
+
+    const list = document.getElementById('dashMyListingsList');
+    if (list) {
+      if (myListings.length === 0) {
+        list.innerHTML = `<div style="text-align:center;padding:32px 16px;color:var(--ink-3);">
+          <div style="font-size:14px;margin-bottom:14px;">Та одоогоор зар нэмээгүй байна.</div>
+          <button class="btn btn-blue" onclick="openAddListing()">Эхний зараа нэмэх</button>
+        </div>`;
+      } else {
+        list.innerHTML = myListings.slice(0, 5).map(l => `
+          <div class="dash-listing" onclick="showPage('listings'); setTimeout(()=>openListing(${l.id}),150)" style="${l._inactive ? 'opacity:0.6;' : ''}">
+            <img class="dash-listing-img" src="${esc(l.img)}" alt="" onerror="this.style.background='var(--paper-2)';this.removeAttribute('src');" />
+            <div class="dash-listing-info">
+              <div class="dash-listing-title">${esc(l.title)}</div>
+              <div class="dash-listing-price">${fmtPrice(l.price)}</div>
+              <div class="dash-listing-stats">
+                <span class="dash-listing-stat">👁 ${l.viewCount || 0}</span>
+                <span class="dash-listing-stat">♥ ${l.favoriteCount || 0}</span>
+                <span class="dash-listing-stat">☎ ${l.contactCount || 0}</span>
+              </div>
+            </div>
+            <span class="dash-listing-status ${l._inactive ? '' : 'active'}">${l._expired ? 'Дууссан' : (l._inactive ? 'Идэвхгүй' : 'Идэвхтэй')}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    const banner = document.getElementById('dashBoostBanner');
+    if (banner) banner.style.display = activeListings.length > 0 ? 'block' : 'none';
+
+    renderViewsChart(activeListings);
+  }
+
+  // ===== DASHBOARD VIEWS CHART (real per-listing view counts) =====
+  function renderViewsChart(myActiveListings) {
     const chart = document.getElementById('viewsChart');
     if (!chart) return;
-    const data = [
-      { day: 'Дав', views: 120 },
-      { day: 'Мяг', views: 185 },
-      { day: 'Лха', views: 156 },
-      { day: 'Пүр', views: 220 },
-      { day: 'Баа', views: 280 },
-      { day: 'Бям', views: 195 },
-      { day: 'Ням', views: 128 }
-    ];
-    const max = Math.max(...data.map(d => d.views));
-    chart.innerHTML = data.map(d => `
+    const list = (myActiveListings || []).slice(0, 7);
+    if (list.length === 0) {
+      chart.innerHTML = `<div style="width:100%;text-align:center;color:var(--ink-3);font-size:13px;padding:20px 0;">Идэвхтэй зар нэмэхэд статистик энд харагдана</div>`;
+      return;
+    }
+    const max = Math.max(...list.map(l => l.viewCount || 0), 1);
+    chart.innerHTML = list.map(l => `
       <div class="views-bar-col">
-        <div class="views-bar" style="height:${(d.views / max) * 100}%;" title="${d.views} үзэлт"></div>
-        <div class="views-bar-label">${d.day}</div>
+        <div class="views-bar" style="height:${((l.viewCount || 0) / max) * 100}%;" title="${esc(l.title)}: ${l.viewCount || 0} үзэлт"></div>
+        <div class="views-bar-label" style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:44px;">${esc((l.title || '').split(',')[0])}</div>
       </div>
     `).join('');
   }

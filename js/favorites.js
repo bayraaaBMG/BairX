@@ -1,10 +1,12 @@
 ﻿  // ===== FAVORITE =====
   async function toggleFav(btn, id) {
+    const l = listings.find(x => x.id === id);
     const idx = favorites.indexOf(id);
     if (idx > -1) {
       favorites.splice(idx, 1);
       btn.classList.remove('faved');
       showToast('Таалагдсанаас хаслаа');
+      if (l) l.favoriteCount = Math.max(0, (l.favoriteCount || 0) - 1);
       if (currentUser) {
         try {
           const q = await db.collection('favorites')
@@ -13,10 +15,14 @@
           q.forEach(doc => doc.ref.delete());
         } catch(e) {}
       }
+      if (l?.firestoreId) {
+        db.collection('listings').doc(l.firestoreId).update({ favoriteCount: firebase.firestore.FieldValue.increment(-1) }).catch(() => {});
+      }
     } else {
       favorites.push(id);
       btn.classList.add('faved');
       showToast('Таалагдсан зар хадгаллаа', 'success');
+      if (l) l.favoriteCount = (l.favoriteCount || 0) + 1;
       if (currentUser) {
         try {
           await db.collection('favorites').add({
@@ -26,9 +32,13 @@
           });
         } catch(e) {}
       }
+      if (l?.firestoreId) {
+        db.collection('listings').doc(l.firestoreId).update({ favoriteCount: firebase.firestore.FieldValue.increment(1) }).catch(() => {});
+      }
     }
     try { localStorage.setItem('bairxFavorites', JSON.stringify(favorites)); } catch(e) {}
     updateFavCount();
+    if (typeof renderDashboard === 'function') renderDashboard();
   }
 
   function updateFavCount() {
