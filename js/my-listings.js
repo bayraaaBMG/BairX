@@ -12,7 +12,6 @@
     };
     Object.assign(addListingState, {
       step: 2,
-      phoneVerified: true,
       intent: l.cat === 'rent' ? 'rent' : 'sell',
       propertyType: l.propertyType || (l.cat === 'rent' ? 'apartment' : l.cat),
       title: l.title,
@@ -42,7 +41,6 @@
 
   let addListingState = {
     step: 1,
-    phoneVerified: false,
     // Step 1
     intent: 'sell', // sell, rent, exchange
     propertyType: '', // apartment, house, land, office
@@ -89,7 +87,7 @@
         <div class="al-header">
           <span class="al-eyebrow">Шинэ зар нийтлэх</span>
           <div class="al-title">Үл хөдлөх хөрөнгөө BairX дээр зарлаарай</div>
-          <div class="al-sub">Бүх алхамыг бөглөж дуусгахад ойролцоогоор 4-6 минут зарцуулагдана. Зар нийтлэхэд утсаар баталгаажилт шаардлагатай.</div>
+          <div class="al-sub">Бүх алхамыг бөглөж дуусгахад ойролцоогоор 4-6 минут зарцуулагдана.</div>
         </div>
 
         <!-- Stepper -->
@@ -386,9 +384,9 @@
         ` : ''}
 
         <div class="form-row">
-          <label class="form-label">Дэлгэрэнгүй тайлбар<span class="req">*</span> <span class="hint">— хамгийн багадаа 50 тэмдэгт</span></label>
+          <label class="form-label">Дэлгэрэнгүй тайлбар<span class="req">*</span></label>
           <textarea class="form-textarea" id="alDescription" rows="5" placeholder="Үл хөдлөх хөрөнгийнхөө онцлог, давуу талыг тайлбарлана уу. Жнь: Зайсаны бизнес төвөөс 5 минутын зайтай, өмнөд талдаа задгай, наран гэрэлтэй..." maxlength="2000">${addListingState.description}</textarea>
-          <div class="form-err-msg">Тайлбар хангалтгүй</div>
+          <div class="form-err-msg">Тайлбараа оруулна уу</div>
         </div>
 
         <div class="step-nav">
@@ -472,53 +470,15 @@
     return `
       <div class="step-panel ${active ? 'active' : ''}" data-step="5">
         <div class="step-section-title">Холбоо барих ба нийтлэх</div>
-        <div class="step-section-sub">Утсаар баталгаажуулсны дараа зар нийтлэгдэнэ</div>
+        <div class="step-section-sub">Худалдан авагчид зөвхөн энэ дугаараар холбогдоно</div>
 
-        <!-- Phone verification -->
-        <div class="phone-verify" id="phoneVerifyBox">
-          ${!addListingState.phoneVerified ? `
-            <div style="font-weight:700; font-size:15px; margin-bottom:6px;">Утсаар баталгаажих<span class="req">*</span></div>
-            <div style="font-size:13px; color:var(--ink-3); margin-bottom:14px;">Зар оруулагч хүн бүр утасны дугаараар бүртгүүлэх шаардлагатай. Энэ нь хуурамч зар, давхар зарын эрсдлээс сэргийлдэг.</div>
-
-            <div id="phoneStep1">
-              <label class="form-label" for="alPhone">Утасны дугаар</label>
-              <div class="phone-input-group">
-                <div class="phone-prefix">+976</div>
-                <input type="tel" class="form-input" id="alPhone" placeholder="88112233" maxlength="8" value="${addListingState.phone}" />
-                <button class="btn btn-blue" onclick="sendOtp()" id="sendOtpBtn">
-                  Код илгээх
-                </button>
-              </div>
-              <div id="listingRecaptchaContainer"></div>
-            </div>
-
-            <div id="phoneStep2" style="display:none;">
-              <div style="font-size:13px; color:var(--ink-2); margin-bottom:8px;">
-                <strong>+976 <span id="phoneDisplay"></span></strong> дугаарт 6 оронтой код илгээлээ
-              </div>
-              <div class="otp-input-group">
-                <input type="text" class="otp-input" maxlength="1" id="otp0" />
-                <input type="text" class="otp-input" maxlength="1" id="otp1" />
-                <input type="text" class="otp-input" maxlength="1" id="otp2" />
-                <input type="text" class="otp-input" maxlength="1" id="otp3" />
-                <input type="text" class="otp-input" maxlength="1" id="otp4" />
-                <input type="text" class="otp-input" maxlength="1" id="otp5" />
-              </div>
-              <div class="resend-row">
-                Код ирээгүй юу? <a onclick="resendOtp()">Дахин илгээх</a>
-              </div>
-            </div>
-          ` : `
-            <div style="display:flex; align-items:center; gap:12px;">
-              <div style="width:40px; height:40px; border-radius:50%; background:var(--accent); display:grid; place-items:center;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <div>
-                <div style="font-weight:700; color:#009878;">Утас амжилттай баталгаажлаа</div>
-                <div style="font-size:13px; color:var(--ink-3);">+976 ${addListingState.phone}</div>
-              </div>
-            </div>
-          `}
+        <div class="form-row">
+          <label class="form-label" for="alPhone">Холбоо барих утасны дугаар<span class="req">*</span></label>
+          <div class="phone-input-group">
+            <div class="phone-prefix">+976</div>
+            <input type="tel" class="form-input" id="alPhone" placeholder="88112233" maxlength="8" value="${addListingState.phone}" />
+          </div>
+          <div class="form-err-msg">Утасны дугаараа 8 оронтой зөв оруулна уу</div>
         </div>
 
         <div class="form-grid-2">
@@ -672,24 +632,6 @@
     const priceInput = document.getElementById('alPrice');
     if (priceInput) priceInput.addEventListener('input', updatePriceSuggestion);
 
-    // OTP auto-advance
-    for (let i = 0; i < 6; i++) {
-      const el = document.getElementById('otp' + i);
-      if (!el) continue;
-      el.addEventListener('input', () => {
-        if (el.value.length === 1) {
-          el.classList.add('filled');
-          if (i < 5) document.getElementById('otp' + (i + 1)).focus();
-          else checkOtp();
-        }
-      });
-      el.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !el.value && i > 0) {
-          document.getElementById('otp' + (i - 1)).focus();
-        }
-      });
-    }
-
     // Phone input — digits only
     const phoneEl = document.getElementById('alPhone');
     if (phoneEl) {
@@ -784,6 +726,7 @@
       addListingState.description = document.getElementById('alDescription')?.value || '';
     }
     if (step === 5) {
+      addListingState.phone = document.getElementById('alPhone')?.value || '';
       addListingState.name = document.getElementById('alName')?.value || '';
       addListingState.role = document.getElementById('alRole')?.value || 'owner';
     }
@@ -816,7 +759,7 @@
       const price = document.getElementById('alPrice');
       const desc = document.getElementById('alDescription');
       if (!price.value || parseFloat(price.value) < 1) { price.classList.add('err'); ok = false; }
-      if (!desc.value || desc.value.length < 50) { desc.classList.add('err'); ok = false; }
+      if (!desc.value || !desc.value.trim()) { desc.classList.add('err'); ok = false; }
       if (!ok) showToast('Заавал бөглөх талбаруудыг шалгана уу');
       return ok;
     }
@@ -828,10 +771,8 @@
       return true;
     }
     if (step === 5) {
-      if (!addListingState.phoneVerified) {
-        showToast('Утсаар баталгаажих шаардлагатай');
-        return false;
-      }
+      const phone = document.getElementById('alPhone');
+      if (!phone.value || phone.value.length !== 8) { phone.classList.add('err'); showToast('Утасны дугаараа 8 оронтой зөв оруулна уу'); return false; }
       const name = document.getElementById('alName');
       if (!name.value) { name.classList.add('err'); showToast('Нэрээ оруулна уу'); return false; }
       return true;
@@ -857,110 +798,6 @@
   function removeImage(idx) {
     addListingState.images.splice(idx, 1);
     document.getElementById('imageGrid').innerHTML = renderImageBoxes();
-  }
-
-  // ===== REAL PHONE VERIFICATION (Firebase Phone Auth — same mechanism as login) =====
-  let listingRecaptchaVerifier = null;
-  let listingOtpConfirmation = null;
-
-  function getListingRecaptcha() {
-    if (listingRecaptchaVerifier) { try { listingRecaptchaVerifier.clear(); } catch(e) {} }
-    listingRecaptchaVerifier = new firebase.auth.RecaptchaVerifier('listingRecaptchaContainer', { size: 'invisible' });
-    return listingRecaptchaVerifier;
-  }
-
-  function markListingPhoneVerified(phone) {
-    addListingState.phone = phone;
-    addListingState.phoneVerified = true;
-    const box = document.getElementById('phoneVerifyBox');
-    if (box) box.innerHTML = `
-      <div style="display:flex; align-items:center; gap:12px;">
-        <div style="width:40px; height:40px; border-radius:50%; background:var(--accent); display:grid; place-items:center;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <div>
-          <div style="font-weight:700; color:#009878;">Утас амжилттай баталгаажлаа</div>
-          <div style="font-size:13px; color:var(--ink-3);">+976 ${esc(phone)}</div>
-        </div>
-      </div>
-    `;
-    showToast('Утас амжилттай баталгаажлаа', 'success');
-  }
-
-  async function sendOtp() {
-    const phone = document.getElementById('alPhone').value.trim();
-    if (phone.length !== 8) {
-      showToast('Утасны дугаар 8 оронтой байх ёстой');
-      return;
-    }
-    const fullNumber = '+976' + phone;
-    const btn = document.getElementById('sendOtpBtn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Илгээж байна...'; }
-    try {
-      // Already-logged-in user re-verifying the exact number already on their account
-      if (auth.currentUser && auth.currentUser.phoneNumber === fullNumber) {
-        markListingPhoneVerified(phone);
-        return;
-      }
-      if (auth.currentUser) {
-        // Verify this number without switching the user's signed-in identity
-        try {
-          listingOtpConfirmation = await auth.currentUser.linkWithPhoneNumber(fullNumber, getListingRecaptcha());
-        } catch(e) {
-          if (e.code === 'auth/provider-already-linked') {
-            // Account already has a different phone linked — swap it for the one being verified now
-            await auth.currentUser.unlink(firebase.auth.PhoneAuthProvider.PROVIDER_ID);
-            listingOtpConfirmation = await auth.currentUser.linkWithPhoneNumber(fullNumber, getListingRecaptcha());
-          } else if (e.code === 'auth/credential-already-in-use') {
-            showToast('Энэ дугаар өөр бүртгэлд аль хэдийн ашиглагдаж байна');
-            return;
-          } else {
-            throw e;
-          }
-        }
-      } else {
-        // Not logged in yet — verifying the phone signs them in (matches "phone-verified poster" requirement)
-        listingOtpConfirmation = await auth.signInWithPhoneNumber(fullNumber, getListingRecaptcha());
-      }
-      addListingState.phone = phone;
-      document.getElementById('phoneStep1').style.display = 'none';
-      document.getElementById('phoneStep2').style.display = 'block';
-      document.getElementById('phoneDisplay').textContent = phone;
-      setTimeout(() => document.getElementById('otp0').focus(), 100);
-      showToast('Баталгаажуулах код илгээгдлээ', 'success');
-    } catch(e) {
-      const msgs = {
-        'auth/invalid-phone-number': 'Утасны дугаар буруу байна',
-        'auth/too-many-requests': 'Хэт олон оролдлого. Түр хүлээнэ үү.'
-      };
-      console.error('Listing phone verification failed:', e.code, e.message);
-      showToast(msgs[e.code] || ('Код илгээхэд алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : '')));
-    } finally {
-      if (btn) { btn.disabled = false; btn.textContent = 'Код илгээх'; }
-    }
-  }
-
-  async function checkOtp() {
-    const code = ['otp0', 'otp1', 'otp2', 'otp3', 'otp4', 'otp5'].map(id => document.getElementById(id).value).join('');
-    if (code.length !== 6 || !listingOtpConfirmation) { showToast('6 оронтой кодоо бүрэн оруулна уу'); return; }
-    try {
-      await listingOtpConfirmation.confirm(code);
-      markListingPhoneVerified(addListingState.phone);
-    } catch(e) {
-      const msgs = { 'auth/invalid-verification-code': 'Код буруу байна', 'auth/code-expired': 'Кодын хугацаа дууссан байна' };
-      console.error('Listing OTP confirm failed:', e.code, e.message);
-      showToast(msgs[e.code] || 'Код буруу байна');
-      ['otp0', 'otp1', 'otp2', 'otp3', 'otp4', 'otp5'].forEach(id => {
-        const el = document.getElementById(id);
-        el.value = '';
-        el.classList.remove('filled');
-      });
-      document.getElementById('otp0').focus();
-    }
-  }
-
-  function resendOtp() {
-    sendOtp();
   }
 
   async function submitListing() {
@@ -1402,25 +1239,23 @@
     if (addListingState.step === 6 || addListingState.step === 1) {
       closeModal();
       addListingState = {
-        step: 1, phoneVerified: false, intent: 'sell', propertyType: '',
+        step: 1, intent: 'sell', propertyType: '',
         title: '', district: '', khoroo: '', address: '', area: '', rooms: '',
         floor: '', totalFloors: '', year: '', price: '', buildingType: '',
         heating: '', condition: '', description: '', features: [], images: [],
         phone: '', name: '', role: 'owner', plan: 'basic'
       };
-      listingOtpConfirmation = null;
       return;
     }
     if (confirm('Зар нэмэх процессоос гарвал оруулсан мэдээлэл устгагдана. Үргэлжлүүлэх үү?')) {
       closeModal();
       addListingState = {
-        step: 1, phoneVerified: false, intent: 'sell', propertyType: '',
+        step: 1, intent: 'sell', propertyType: '',
         title: '', district: '', khoroo: '', address: '', area: '', rooms: '',
         floor: '', totalFloors: '', year: '', price: '', buildingType: '',
         heating: '', condition: '', description: '', features: [], images: [],
         phone: '', name: '', role: 'owner', plan: 'basic'
       };
-      listingOtpConfirmation = null;
     }
   }
 
