@@ -21,6 +21,7 @@
         name: fallbackFirst,
         lastName: fallbackLast,
         letter: fallbackFirst[0] || 'Х',
+        photoURL: fbUser.photoURL || null,
         isGoogle,
         isPhone
       };
@@ -44,6 +45,7 @@
           currentUser.name = data.firstName || currentUser.name;
           currentUser.lastName = data.lastName || currentUser.lastName;
           currentUser.letter = currentUser.name[0] || 'Х';
+          if (data.photoURL) currentUser.photoURL = data.photoURL;
           updateNavLoggedIn();
         }
       } catch(e) {
@@ -380,7 +382,14 @@
     if (userAvatar) {
       userAvatar.style.display = 'grid';
       const letterEl = document.getElementById('userAvLetter');
-      if (letterEl) letterEl.textContent = currentUser.letter;
+      const imgEl = document.getElementById('userAvImg');
+      if (currentUser.photoURL) {
+        if (imgEl) { imgEl.src = currentUser.photoURL; imgEl.style.display = 'block'; }
+        if (letterEl) letterEl.style.display = 'none';
+      } else {
+        if (imgEl) imgEl.style.display = 'none';
+        if (letterEl) { letterEl.style.display = ''; letterEl.textContent = currentUser.letter; }
+      }
     }
     if (userDropName) userDropName.textContent = (currentUser.lastName ? currentUser.lastName + ' ' : '') + currentUser.name;
     if (userDropPhone) userDropPhone.textContent = currentUser.isGoogle ? 'Google хэрэглэгч' : (currentUser.isPhone ? (currentUser.phoneNumber || '') : (currentUser.email || ''));

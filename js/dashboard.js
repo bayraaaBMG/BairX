@@ -168,6 +168,7 @@
   // ===== МИНИЙ ТОХИРГОО (account settings) =====
   function openAccountSettings() {
     if (!currentUser) { showToast('Нэвтэрнэ үү'); openAuth(); return; }
+    pendingProfilePhoto = null;
     const canChangePassword = !currentUser.isGoogle && !currentUser.isPhone;
     document.getElementById('modalContent').innerHTML = `
       <button class="modal-close" onclick="closeModal()">
@@ -176,6 +177,19 @@
       <div style="padding:32px 28px;">
         <span class="al-eyebrow">Тохиргоо</span>
         <div class="al-title" style="margin-bottom:20px;">Миний тохиргоо</div>
+
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
+          <div style="position:relative; width:72px; height:72px; flex-shrink:0;">
+            <div id="acctPhotoPreview" style="width:72px; height:72px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--primary-deep)); display:grid; place-items:center; overflow:hidden; font-size:26px; font-weight:700; color:#fff;">
+              ${currentUser.photoURL ? `<img src="${esc(currentUser.photoURL)}" alt="" style="width:100%;height:100%;object-fit:cover;">` : esc(currentUser.letter)}
+            </div>
+            <label for="acctPhotoInput" style="position:absolute; bottom:-2px; right:-2px; width:26px; height:26px; border-radius:50%; background:var(--ink); display:grid; place-items:center; cursor:pointer; border:2px solid white;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </label>
+            <input type="file" id="acctPhotoInput" accept="image/*" style="display:none" onchange="handleProfilePhotoUpload(event)" />
+          </div>
+          <div style="font-size:12px; color:var(--ink-3); line-height:1.5;">Профайл зураг<br>JPG, PNG зөвшөөрнө</div>
+        </div>
 
         <div class="form-grid-2">
           <div>
@@ -208,16 +222,47 @@
     document.body.style.overflow = 'hidden';
   }
 
+  let pendingProfilePhoto = null;
+  function handleProfilePhotoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { showToast('Зурган файл сонгоно уу'); return; }
+    if (file.size > 8 * 1024 * 1024) { showToast('Зураг 8MB-аас бага байх ёстой'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Resize down to a small square so the base64 result stays well under
+        // Firestore's 1MiB document limit regardless of the source photo size.
+        const maxDim = 320;
+        let { width, height } = img;
+        if (width > height && width > maxDim) { height = Math.round(height * maxDim / width); width = maxDim; }
+        else if (height >= width && height > maxDim) { width = Math.round(width * maxDim / height); height = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        pendingProfilePhoto = canvas.toDataURL('image/jpeg', 0.85);
+        const preview = document.getElementById('acctPhotoPreview');
+        if (preview) preview.innerHTML = `<img src="${pendingProfilePhoto}" alt="" style="width:100%;height:100%;object-fit:cover;">`;
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
   async function saveAccountSettings() {
     const firstName = document.getElementById('acctFirstName').value.trim();
     const lastName = document.getElementById('acctLastName').value.trim();
     if (!firstName) { showToast('Нэрээ оруулна уу'); return; }
     try {
-      await db.collection('users').doc(currentUser.uid).set({ firstName, lastName }, { merge: true });
+      const updateData = { firstName, lastName };
+      if (pendingProfilePhoto) updateData.photoURL = pendingProfilePhoto;
+      await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
       if (auth.currentUser) await auth.currentUser.updateProfile({ displayName: firstName + (lastName ? ' ' + lastName : '') });
       currentUser.name = firstName;
       currentUser.lastName = lastName;
       currentUser.letter = firstName[0] || 'Х';
+      if (pendingProfilePhoto) { currentUser.photoURL = pendingProfilePhoto; pendingProfilePhoto = null; }
       updateNavLoggedIn();
       showToast('Мэдээлэл шинэчлэгдлээ', 'success');
     } catch(e) {
