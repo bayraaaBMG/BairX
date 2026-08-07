@@ -141,7 +141,7 @@
   }
 
   // ===== ACCOUNT SIDEBAR (support + quick links, shown on Dashboard / My Listings) =====
-  const ACCT_SUPPORT_EMAIL = 'press@bairx.mn';
+  const ACCT_SUPPORT_EMAIL = 'bbayraa20@gmail.com';
   const ACCT_SUPPORT_PHONE = '7211-9435';
 
   function renderAccountSidebar() {
