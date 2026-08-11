@@ -11,7 +11,7 @@
 
         <h4>Beta хувилбарын байдал</h4>
         <div class="info-stats">
-          <div class="info-stat"><div class="info-stat-num">30+</div><div class="info-stat-label">Demo зар</div></div>
+          <div class="info-stat"><div class="info-stat-num">20+</div><div class="info-stat-label">Demo зар</div></div>
           <div class="info-stat"><div class="info-stat-num">12</div><div class="info-stat-label">Банкны тооцоолуур</div></div>
           <div class="info-stat"><div class="info-stat-num">2026</div><div class="info-stat-label">Үүсгэн байгуулсан</div></div>
           <div class="info-stat"><div class="info-stat-num" style="font-size:16px;">Beta</div><div class="info-stat-label">Хөгжлийн шат</div></div>

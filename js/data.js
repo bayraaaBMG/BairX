@@ -4,37 +4,6 @@
   })();
   const listings = [
     {
-      id: 1,
-      cat: 'apartment',
-      title: 'Зайсан, Хүннү 2222, 2 өрөө',
-      loc: 'Хан-Уул, 11-р хороо · Зайсан',
-      district: 'khan-uul',
-      price: 412,
-      pricePerSqm: 5.28,
-      area: 78,
-      rooms: 2,
-      floor: '8/16',
-      year: 2022,
-      tag: { type: 'normal', text: 'Зах зээлийн үнэ' },
-      badges: ['verified', 'new'],
-      loanType: 'Ипотек 12%',
-      monthly: 3.18,
-      img: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
-      // Мэргэжлийн нэмэлт мэдээлэл
-      buildingType: 'Цутгамал төмөр бетон',
-      insulation: 'Гадна 100мм EPS дулаалга',
-      heating: 'Төвлөрсөн халаалт',
-      parking: 'Подвалын паркинг (нэмэлт 25 сая ₮)',
-      elevator: '2 ширхэг лифт',
-      utilityCost: '180,000 ₮/сар (зун) · 320,000 ₮/сар (өвөл)',
-      ownership: 'Хувийн өмчлөл',
-      cadastre: 'Кадастрын мэдээлэл шалгагдсан',
-      collateral: 'Барьцаагүй',
-      taxDebt: 'Татварын өргүй',
-      condition: 'Засвартай (2024 онд хийсэн)',
-      legalNotes: 'Гэрчилгээ бэлэн, нэн даруй шилжүүлэх боломжтой'
-    },
-    {
       id: 2,
       cat: 'apartment',
       title: 'Олимп тауэр, Сүхбаатар, 3 өрөө',
@@ -63,36 +32,6 @@
       taxDebt: 'Татварын өргүй (2024 он тушаасан)',
       condition: 'Үндсэн засвартай, угсралттай',
       legalNotes: 'Барьцаа чөлөөлсний дараа шилжүүлнэ (7-14 хоног)'
-    },
-    {
-      id: 3,
-      cat: 'house',
-      title: 'Яармаг, тусгайлсан хаус',
-      loc: 'Хан-Уул, Яармаг 5-р хэсэг',
-      district: 'khan-uul',
-      price: 920,
-      pricePerSqm: 3.83,
-      area: 240,
-      rooms: 5,
-      floor: '0.07 га',
-      year: 2018,
-      tag: { type: 'below', text: '↓ 8% доогуур' },
-      badges: ['verified'],
-      loanType: 'Ипотек 12%',
-      monthly: 7.10,
-      img: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80',
-      buildingType: 'Хийц өрлөгийн (керамзитбетон блок)',
-      insulation: 'Гадна 150мм EPS + дотор гипсокартон',
-      heating: 'Бие даасан хийн зуух (BAXI) + цахилгаан халаагуур',
-      parking: 'Хувийн 2 машины гараж + 2 машины газар',
-      elevator: 'Байхгүй (2 давхар)',
-      utilityCost: 'Хий: 280,000 ₮/сар (өвөл), 80,000 ₮/сар (зун), Цахилгаан 150,000 ₮',
-      ownership: 'Хувийн өмчлөл (газар + барилга)',
-      cadastre: 'Газрын кадастр тодорхой, 700м² талбай',
-      collateral: 'Барьцаагүй',
-      taxDebt: 'Татварын өргүй',
-      condition: 'Засвартай, нийт тавилгатай',
-      legalNotes: 'Газрын гэрчилгээ хувийн өмчлөлтэй (15А-001234)'
     },
     {
       id: 4,
@@ -125,36 +64,6 @@
       legalNotes: 'ХХБ-тай гэрээтэй, барилгын зээл шилжүүлэх боломжтой'
     },
     {
-      id: 5,
-      cat: 'office',
-      title: 'Чингисийн өргөн чөлөө, А зэрэглэлийн оффис',
-      loc: 'Сүхбаатар дүүрэг · Бизнес төв',
-      district: 'sukhbaatar',
-      price: 1780,
-      pricePerSqm: 10.0,
-      area: 178,
-      rooms: 'А',
-      floor: '7/12',
-      year: 2021,
-      tag: { type: 'normal', text: 'Зах зээлийн үнэ' },
-      badges: ['verified', 'hot'],
-      loanType: 'Арилжааны 18%',
-      monthly: 18.45,
-      img: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
-      buildingType: 'Цутгамал төмөр бетон, газар хөдлөлтийн зэрэглэл 9',
-      insulation: 'Хосолсон ханатай, дотор/гадна 200мм',
-      heating: 'Төвлөрсөн + кондиционер (VRV систем)',
-      parking: '2 машины байр (үнэнд багтсан)',
-      elevator: '4 ширхэг өндөр хурдны лифт',
-      utilityCost: '850,000 ₮/сар (бүх зардал багтсан)',
-      ownership: 'ХХК-ийн өмчлөл',
-      cadastre: 'Арилжааны зориулалт, кадастр шалгасан',
-      collateral: 'Барьцаагүй',
-      taxDebt: 'Татварын өргүй',
-      condition: 'Premium засвартай, гүйцэт тавилгатай',
-      legalNotes: 'Арилжааны үйл ажиллагаа эрхлэх зөвшөөрөл бэлэн'
-    },
-    {
       id: 6,
       cat: 'land',
       title: 'Налайх, барилгын зориулалттай газар',
@@ -185,18 +94,6 @@
       legalNotes: 'Газар эзэмшүүлэх гэрчилгээ (НА-009876) бэлэн'
     },
     {
-      id: 7, cat: 'apartment', title: 'Баянзүрх, Баянмонгол 2 өрөө',
-      loc: 'Баянзүрх, 14-р хороо · Баянмонгол', district: 'bayanzurkh',
-      price: 195, pricePerSqm: 3.9, area: 50, rooms: 2, floor: '5/9', year: 2019,
-      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
-      loanType: 'Ипотек 12%', monthly: 1.50,
-      img: 'https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=800&q=80',
-      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 80мм EPS', heating: 'Төвлөрсөн халаалт',
-      parking: 'Гадна талбай', elevator: '1 лифт', utilityCost: '160,000 ₮/сар (зун) · 280,000 ₮/сар (өвөл)',
-      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
-      taxDebt: 'Өргүй', condition: 'Засвартай', legalNotes: 'Гэрчилгээ бэлэн'
-    },
-    {
       id: 8, cat: 'apartment', title: 'Чингэлтэй, 13-р хороо, 1 өрөө',
       loc: 'Чингэлтэй, 13-р хороо · Амгалан', district: 'chingeltei',
       price: 148, pricePerSqm: 3.7, area: 40, rooms: 1, floor: '3/5', year: 2015,
@@ -207,18 +104,6 @@
       parking: 'Байхгүй', elevator: 'Байхгүй', utilityCost: '120,000 ₮/сар (зун) · 220,000 ₮/сар (өвөл)',
       ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
       taxDebt: 'Өргүй', condition: 'Засвартай, тавилгатай', legalNotes: 'Гэрчилгээ бэлэн, нэн даруй шилжүүлэх'
-    },
-    {
-      id: 9, cat: 'apartment', title: 'Баянгол, Гандан, 3 өрөө',
-      loc: 'Баянгол, 6-р хороо · Гандан', district: 'bayangol',
-      price: 325, pricePerSqm: 4.5, area: 72, rooms: 3, floor: '7/12', year: 2020,
-      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified', 'hot'],
-      loanType: 'Ипотек 12%', monthly: 2.51,
-      img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
-      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 100мм EPS', heating: 'Төвлөрсөн халаалт',
-      parking: 'Подвалын паркинг (20 сая ₮)', elevator: '2 лифт', utilityCost: '200,000 ₮/сар (зун) · 360,000 ₮/сар (өвөл)',
-      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
-      taxDebt: 'Өргүй', condition: 'Гүйцэт засвартай', legalNotes: 'Гэрчилгээ бэлэн'
     },
     {
       id: 10, cat: 'apartment', title: 'Сонгинохайрхан, шинэ 2 өрөө',
@@ -233,18 +118,6 @@
       taxDebt: 'Шинэ барилга', condition: 'Засваргүй (white box)', legalNotes: 'Барилгын гэрээгээр'
     },
     {
-      id: 11, cat: 'apartment', title: 'Сүхбаатар, Их Тойруу 1 өрөө',
-      loc: 'Сүхбаатар, 8-р хороо · Их Тойруу', district: 'sukhbaatar',
-      price: 225, pricePerSqm: 5.0, area: 45, rooms: 1, floor: '11/18', year: 2021,
-      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
-      loanType: 'Ипотек 12%', monthly: 1.74,
-      img: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=800&q=80',
-      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 120мм MW', heating: 'Төвлөрсөн + зохицуулалт',
-      parking: 'Ойролцоо авч болно (25 сая ₮)', elevator: '2 лифт', utilityCost: '180,000 ₮/сар (зун) · 310,000 ₮/сар (өвөл)',
-      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
-      taxDebt: 'Өргүй', condition: 'Засвартай', legalNotes: 'Гэрчилгээ бэлэн'
-    },
-    {
       id: 12, cat: 'house', title: 'Хан-Уул, Зайсан, 4 өрөө хаус',
       loc: 'Хан-Уул, Зайсан 15-р хэсэг', district: 'khan-uul',
       price: 780, pricePerSqm: 3.25, area: 240, rooms: 4, floor: '0.06 га', year: 2020,
@@ -255,18 +128,6 @@
       parking: '2 машины хаалттай гараж', elevator: 'Байхгүй', utilityCost: 'Хий 250,000 · Цахилгаан 130,000 ₮/сар',
       ownership: 'Хувийн өмчлөл (газар + барилга)', cadastre: 'Газрын кадастр шалгасан', collateral: 'Барьцаагүй',
       taxDebt: 'Өргүй', condition: 'Засвартай, тавилгатай', legalNotes: 'Газрын гэрчилгээ бэлэн'
-    },
-    {
-      id: 13, cat: 'apartment', title: 'Баянзүрх, 17-р хороо, 3 өрөө',
-      loc: 'Баянзүрх, 17-р хороо · Нисэх', district: 'bayanzurkh',
-      price: 385, pricePerSqm: 4.85, area: 79, rooms: 3, floor: '10/16', year: 2021,
-      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
-      loanType: 'Ипотек 12%', monthly: 2.97,
-      img: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80',
-      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 100мм EPS', heating: 'Төвлөрсөн халаалт',
-      parking: 'Гадна талбай', elevator: '2 лифт', utilityCost: '210,000 ₮/сар (зун) · 380,000 ₮/сар (өвөл)',
-      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
-      taxDebt: 'Өргүй', condition: 'Гүйцэт засвартай', legalNotes: 'Гэрчилгээ бэлэн'
     },
     {
       id: 14, cat: 'office', title: 'Чингэлтэй, Б зэрэглэлийн оффис',
@@ -281,18 +142,6 @@
       taxDebt: 'Өргүй', condition: 'Premium засвартай', legalNotes: 'Зөвшөөрөл бэлэн'
     },
     {
-      id: 15, cat: 'land', title: 'Налайх, иргэний зориулалт газар',
-      loc: 'Налайх дүүрэг · 3-р хороо', district: 'nalaikh',
-      price: 95, pricePerSqm: 0.19, area: 500, rooms: '0.05 га', floor: 'Эзэмшил',
-      year: 'Цахилгаан татсан', tag: { type: 'below', text: '↓ 10% доогуур' }, badges: ['verified'],
-      loanType: 'Бэлэн мөнгө', monthly: '+15% / 5 жил',
-      img: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80',
-      buildingType: 'Газар (иргэний)', insulation: 'Хамаарахгүй', heating: 'Дэд бүтэц байгаа',
-      parking: 'Талбай дотор', elevator: 'Хамаарахгүй', utilityCost: 'Цахилгаан холболт хийсэн',
-      ownership: 'Хувийн эзэмшил (60 жил)', cadastre: 'Шинэчилсэн', collateral: 'Барьцаагүй',
-      taxDebt: 'Өргүй', condition: 'Хашаатай', legalNotes: 'Гэрчилгээ бэлэн'
-    },
-    {
       id: 16, cat: 'apartment', title: 'Баянгол, Ногоон нуур, 2 өрөө',
       loc: 'Баянгол, 19-р хороо · Ногоон нуур', district: 'bayangol',
       price: 255, pricePerSqm: 4.25, area: 60, rooms: 2, floor: '6/12', year: 2018,
@@ -303,18 +152,6 @@
       parking: 'Гадна талбай', elevator: '1 лифт', utilityCost: '170,000 ₮/сар (зун) · 300,000 ₮/сар (өвөл)',
       ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
       taxDebt: 'Өргүй', condition: 'Засвартай', legalNotes: 'Гэрчилгээ бэлэн'
-    },
-    {
-      id: 17, cat: 'apartment', title: 'Сүхбаатар, Сансар, 4 өрөө',
-      loc: 'Сүхбаатар, 3-р хороо · Сансар', district: 'sukhbaatar',
-      price: 920, pricePerSqm: 6.1, area: 151, rooms: 4, floor: '16/22', year: 2022,
-      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified', 'hot'],
-      loanType: 'Ипотек 12%', monthly: 7.10,
-      img: 'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&q=80',
-      buildingType: 'Цутгамал төмөр бетон, 9 баллын тэсвэртэй', insulation: 'Гадна 150мм MW', heating: 'Төвлөрсөн + зохицуулалт',
-      parking: '2 машины байр (40 сая ₮)', elevator: '3 лифт (нэг нь VIP)', utilityCost: '380,000 ₮/сар (зун) · 680,000 ₮/сар (өвөл)',
-      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
-      taxDebt: 'Өргүй', condition: 'Premium засвартай, тавилгатай', legalNotes: 'Гэрчилгээ бэлэн'
     },
     {
       id: 18, cat: 'apartment', title: 'Хан-Уул, Зайсан Тольт, 2 өрөө',
@@ -329,18 +166,6 @@
       taxDebt: 'Өргүй', condition: 'Засвартай', legalNotes: 'Гэрчилгээ бэлэн, нэн даруй шилжүүлэх'
     },
     {
-      id: 19, cat: 'land', title: 'Баянзүрх, барилгын газар 700м²',
-      loc: 'Баянзүрх, 27-р хороо', district: 'bayanzurkh',
-      price: 182, pricePerSqm: 0.26, area: 700, rooms: '0.07 га', floor: 'Эзэмшил',
-      year: 'Ус, цахилгаан', tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified'],
-      loanType: 'Бэлэн мөнгө', monthly: '+18% / 5 жил',
-      img: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80',
-      buildingType: 'Газар (барилгын)', insulation: 'Хамаарахгүй', heating: 'Дэд бүтэц бэлэн',
-      parking: 'Талбай дотор', elevator: 'Хамаарахгүй', utilityCost: 'Ус, цахилгаан холбоотой',
-      ownership: 'Хувийн эзэмшил (60 жил)', cadastre: 'Кадастр шинэчилсэн', collateral: 'Барьцаагүй',
-      taxDebt: 'Татвар тушаасан', condition: 'Хашаатай, барилгад бэлэн', legalNotes: 'Гэрчилгээ бэлэн'
-    },
-    {
       id: 20, cat: 'house', title: 'Сонгинохайрхан, 2 давхар хаус',
       loc: 'Сонгинохайрхан, 32-р хороо', district: 'songinokhairkhan',
       price: 520, pricePerSqm: 2.6, area: 200, rooms: 4, floor: '0.08 га', year: 2019,
@@ -351,18 +176,6 @@
       parking: '2 машины гараж', elevator: 'Байхгүй', utilityCost: 'Хий 220,000 · Цахилгаан 110,000 ₮/сар',
       ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
       taxDebt: 'Өргүй', condition: 'Засвартай, хэсэгчлэн тавилгатай', legalNotes: 'Газар + барилгын гэрчилгээ бэлэн'
-    },
-    {
-      id: 21, cat: 'apartment', title: 'Чингэлтэй, шинэ 3 өрөө',
-      loc: 'Чингэлтэй, 6-р хороо · Хүрэлтогоот', district: 'chingeltei',
-      price: 292, pricePerSqm: 4.45, area: 65, rooms: 3, floor: '5/12', year: 2023,
-      tag: { type: 'below', text: '↓ 7% доогуур' }, badges: ['verified', 'new'],
-      loanType: 'Барилгын зээл 9%', monthly: 2.25,
-      img: 'https://images.unsplash.com/photo-1560185008-b033106af5c3?w=800&q=80',
-      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 100мм PIR', heating: 'Төвлөрсөн халаалт',
-      parking: '1 машины байр (15 сая ₮)', elevator: '2 лифт', utilityCost: '180,000 ₮/сар (зун) · 320,000 ₮/сар (өвөл)',
-      ownership: 'Барилгын явц 95%', cadastre: 'Гарч буй', collateral: 'Барьцаагүй',
-      taxDebt: 'Шинэ барилга', condition: 'Засваргүй (white box)', legalNotes: 'ХХБ-тай гэрээтэй'
     },
     {
       id: 22, cat: 'office', title: 'Баянгол, арилжааны зориулалт',
@@ -377,18 +190,6 @@
       taxDebt: 'Өргүй', condition: 'Premium засвартай', legalNotes: 'Зөвшөөрөл бэлэн'
     },
     {
-      id: 23, cat: 'apartment', title: 'Сүхбаатар, Чингис хаан, 2 өрөө',
-      loc: 'Сүхбаатар, 6-р хороо · Чингис хааны гудамж', district: 'sukhbaatar',
-      price: 485, pricePerSqm: 5.72, area: 85, rooms: 2, floor: '12/20', year: 2021,
-      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified', 'hot'],
-      loanType: 'Ипотек 12%', monthly: 3.74,
-      img: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80',
-      buildingType: 'Цутгамал төмөр бетон', insulation: 'Гадна 120мм MW', heating: 'Төвлөрсөн + зохицуулалт',
-      parking: '1 машины байр (35 сая ₮)', elevator: '3 лифт', utilityCost: '250,000 ₮/сар (зун) · 430,000 ₮/сар (өвөл)',
-      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
-      taxDebt: 'Өргүй', condition: 'Premium засвартай', legalNotes: 'Гэрчилгээ бэлэн'
-    },
-    {
       id: 24, cat: 'apartment', title: 'Хан-Уул, Зайсан Тольт, 3 өрөө',
       loc: 'Хан-Уул, 12-р хороо · Зайсан', district: 'khan-uul',
       price: 510, pricePerSqm: 5.1, area: 100, rooms: 3, floor: '11/18', year: 2022,
@@ -399,18 +200,6 @@
       parking: '1 машины байр (32 сая ₮)', elevator: '2 лифт', utilityCost: '280,000 ₮/сар (зун) · 490,000 ₮/сар (өвөл)',
       ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
       taxDebt: 'Өргүй', condition: 'Гүйцэт засвартай, тавилгатай', legalNotes: 'Гэрчилгээ бэлэн'
-    },
-    {
-      id: 25, cat: 'apartment', title: 'Баянзүрх, 1 өрөө, хямд',
-      loc: 'Баянзүрх, 22-р хороо', district: 'bayanzurkh',
-      price: 165, pricePerSqm: 3.67, area: 45, rooms: 1, floor: '4/9', year: 2016,
-      tag: { type: 'below', text: '↓ 8% доогуур' }, badges: ['verified'],
-      loanType: 'Ипотек 12%', monthly: 1.27,
-      img: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80',
-      buildingType: 'Хуучин цутгамал (K серий)', insulation: 'Засвар хийсэн', heating: 'Төвлөрсөн халаалт',
-      parking: 'Гадна талбай', elevator: 'Байхгүй', utilityCost: '110,000 ₮/сар (зун) · 200,000 ₮/сар (өвөл)',
-      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
-      taxDebt: 'Өргүй', condition: 'Засвартай', legalNotes: 'Гэрчилгээ бэлэн'
     },
     {
       id: 26, cat: 'house', title: 'Чингэлтэй, орчин үеийн хаус',
@@ -425,18 +214,6 @@
       taxDebt: 'Өргүй', condition: 'Засвартай, тавилгатай', legalNotes: 'Гэрчилгээ бэлэн'
     },
     {
-      id: 27, cat: 'apartment', title: 'Налайх, 2 өрөө, хямд',
-      loc: 'Налайх дүүрэг · 5-р хороо', district: 'nalaikh',
-      price: 128, pricePerSqm: 2.56, area: 50, rooms: 2, floor: '3/5', year: 2014,
-      tag: { type: 'below', text: '↓ 12% доогуур' }, badges: ['verified'],
-      loanType: 'Ипотек 12%', monthly: 0.99,
-      img: 'https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=800&q=80',
-      buildingType: 'Хуучин хийц (блок)', insulation: 'Дотроос хийсэн 50мм', heating: 'Төвлөрсөн халаалт',
-      parking: 'Гадна талбай', elevator: 'Байхгүй', utilityCost: '90,000 ₮/сар (зун) · 170,000 ₮/сар (өвөл)',
-      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
-      taxDebt: 'Өргүй', condition: 'Хэсэгчлэн засвартай', legalNotes: 'Гэрчилгээ бэлэн'
-    },
-    {
       id: 28, cat: 'apartment', title: 'Баянгол, Хорооллын гудамж, 3 өрөө',
       loc: 'Баянгол, 11-р хороо · Хорооллын гудамж', district: 'bayangol',
       price: 312, pricePerSqm: 4.45, area: 70, rooms: 3, floor: '8/14', year: 2020,
@@ -447,18 +224,6 @@
       parking: 'Гадна талбай (8 сая ₮)', elevator: '2 лифт', utilityCost: '190,000 ₮/сар (зун) · 340,000 ₮/сар (өвөл)',
       ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
       taxDebt: 'Өргүй', condition: 'Засвартай', legalNotes: 'Гэрчилгээ бэлэн'
-    },
-    {
-      id: 29, cat: 'apartment', title: 'Сүхбаатар, Токио Street, 5 өрөө',
-      loc: 'Сүхбаатар, 5-р хороо · Токио Street', district: 'sukhbaatar',
-      price: 1250, pricePerSqm: 6.94, area: 180, rooms: 5, floor: '18/24', year: 2023,
-      tag: { type: 'normal', text: 'Зах зээлийн үнэ' }, badges: ['verified', 'hot'],
-      loanType: 'Ипотек 12%', monthly: 9.64,
-      img: 'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&q=80',
-      buildingType: 'Цутгамал төмөр бетон, 9 баллын тэсвэртэй', insulation: 'Гадна 150мм MW', heating: 'Төвлөрсөн + хувийн зохицуулалт',
-      parking: '2 машины байр (50 сая ₮)', elevator: '4 лифт (2 нь VIP)', utilityCost: '500,000 ₮/сар (зун) · 900,000 ₮/сар (өвөл)',
-      ownership: 'Хувийн өмчлөл', cadastre: 'Шалгасан', collateral: 'Барьцаагүй',
-      taxDebt: 'Өргүй', condition: 'Premium засвартай, тавилгатай', legalNotes: 'Гэрчилгээ бэлэн, нэн даруй'
     },
     {
       id: 30, cat: 'land', title: 'Хан-Уул, хөрөнгө оруулалтын газар',
@@ -473,15 +238,6 @@
       taxDebt: 'Татвар тушаасан', condition: 'Хашаатай, нэн даруй барилга эхлэх боломжтой', legalNotes: 'Гэрчилгээ бэлэн (ХА-002341)'
     },
     // ---- ТҮРЭЭС ----
-    { id: 31, cat: 'rent', title: 'Зайсан, 2 өрөө түрээс', loc: 'Хан-Уул · Зайсан', district: 'khan-uul',
-      price: 1.8, pricePerSqm: 'Сарын түрээс', area: 65, rooms: 2, floor: '5/16', year: 2021,
-      tag: { type: 'normal', text: 'Түрээс' }, badges: ['verified'],
-      loanType: 'Хамаарахгүй', monthly: 1.8,
-      img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
-      buildingType: 'Цутгамал', insulation: '100мм EPS', heating: 'Төвлөрсөн', parking: 'Байхгүй',
-      elevator: '2 лифт', utilityCost: 'Нэмэлтээр', ownership: 'Хувийн', cadastre: 'Баталгаажсан',
-      collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй', condition: 'Бүрэн засвартай',
-      legalNotes: '1 сарын барьцаа + 1 сарын урьдчилгаа' },
     { id: 32, cat: 'rent', title: 'Сансар, 3 өрөө, бүрэн тавилгатай', loc: 'Сүхбаатар · Сансар', district: 'sukhbaatar',
       price: 2.5, pricePerSqm: 'Сарын түрээс', area: 90, rooms: 3, floor: '8/14', year: 2019,
       tag: { type: 'normal', text: 'Түрээс' }, badges: ['verified', 'hot'],
@@ -491,15 +247,6 @@
       parking: '1 машины байр (нэмэлтээр)', elevator: '3 лифт', utilityCost: 'Нэмэлтээр',
       ownership: 'Хувийн', cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
       condition: 'Тавилгатай, угсралттай', legalNotes: '1 сарын барьцаа' },
-    { id: 33, cat: 'rent', title: 'Чингэлтэй, 1 өрөө studio', loc: 'Чингэлтэй · Төв', district: 'chingeltei',
-      price: 0.8, pricePerSqm: 'Сарын түрээс', area: 35, rooms: 1, floor: '3/9', year: 2017,
-      tag: { type: 'normal', text: 'Түрээс' }, badges: [],
-      loanType: 'Хамаарахгүй', monthly: 0.8,
-      img: 'https://images.unsplash.com/photo-1560185127-6ac024dd3cbc?w=800&q=80',
-      buildingType: 'Панел', insulation: '80мм EPS', heating: 'Төвлөрсөн', parking: 'Байхгүй',
-      elevator: '1 лифт', utilityCost: 'Нэмэлтээр', ownership: 'Хувийн',
-      cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
-      condition: 'Хэрэгцээний засвартай', legalNotes: 'Гэрээ 1 жил' },
     { id: 34, cat: 'rent', title: 'Баянзүрх, 2 өрөө цэмцгэр', loc: 'Баянзүрх · 17-р хороо', district: 'bayanzurkh',
       price: 1.2, pricePerSqm: 'Сарын түрээс', area: 58, rooms: 2, floor: '6/12', year: 2020,
       tag: { type: 'below', text: '↓ Хямд' }, badges: ['new'],
@@ -509,15 +256,6 @@
       elevator: '2 лифт', utilityCost: 'Нэмэлтээр', ownership: 'Хувийн',
       cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
       condition: 'Засвартай', legalNotes: '2 сарын урьдчилгаа' },
-    { id: 35, cat: 'rent', title: 'Баянгол, 1 өрөө Ногоон нуур', loc: 'Баянгол · Ногоон нуур', district: 'bayangol',
-      price: 0.75, pricePerSqm: 'Сарын түрээс', area: 38, rooms: 1, floor: '2/5', year: 2015,
-      tag: { type: 'normal', text: 'Түрээс' }, badges: [],
-      loanType: 'Хамаарахгүй', monthly: 0.75,
-      img: 'https://images.unsplash.com/photo-1512918728672-db6de3cd93e3?w=800&q=80',
-      buildingType: 'Хийц', insulation: '80мм', heating: 'Төвлөрсөн', parking: 'Байхгүй',
-      elevator: 'Байхгүй', utilityCost: 'Нэмэлтээр', ownership: 'Хувийн',
-      cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
-      condition: 'Дунд зэргийн', legalNotes: 'Гэрээ 6 сар+ боломжтой' },
     { id: 36, cat: 'rent', title: 'Их Тойруу, 3 өрөө VIP', loc: 'Сүхбаатар · Их Тойруу', district: 'sukhbaatar',
       price: 3.2, pricePerSqm: 'Сарын түрээс', area: 105, rooms: 3, floor: '12/18', year: 2023,
       tag: { type: 'normal', text: 'Түрээс · Шинэ' }, badges: ['verified', 'new', 'hot'],
@@ -527,15 +265,6 @@
       parking: '2 машины байр', elevator: '3 лифт', utilityCost: 'Нэмэлтээр',
       ownership: 'Хувийн', cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
       condition: 'Брэнд шинэ, угсралттай', legalNotes: '2 сарын барьцаа' },
-    { id: 37, cat: 'rent', title: 'Сонгинохайрхан, 2 өрөө', loc: 'Сонгинохайрхан · 17-р хороо', district: 'songinokhairkhan',
-      price: 0.95, pricePerSqm: 'Сарын түрээс', area: 55, rooms: 2, floor: '4/9', year: 2016,
-      tag: { type: 'normal', text: 'Түрээс' }, badges: [],
-      loanType: 'Хамаарахгүй', monthly: 0.95,
-      img: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80',
-      buildingType: 'Панел', insulation: '80мм', heating: 'Төвлөрсөн', parking: 'Байхгүй',
-      elevator: '1 лифт', utilityCost: 'Нэмэлтээр', ownership: 'Хувийн',
-      cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
-      condition: 'Дунд зэргийн', legalNotes: '1 сарын барьцаа' },
     { id: 38, cat: 'rent', title: 'Хан-Уул, 4 өрөө хаус түрээс', loc: 'Хан-Уул · Яармаг', district: 'khan-uul',
       price: 3.8, pricePerSqm: 'Сарын түрээс', area: 160, rooms: 4, floor: '2 давхар', year: 2018,
       tag: { type: 'normal', text: 'Хаус түрээс' }, badges: ['verified'],
@@ -545,15 +274,6 @@
       parking: '2 машины байр (хашаанд)', elevator: 'Хамаарахгүй', utilityCost: 'Нэмэлтээр',
       ownership: 'Хувийн', cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
       condition: 'Сайн засвартай', legalNotes: '2 сарын барьцаа + гэрээ' },
-    { id: 39, cat: 'rent', title: 'Баянзүрх, 1 өрөө хямд', loc: 'Баянзүрх · 6-р хороо', district: 'bayanzurkh',
-      price: 0.65, pricePerSqm: 'Сарын түрээс', area: 32, rooms: 1, floor: '1/5', year: 2010,
-      tag: { type: 'normal', text: 'Түрээс · Хямд' }, badges: [],
-      loanType: 'Хамаарахгүй', monthly: 0.65,
-      img: 'https://images.unsplash.com/photo-1527456011965-6b88c71e5b9b?w=800&q=80',
-      buildingType: 'Хийц өрлөг', insulation: 'Байхгүй', heating: 'Төвлөрсөн', parking: 'Байхгүй',
-      elevator: 'Байхгүй', utilityCost: 'Нэмэлтээр', ownership: 'Хувийн',
-      cadastre: 'Баталгаажсан', collateral: 'Хамаарахгүй', taxDebt: 'Хамаарахгүй',
-      condition: 'Хэрэгцээний', legalNotes: 'Гэрээ уян хатан' },
     { id: 40, cat: 'rent', title: 'Сүхбаатар, 2 өрөө цэвэрхэн', loc: 'Сүхбаатар · Энхтайваны өргөн чөлөө', district: 'sukhbaatar',
       price: 2.0, pricePerSqm: 'Сарын түрээс', area: 72, rooms: 2, floor: '7/15', year: 2022,
       tag: { type: 'normal', text: 'Түрээс' }, badges: ['verified', 'new'],
