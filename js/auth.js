@@ -22,6 +22,8 @@
         lastName: fallbackLast,
         letter: fallbackFirst[0] || 'Х',
         photoURL: fbUser.photoURL || null,
+        accountType: 'owner',
+        companyName: '',
         isGoogle,
         isPhone
       };
@@ -46,6 +48,8 @@
           currentUser.lastName = data.lastName || currentUser.lastName;
           currentUser.letter = currentUser.name[0] || 'Х';
           if (data.photoURL) currentUser.photoURL = data.photoURL;
+          currentUser.accountType = data.accountType || 'owner';
+          currentUser.companyName = data.companyName || '';
           updateNavLoggedIn();
         }
       } catch(e) {
@@ -97,7 +101,7 @@
           };
           listings.push(entry);
           if (d.images && d.images.length > 0) listingExtras[numId] = { coords: { x: 50, y: 50 }, gallery: d.images };
-          sellerData[numId] = { phone: d.sellerPhone || '', name: d.sellerName || 'Хэрэглэгч', type: d.sellerType || 'Хувь хүн' };
+          sellerData[numId] = { phone: d.sellerPhone || '', name: d.sellerName || 'Хэрэглэгч', type: d.sellerType || 'Хувь хүн', company: d.sellerCompany || '' };
         });
         renderMyListings(); renderHomeListings(); renderListings(getFilteredListings());
         if (typeof renderDashboard === 'function') renderDashboard();

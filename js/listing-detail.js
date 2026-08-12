@@ -835,32 +835,76 @@
     if (typeof unsubscribeActiveChat === 'function') unsubscribeActiveChat();
   }
 
-  // ===== SELLER PROFILE =====
+  // ===== SELLER / AGENT PROFILE =====
+  // One profile per real owner: every listing that owner has posted, plus their role
+  // (Эзэмшигч/Агент/Компани), verified badge, and self-reported company name. Since
+  // Firestore rules only let a user read their own users/{uid} doc, all of this rides
+  // on the listing documents themselves (sellerType/sellerVerified/sellerCompany,
+  // snapshotted at publish time) rather than a live cross-account lookup.
   function openSellerProfile(ownerId, name) {
     if (!ownerId) return;
-    const sellerListings = listings.filter(x => x.ownerId === ownerId && !x._inactive);
+    const allSellerListings = listings.filter(x => x.ownerId === ownerId)
+      .sort((a, b) => (b._bumpedAt || b.id) - (a._bumpedAt || a.id));
+    if (!allSellerListings.length) return;
+    const activeListings = allSellerListings.filter(x => !x._inactive);
+    const primary = allSellerListings[0];
+    // Not every listing necessarily has a populated sellerData entry (e.g. legacy rows) —
+    // use the newest one that actually does, rather than assuming it's always `primary`.
+    const withSellerData = allSellerListings.find(x => sellerData[x.id]) || primary;
+    const sd = sellerData[withSellerData.id] || {};
+    const roleLabel = sd.type || 'Хувь хүн';
+    const isVerified = primary.userSubmitted ? !!primary.sellerVerified : true;
+    const memberSince = primary.userSubmitted ? new Date().getFullYear() : 2020 + (primary.id % 5);
+
     document.getElementById('modalContent').innerHTML = `
       <button class="modal-close" onclick="closeModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
       <div style="padding:32px 28px;">
-        <span class="al-eyebrow">Худалдагчийн профайл</span>
-        <div class="al-title" style="margin-bottom:6px;">${esc(name)}</div>
-        <div style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">${sellerListings.length} идэвхтэй зар</div>
+        <span class="al-eyebrow">Профайл</span>
+        <div style="display:flex; align-items:center; gap:14px; margin:10px 0 4px;">
+          <div style="width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--primary-deep)); display:grid; place-items:center; color:#fff; font-weight:700; font-size:20px; flex-shrink:0;">${esc((name || 'А')[0])}</div>
+          <div>
+            <div class="al-title" style="margin-bottom:2px; font-size:22px;">${esc(name)}${isVerified ? ' <span class="seller-verified">✓ Verified</span>' : ''}</div>
+            <div style="font-size:13px; color:var(--ink-3);">
+              <span style="font-weight:600; color:var(--ink-2);">${roleLabel === 'Агент' ? 'Үл хөдлөх хөрөнгийн агент' : (roleLabel === 'Компани' ? 'Барилгын компани' : 'Хувь хүн — эзэмшигч')}</span>
+              ${sd.company ? ` · ${esc(sd.company)}` : ''}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; gap:18px; font-size:12.5px; color:var(--ink-3); margin:14px 0 22px; padding-bottom:18px; border-bottom:1px solid var(--line);">
+          <span><b style="color:var(--ink);">${activeListings.length}</b> идэвхтэй зар</span>
+          <span><b style="color:var(--ink);">${allSellerListings.length}</b> нийт нийтэлсэн</span>
+          <span>Гишүүн: <b style="color:var(--ink);">${memberSince}</b> оноос</span>
+        </div>
+        ${sd.phone ? `
+        <div style="display:flex; gap:10px; margin-bottom:24px;">
+          <button class="btn btn-blue" style="flex:1; justify-content:center;" onclick="revealPhone(${withSellerData.id}, '${esc(sd.phone)}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
+            Залгах
+          </button>
+          <button class="btn btn-ghost" style="flex:1; justify-content:center; border:1.5px solid var(--line-2);" onclick="closeModal(); setTimeout(() => openListingChat(${withSellerData.id}, '${esc(withSellerData.title)}'), 250)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            Чат бичих
+          </button>
+        </div>
+        ` : ''}
+        <div style="font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-3); margin-bottom:12px;">Бүх зар (${allSellerListings.length})</div>
         <div class="listings-grid" id="sellerProfileGrid"></div>
       </div>
     `;
     document.getElementById('modal').classList.add('open');
     document.body.style.overflow = 'hidden';
     const grid = document.getElementById('sellerProfileGrid');
-    grid.innerHTML = sellerListings.map(l => `
-      <article class="listing-card" onclick="closeModal(); setTimeout(()=>openListing(${l.id}),200)">
+    grid.innerHTML = allSellerListings.map(l => `
+      <article class="listing-card" style="${l._inactive ? 'opacity:0.6;' : ''}" onclick="closeModal(); setTimeout(()=>openListing(${l.id}),200)">
         <div class="listing-img">
           <img src="${esc(l.img)}" alt="${esc(l.title)}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';" />
         </div>
         <div class="listing-body">
           <div class="listing-price-row">
             <div class="listing-price">${fmtPrice(l.price)}</div>
+            ${l._inactive ? '<span style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-3); background:var(--paper-2); padding:3px 8px; border-radius:100px;">Идэвхгүй</span>' : ''}
           </div>
           <h3 class="listing-title">${esc(l.title)}</h3>
           <div class="listing-loc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${esc(l.loc)}</div>

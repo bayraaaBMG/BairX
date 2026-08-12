@@ -152,6 +152,10 @@
 
   function openAddListing() {
     addListingState.step = 1;
+    // Default the "Та хэн вэ?" role to the account's saved identity (Миний тохиргоо) so
+    // it stays consistent across listings instead of resetting to "owner" every time —
+    // still overridable per listing in Step 5.
+    if (currentUser?.accountType) addListingState.role = currentUser.accountType;
     document.getElementById('modalContent').innerHTML = renderAddListing();
     document.getElementById('modal').classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -1276,6 +1280,10 @@
         sellerName: s.name || currentUser.name || 'Хэрэглэгч',
         sellerPhone: s.phone || '',
         sellerType: s.role === 'agent' ? 'Агент' : (s.role === 'company' ? 'Компани' : 'Хувь хүн'),
+        // Snapshot at publish time — other users can't read another account's private
+        // users/{uid} doc (Firestore rules), so verification/company identity has to
+        // ride along on the listing itself the same way sellerVerified already does.
+        sellerCompany: currentUser.companyName || '',
         status: 'active',
         badges: ['new', 'user'],
         boosted: false,
@@ -1357,7 +1365,8 @@
       sellerData[targetId] = {
         phone: s.phone || '9900-0000',
         name: s.name || 'Хэрэглэгч',
-        type: s.role === 'agent' ? 'Агент' : (s.role === 'company' ? 'Компани' : 'Хувь хүн')
+        type: s.role === 'agent' ? 'Агент' : (s.role === 'company' ? 'Компани' : 'Хувь хүн'),
+        company: currentUser?.companyName || ''
       };
       try {
         const sd = JSON.parse(localStorage.getItem('bairxSellerData') || '{}');

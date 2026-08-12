@@ -205,6 +205,20 @@
           <label class="form-label">Холбоо барих</label>
           <input class="form-input" value="${esc(currentUser.isPhone ? (currentUser.phoneNumber || '') : (currentUser.email || ''))}" disabled />
         </div>
+
+        <div class="form-row">
+          <label class="form-label">Хэрэглэгчийн төрөл <span class="hint">— зарын профайл дээр харагдана</span></label>
+          <select class="form-select" id="acctType" onchange="document.getElementById('acctCompanyRow').style.display = this.value === 'owner' ? 'none' : ''">
+            <option value="owner" ${(currentUser.accountType || 'owner') === 'owner' ? 'selected' : ''}>Үл хөдлөхийн эзэн</option>
+            <option value="agent" ${currentUser.accountType === 'agent' ? 'selected' : ''}>Үл хөдлөхийн агент</option>
+            <option value="company" ${currentUser.accountType === 'company' ? 'selected' : ''}>Барилгын компани</option>
+          </select>
+        </div>
+        <div class="form-row" id="acctCompanyRow" style="display:${(currentUser.accountType === 'agent' || currentUser.accountType === 'company') ? '' : 'none'};">
+          <label class="form-label">Агентлаг/Компанийн нэр <span class="hint">— заавал биш</span></label>
+          <input class="form-input" id="acctCompanyName" placeholder="Жнь: Болор Эстэйт" value="${esc(currentUser.companyName || '')}" />
+        </div>
+
         <button class="btn btn-blue btn-lg" style="width:100%;justify-content:center;margin-top:8px;" onclick="saveAccountSettings()">Хадгалах</button>
 
         ${canChangePassword ? `
@@ -254,14 +268,18 @@
     const firstName = document.getElementById('acctFirstName').value.trim();
     const lastName = document.getElementById('acctLastName').value.trim();
     if (!firstName) { showToast('Нэрээ оруулна уу'); return; }
+    const accountType = document.getElementById('acctType')?.value || 'owner';
+    const companyName = document.getElementById('acctCompanyName')?.value.trim() || '';
     try {
-      const updateData = { firstName, lastName };
+      const updateData = { firstName, lastName, accountType, companyName };
       if (pendingProfilePhoto) updateData.photoURL = pendingProfilePhoto;
       await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
       if (auth.currentUser) await auth.currentUser.updateProfile({ displayName: firstName + (lastName ? ' ' + lastName : '') });
       currentUser.name = firstName;
       currentUser.lastName = lastName;
       currentUser.letter = firstName[0] || 'Х';
+      currentUser.accountType = accountType;
+      currentUser.companyName = companyName;
       if (pendingProfilePhoto) { currentUser.photoURL = pendingProfilePhoto; pendingProfilePhoto = null; }
       updateNavLoggedIn();
       showToast('Мэдээлэл шинэчлэгдлээ', 'success');
