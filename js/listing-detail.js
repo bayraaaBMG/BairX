@@ -786,46 +786,24 @@
     const l = listings.find(x => x.id === id);
     if (!l) return;
     if (!currentUser) { closeModal(); showToast('Чат бичихийн тулд нэвтэрнэ үү'); openAuth(); return; }
-    if (!l.ownerId) { openDemoListingChat(id, title); return; } // safety net only — every listing gets an ownerId
     if (l.ownerId === currentUser.uid) { showToast('Энэ бол таны өөрийн зар'); return; }
     closeModal();
     const chatId = await getOrCreateChat(l);
     if (!chatId) return;
+    // A brand-new thread (no messages sent yet) gets a pre-filled, editable greeting so
+    // starting a real conversation is one tap instead of a blank input — an existing
+    // conversation is left alone so reopening it doesn't keep re-suggesting a greeting.
+    const chat = myChats.find(c => c.id === chatId);
+    const starter = (chat && !chat.lastMessage) ? 'Сайн байна уу, энэ зар одоо ч сул байгаа юу?' : '';
     setTimeout(() => {
       document.getElementById('modalContent').className = 'modal chat-modal';
       renderChatShell();
       document.getElementById('modal').classList.add('open');
       document.body.style.overflow = 'hidden';
-      openChatThread(chatId);
+      openChatThread(chatId, starter);
     }, 200);
   }
 
-  // Demo listings have no real counterpart account to chat with — kept as a scripted preview only.
-  function openDemoListingChat(id, title) {
-    closeModal();
-    setTimeout(() => {
-      const msg = `Сайн байна уу! "${title}" зарт сонирхсон байна. Дэлгэрэнгүй мэдээлэл авах боломжтой юу?`;
-      document.getElementById('modalContent').innerHTML = `
-        <button class="modal-close" onclick="closeModal()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
-        <div style="padding:32px 28px;">
-          <h3 style="font-family:'Fraunces',serif;margin-bottom:6px;">Зар дахь чат</h3>
-          <div style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">${esc(title)}</div>
-          <textarea id="chatMsgInput" rows="5" style="width:100%;padding:12px;border:1.5px solid var(--line-2);border-radius:12px;font-size:14px;font-family:'Manrope',sans-serif;resize:vertical;outline:none;">${esc(msg)}</textarea>
-          <div style="display:flex;gap:10px;margin-top:14px;">
-            <button class="btn btn-blue btn-lg" style="flex:1;justify-content:center;" onclick="showToast('Мессеж илгээгдлээ!','success');closeModal();">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              Илгээх
-            </button>
-            <button class="btn btn-ghost" onclick="closeModal()">Цуцлах</button>
-          </div>
-        </div>
-      `;
-      document.getElementById('modal').classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }, 300);
-  }
 
   function closeModal() {
     document.getElementById('modal').classList.remove('open');

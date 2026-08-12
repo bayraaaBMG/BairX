@@ -110,22 +110,25 @@
   function switchRealChat(chatId) {
     openChatThread(chatId);
     renderChatListPanel();
+  }
+
+  function openChatThread(chatId, starterText) {
+    activeChatId = chatId;
+    unsubscribeActiveChat();
+    renderChatMainShell(chatId, starterText);
+    _chatMsgUnsub = db.collection('chats').doc(chatId).collection('messages').orderBy('createdAt', 'asc')
+      .onSnapshot(snap => renderChatMessages(snap.docs.map(d => d.data())), () => {});
+    db.collection('chats').doc(chatId).update({ ['unread.' + currentUser.uid]: 0 }).catch(() => {});
+    // On mobile the list panel covers the whole modal (absolute-positioned) — whenever a
+    // specific thread is opened, whether from the list or straight from a listing page,
+    // switch to showing that conversation instead of leaving the list on top of it.
     if (window.innerWidth <= 640) {
       const panel = document.getElementById('chatListPanel');
       if (panel) panel.classList.add('hidden-mobile');
     }
   }
 
-  function openChatThread(chatId) {
-    activeChatId = chatId;
-    unsubscribeActiveChat();
-    renderChatMainShell(chatId);
-    _chatMsgUnsub = db.collection('chats').doc(chatId).collection('messages').orderBy('createdAt', 'asc')
-      .onSnapshot(snap => renderChatMessages(snap.docs.map(d => d.data())), () => {});
-    db.collection('chats').doc(chatId).update({ ['unread.' + currentUser.uid]: 0 }).catch(() => {});
-  }
-
-  function renderChatMainShell(chatId) {
+  function renderChatMainShell(chatId, starterText) {
     const chat = myChats.find(c => c.id === chatId);
     const pane = document.getElementById('chatMainPane');
     if (!chat || !pane) return;
@@ -152,12 +155,16 @@
       ` : ''}
       <div class="chat-messages" id="chatMessages"></div>
       <div class="chat-input-bar">
-        <input type="text" class="chat-input" id="chatInput" placeholder="Зурвас бичих..." onkeydown="if(event.key==='Enter') sendRealChatMessage()" />
+        <input type="text" class="chat-input" id="chatInput" placeholder="Зурвас бичих..." value="${esc(starterText || '')}" onkeydown="if(event.key==='Enter') sendRealChatMessage()" />
         <button class="chat-send" onclick="sendRealChatMessage()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
     `;
+    if (starterText) {
+      const inputEl = document.getElementById('chatInput');
+      if (inputEl) { inputEl.focus(); inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length); }
+    }
   }
 
   function openChatListingRef(listingKey) {
