@@ -1043,7 +1043,11 @@
         }
       } catch(e) {
         firestoreSaveFailed = true;
-        showToast('Сервер лүү илгээхэд алдаа гарлаа — зар зөвхөн энэ төхөөрөмж дээр хадгалагдлаа');
+        console.error('Listing Firestore save failed:', e.code, e.message);
+        const reason = e.code === 'permission-denied'
+          ? ' (зөвшөөрөл татгалзагдлаа — Firestore Rules Publish хийгдээгvй байж болзошгvй)'
+          : (e.code ? ' (' + e.code + ')' : '');
+        showToast('Сервер лүү илгээхэд алдаа гарлаа — зар зөвхөн энэ төхөөрөмж дээр хадгалагдлаа' + reason);
       }
     }
     // ===== END FIRESTORE =====
