@@ -198,7 +198,7 @@
         <div class="modal-price-row">
           <div>
             <div class="modal-price">${fmtPrice(l.price)}</div>
-            <div style="font-size:13px; color:var(--ink-3); margin-top:4px;">${typeof l.pricePerSqm === 'number' ? l.pricePerSqm + ' сая ₮ / м²' : ''}</div>
+            <div style="font-size:13px; color:var(--ink-3); margin-top:4px;">${pricePerSqmText(l)}</div>
           </div>
           <span class="price-tag ${l.tag.type === 'normal' ? '' : l.tag.type}">${l.tag.text}</span>
         </div>

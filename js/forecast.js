@@ -74,12 +74,13 @@
     const props = compareList.map(id => listings.find(x => x.id === id));
     // Determine best values
     const minPrice = Math.min(...props.map(p => p.price));
-    const minPricePerSqm = Math.min(...props.filter(p => typeof p.pricePerSqm === 'number').map(p => p.pricePerSqm));
+    const perSqmOf = p => (p.cat !== 'rent' && p.area && typeof p.price === 'number') ? (p.price * 1000000) / p.area : null;
+    const minPricePerSqm = Math.min(...props.map(perSqmOf).filter(v => v != null));
     const maxArea = Math.max(...props.map(p => p.area));
 
     const rows = [
       { label: 'Үнэ', get: p => fmtPrice(p.price), best: p => p.price === minPrice },
-      { label: 'м² үнэ', get: p => typeof p.pricePerSqm === 'number' ? p.pricePerSqm + ' сая ₮' : '—', best: p => p.pricePerSqm === minPricePerSqm },
+      { label: 'м² үнэ', get: p => pricePerSqmText(p) || '—', best: p => perSqmOf(p) === minPricePerSqm },
       { label: 'Талбай', get: p => p.area + ' м²', best: p => p.area === maxArea },
       { label: 'Өрөө', get: p => p.rooms, best: () => false },
       { label: 'Давхар', get: p => p.floor, best: () => false },

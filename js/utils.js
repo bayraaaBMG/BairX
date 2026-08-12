@@ -12,6 +12,15 @@
     const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
+  // Always computed live from current price/area (never a stale stored snapshot), so it
+  // stays correct even for listings loaded from Firestore without a pre-computed field,
+  // and updates automatically the instant price or area changes.
+  function pricePerSqmText(l) {
+    if (!l || l.cat === 'rent' || typeof l.price !== 'number' || !l.area) return '';
+    const perSqm = (l.price * 1000000) / l.area;
+    if (!isFinite(perSqm) || perSqm <= 0) return '';
+    return fmt(perSqm) + ' ₮/м²';
+  }
   function fmtPrice(p) {
     if (p >= 1000) return (p/1000).toFixed(1) + ' тэрбум ₮';
     return p + ' сая ₮';

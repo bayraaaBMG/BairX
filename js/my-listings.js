@@ -480,6 +480,7 @@
           <label class="form-label">Үнэ (сая ₮)<span class="req">*</span></label>
           <input type="number" class="form-input" id="alPrice" placeholder="Жнь: 412" min="1" step="0.5" value="${addListingState.price}" />
           <div class="form-err-msg">Үнэ оруулна уу</div>
+          <div id="pricePerSqmBox" style="margin-top:8px;"></div>
           <div id="priceSuggestBox"></div>
         </div>
 
@@ -876,11 +877,27 @@
   function updatePriceSuggestion() {
     const priceInput = document.getElementById('alPrice');
     const box = document.getElementById('priceSuggestBox');
-    if (!priceInput || !box) return;
+    const ppsqmBox = document.getElementById('pricePerSqmBox');
+    if (!priceInput) return;
     const price = parseFloat(priceInput.value);
     const area = parseFloat(document.getElementById('alArea')?.value || addListingState.area);
-    if (!price || !area) { box.innerHTML = ''; return; }
+    if (!price || !area) {
+      if (box) box.innerHTML = '';
+      if (ppsqmBox) ppsqmBox.innerHTML = '';
+      return;
+    }
 
+    if (ppsqmBox) {
+      const totalTogrog = Math.round(price * 1000000);
+      ppsqmBox.innerHTML = `
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 14px; background:var(--paper-2); border-radius:10px; font-size:13px;">
+          <span style="color:var(--ink-3);">${fmt(totalTogrog)}₮ ÷ ${area}м² =</span>
+          <strong style="font-family:'JetBrains Mono',monospace; color:var(--primary);">${fmt(totalTogrog / area)}₮/м²</strong>
+        </div>
+      `;
+    }
+
+    if (!box) return;
     const district = document.getElementById('alDistrict')?.value || addListingState.district;
     const pricePerSqm = price / area;
 
