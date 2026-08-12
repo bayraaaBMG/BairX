@@ -74,13 +74,22 @@
       geoLng: l.geoLng || null,
       area: String(l.area),
       rooms: String(l.rooms),
+      bedrooms: l.bedrooms ? String(l.bedrooms) : '',
+      bathrooms: l.bathrooms ? String(l.bathrooms) : '',
       floor: (l.floor || '').split('/')[0] || '',
       totalFloors: (l.floor || '').split('/')[1] || '',
       year: String(l.year),
+      buildingName: l.buildingName || '',
+      complex: l.complex || '',
       price: String(l.price),
       buildingType: l.buildingType || '',
       heating: l.heating || '',
+      insulationType: l.insulationType || '',
+      windowDirection: l.windowDirection || '',
+      hoaFee: l.hoaFee ? String(l.hoaFee) : '',
       condition: l.condition || '',
+      deposit: l.deposit ? String(l.deposit) : '',
+      minTerm: l.minTerm || '',
       description: '',
       features: Array.isArray(l.features) ? l.features.slice() : [],
       images: listingExtras[l.id]?.gallery || (l.img ? [l.img] : []),
@@ -107,14 +116,23 @@
     geoLng: null,
     area: '',
     rooms: '',
+    bedrooms: '',
+    bathrooms: '',
     floor: '',
     totalFloors: '',
     year: '',
+    buildingName: '',
+    complex: '',
     // Step 3 - details
     price: '',
     buildingType: '',
     heating: '',
+    insulationType: '',
+    windowDirection: '',
+    hoaFee: '',
     condition: '',
+    deposit: '',
+    minTerm: '',
     description: '',
     features: [],
     // Step 4 - images
@@ -218,9 +236,20 @@
     `;
   }
 
+  // Which extra field set a property type shows: 'land' keeps its existing zoning
+  // fields; 'commercial' (office/warehouse/commercial-space) skips residential-only
+  // fields like bedrooms or balcony; everything else gets the full residential set.
+  function listingFieldGroup() {
+    const isLand = addListingState.propertyType === 'land';
+    if (isLand) return 'land';
+    return propertyTypeBucket(addListingState.propertyType) === 'office' ? 'commercial' : 'residential';
+  }
+
   function renderStep2() {
     const active = addListingState.step === 2;
     const isLand = addListingState.propertyType === 'land';
+    const fieldGroup = listingFieldGroup();
+    const isResidential = fieldGroup === 'residential';
     return `
       <div class="step-panel ${active ? 'active' : ''}" data-step="2">
         <div class="step-section-title">Үндсэн мэдээлэл</div>
@@ -320,6 +349,19 @@
           `}
         </div>
 
+        ${isResidential ? `
+        <div class="form-grid-2">
+          <div>
+            <label class="form-label">Унтлагын өрөө</label>
+            <input type="number" class="form-input" id="alBedrooms" placeholder="2" min="0" max="20" value="${addListingState.bedrooms}" />
+          </div>
+          <div>
+            <label class="form-label">Ариун цэврийн өрөө</label>
+            <input type="number" class="form-input" id="alBathrooms" placeholder="1" min="0" max="10" value="${addListingState.bathrooms}" />
+          </div>
+        </div>
+        ` : ''}
+
         ${!isLand ? `
         <div class="form-grid-2">
           <div>
@@ -329,6 +371,19 @@
           <div>
             <label class="form-label">Нийт давхар</label>
             <input type="number" class="form-input" id="alTotalFloors" placeholder="12" min="1" max="50" value="${addListingState.totalFloors}" />
+          </div>
+        </div>
+        ` : ''}
+
+        ${fieldGroup !== 'land' ? `
+        <div class="form-grid-2">
+          <div>
+            <label class="form-label">Барилгын нэр <span class="hint">— заавал биш</span></label>
+            <input type="text" class="form-input" id="alBuildingName" placeholder="Жнь: Хүннү 2222" value="${addListingState.buildingName}" />
+          </div>
+          <div>
+            <label class="form-label">Хотхон</label>
+            <input type="text" class="form-input" id="alComplex" placeholder="Жнь: Зайсан Тольт" value="${addListingState.complex}" />
           </div>
         </div>
         ` : ''}
@@ -414,6 +469,8 @@
   function renderStep3() {
     const active = addListingState.step === 3;
     const isLand = addListingState.propertyType === 'land';
+    const fieldGroup = listingFieldGroup();
+    const isResidential = fieldGroup === 'residential';
     return `
       <div class="step-panel ${active ? 'active' : ''}" data-step="3">
         <div class="step-section-title">Үнэ ба дэлгэрэнгүй</div>
@@ -452,6 +509,40 @@
           </div>
         </div>
 
+        ${isResidential ? `
+        <div class="form-grid-2">
+          <div>
+            <label class="form-label">Цонхны чиглэл</label>
+            <select class="form-select" id="alWindowDirection">
+              <option value="">Сонгох...</option>
+              <option value="north">Хойд</option>
+              <option value="south">Урд</option>
+              <option value="east">Дорнод</option>
+              <option value="west">Өрнөд</option>
+              <option value="southeast">Урд-Дорнод</option>
+              <option value="southwest">Урд-Өрнөд</option>
+              <option value="northeast">Хойд-Дорнод</option>
+              <option value="northwest">Хойд-Өрнөд</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Дулаалга</label>
+            <select class="form-select" id="alInsulation">
+              <option value="">Сонгох...</option>
+              <option value="eps">Гадна EPS дулаалга</option>
+              <option value="mw">Эрдэс ноос (MW)</option>
+              <option value="pir">PIR (шинэ стандарт)</option>
+              <option value="inside">Дотроос хийсэн</option>
+              <option value="none">Дулаалгагүй</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">СӨХ-ийн төлбөр (₮/сар) <span class="hint">— заавал биш</span></label>
+          <input type="number" class="form-input" id="alHoaFee" placeholder="Жнь: 80000" min="0" step="1000" value="${addListingState.hoaFee}" />
+        </div>
+        ` : ''}
+
         <div class="form-row">
           <label class="form-label">Засварын байдал</label>
           <select class="form-select" id="alCondition">
@@ -475,14 +566,20 @@
               <span>Лифттэй</span>
               <div class="toggle-switch"></div>
             </div>
+            ${isResidential ? `
             <div class="toggle-row" data-feature="balcony">
               <span>Тагттай</span>
+              <div class="toggle-switch"></div>
+            </div>
+            <div class="toggle-row" data-feature="basement">
+              <span>Зоорьтой</span>
               <div class="toggle-switch"></div>
             </div>
             <div class="toggle-row" data-feature="furnished">
               <span>Тавилгатай</span>
               <div class="toggle-switch"></div>
             </div>
+            ` : ''}
             <div class="toggle-row" data-feature="loan">
               <span>Банкны зээлд хамрагдана</span>
               <div class="toggle-switch"></div>
@@ -493,6 +590,25 @@
             </div>
           </div>
         </div>
+
+        ${addListingState.intent === 'rent' ? `
+        <div class="form-grid-2">
+          <div>
+            <label class="form-label">Барьцаа/Урьдчилгаа (сая ₮)</label>
+            <input type="number" class="form-input" id="alDeposit" placeholder="Жнь: 2" min="0" step="0.5" value="${addListingState.deposit}" />
+          </div>
+          <div>
+            <label class="form-label">Хамгийн бага хугацаа</label>
+            <select class="form-select" id="alMinTerm">
+              <option value="">Сонгох...</option>
+              <option value="1m">1 сар</option>
+              <option value="3m">3 сар</option>
+              <option value="6m">6 сар</option>
+              <option value="1y">1 жил+</option>
+            </select>
+          </div>
+        </div>
+        ` : ''}
         ` : ''}
 
         <div class="form-row">
@@ -828,15 +944,24 @@
       addListingState.address = document.getElementById('alAddress')?.value || '';
       addListingState.area = document.getElementById('alArea')?.value || '';
       addListingState.rooms = document.getElementById('alRooms')?.value || '';
+      addListingState.bedrooms = document.getElementById('alBedrooms')?.value || '';
+      addListingState.bathrooms = document.getElementById('alBathrooms')?.value || '';
       addListingState.year = document.getElementById('alYear')?.value || '';
       addListingState.floor = document.getElementById('alFloor')?.value || '';
       addListingState.totalFloors = document.getElementById('alTotalFloors')?.value || '';
+      addListingState.buildingName = document.getElementById('alBuildingName')?.value || '';
+      addListingState.complex = document.getElementById('alComplex')?.value || '';
     }
     if (step === 3) {
       addListingState.price = document.getElementById('alPrice')?.value || '';
       addListingState.buildingType = document.getElementById('alBuildingType')?.value || '';
       addListingState.heating = document.getElementById('alHeating')?.value || '';
+      addListingState.windowDirection = document.getElementById('alWindowDirection')?.value || '';
+      addListingState.insulationType = document.getElementById('alInsulation')?.value || '';
+      addListingState.hoaFee = document.getElementById('alHoaFee')?.value || '';
       addListingState.condition = document.getElementById('alCondition')?.value || '';
+      addListingState.deposit = document.getElementById('alDeposit')?.value || '';
+      addListingState.minTerm = document.getElementById('alMinTerm')?.value || '';
       addListingState.description = document.getElementById('alDescription')?.value || '';
     }
     if (step === 5) {
@@ -951,6 +1076,15 @@
       'white-box': 'Засваргүй (white box)', basic: 'Энгийн засвартай', renovated: 'Үндсэн засвартай',
       premium: 'Premium засвартай', furnished: 'Тавилгатай, бүрэн засвартай'
     };
+    const insulationLabels = {
+      eps: 'Гадна EPS дулаалга', mw: 'Эрдэс ноос (MW)', pir: 'PIR (шинэ стандарт)',
+      inside: 'Дотроос хийсэн', none: 'Дулаалгагүй'
+    };
+    const windowDirLabels = {
+      north: 'Хойд', south: 'Урд', east: 'Дорнод', west: 'Өрнөд',
+      southeast: 'Урд-Дорнод', southwest: 'Урд-Өрнөд', northeast: 'Хойд-Дорнод', northwest: 'Хойд-Өрнөд'
+    };
+    const minTermLabels = { '1m': '1 сар', '3m': '3 сар', '6m': '6 сар', '1y': '1 жил+' };
     const isLand = s.propertyType === 'land';
     const newId = listings.reduce(function(m, l) { return l.id > m ? l.id : m; }, 0) + 1;
     const p = parseFloat(s.price) || 0;
@@ -975,17 +1109,29 @@
       pricePerSqm: (a && p) ? parseFloat((p / a).toFixed(2)) : 0,
       area: a,
       rooms: isLand ? (a ? (a / 10000).toFixed(2) + ' га' : '—') : (parseInt(s.rooms) || 1),
+      bedrooms: isLand ? null : (parseInt(s.bedrooms) || null),
+      bathrooms: isLand ? null : (parseInt(s.bathrooms) || null),
       floor: isLand ? 'Эзэмшил' : (s.floor ? s.floor + '/' + (s.totalFloors || '?') : '?'),
       year: isLand ? (infraLabels[s.year] || 'Тодорхойгүй') : (parseInt(s.year) || new Date().getFullYear()),
+      buildingName: isLand ? '' : (s.buildingName || ''),
+      complex: isLand ? '' : (s.complex || ''),
       tag: { type: 'new', text: 'Шинэ зар' },
       badges: ['new', 'user'],
       loanType: 'Тохиролцоно',
       monthly: 0,
       img: allImages[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
       buildingType: isLand ? ('Газар (' + (zoningLabels[s.rooms] || 'Тодорхойгүй') + ')') : (s.buildingType || ''),
-      insulation: '', heating: s.heating || '',
+      insulation: isLand ? '' : (insulationLabels[s.insulationType] || ''),
+      windowDirection: isLand ? '' : (windowDirLabels[s.windowDirection] || ''),
+      hoaFee: isLand ? null : (parseInt(s.hoaFee) || null),
+      heating: s.heating || '',
       parking: s.features.includes('parking') ? 'Паркинг бий' : '',
       elevator: s.features.includes('elevator') ? 'Лифттэй' : '',
+      balcony: s.features.includes('balcony') ? 'Тагттай' : '',
+      basement: s.features.includes('basement') ? 'Зоорьтой' : '',
+      furniture: s.features.includes('furnished') ? 'Тавилгатай' : '',
+      deposit: (s.intent === 'rent' && !isLand) ? (parseFloat(s.deposit) || null) : null,
+      minTerm: (s.intent === 'rent' && !isLand) ? (minTermLabels[s.minTerm] || '') : '',
       utilityCost: '', ownership: 'Хувийн өмчлөл',
       cadastre: '', collateral: '', taxDebt: '',
       condition: conditionLabels[s.condition] || s.condition || '',
@@ -1016,8 +1162,19 @@
         price: newListing.price,
         area: newListing.area,
         rooms: newListing.rooms,
+        bedrooms: newListing.bedrooms,
+        bathrooms: newListing.bathrooms,
         floor: newListing.floor,
         year: newListing.year,
+        buildingName: newListing.buildingName,
+        complex: newListing.complex,
+        buildingType: newListing.buildingType,
+        insulation: newListing.insulation,
+        windowDirection: newListing.windowDirection,
+        hoaFee: newListing.hoaFee,
+        heating: newListing.heating,
+        deposit: newListing.deposit,
+        minTerm: newListing.minTerm,
         condition: newListing.condition,
         features: newListing.features,
         img: newListing.img,
@@ -1384,8 +1541,9 @@
       addListingState = {
         step: 1, intent: 'sell', propertyType: '',
         title: '', district: '', khoroo: '', address: '', geoLat: null, geoLng: null, area: '', rooms: '',
-        floor: '', totalFloors: '', year: '', price: '', buildingType: '',
-        heating: '', condition: '', description: '', features: [], images: [],
+        bedrooms: '', bathrooms: '', floor: '', totalFloors: '', year: '', buildingName: '', complex: '',
+        price: '', buildingType: '', heating: '', insulationType: '', windowDirection: '', hoaFee: '',
+        condition: '', deposit: '', minTerm: '', description: '', features: [], images: [],
         phone: '', name: '', role: 'owner', plan: 'basic'
       };
       return;
@@ -1395,8 +1553,9 @@
       addListingState = {
         step: 1, intent: 'sell', propertyType: '',
         title: '', district: '', khoroo: '', address: '', geoLat: null, geoLng: null, area: '', rooms: '',
-        floor: '', totalFloors: '', year: '', price: '', buildingType: '',
-        heating: '', condition: '', description: '', features: [], images: [],
+        bedrooms: '', bathrooms: '', floor: '', totalFloors: '', year: '', buildingName: '', complex: '',
+        price: '', buildingType: '', heating: '', insulationType: '', windowDirection: '', hoaFee: '',
+        condition: '', deposit: '', minTerm: '', description: '', features: [], images: [],
         phone: '', name: '', role: 'owner', plan: 'basic'
       };
     }

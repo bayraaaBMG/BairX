@@ -333,13 +333,22 @@
         if (listings.some(l => l.firestoreId === doc.id)) return;
         const d = doc.data();
         const numId = listings.reduce((m, l) => l.id > m ? l.id : m, 0) + 1;
+        const feats = d.features || [];
         const entry = {
           id: numId, firestoreId: doc.id, ownerId: d.ownerId, sellerVerified: !!d.sellerVerified,
           cat: d.category || 'apartment', propertyType: d.propertyType || d.category || 'apartment',
           title: d.title, loc: d.loc, district: d.district,
           geoLat: d.geoLat || null, geoLng: d.geoLng || null,
           price: d.price, area: d.area, rooms: d.rooms, floor: d.floor, year: d.year,
-          condition: d.condition || '', features: d.features || [],
+          bedrooms: d.bedrooms || null, bathrooms: d.bathrooms || null,
+          buildingName: d.buildingName || '', complex: d.complex || '',
+          buildingType: d.buildingType || '', insulation: d.insulation || '', windowDirection: d.windowDirection || '',
+          hoaFee: d.hoaFee || null, heating: d.heating || '',
+          parking: feats.includes('parking') ? 'Паркинг бий' : '', elevator: feats.includes('elevator') ? 'Лифттэй' : '',
+          balcony: feats.includes('balcony') ? 'Тагттай' : '', basement: feats.includes('basement') ? 'Зоорьтой' : '',
+          furniture: feats.includes('furnished') ? 'Тавилгатай' : '',
+          deposit: d.deposit || null, minTerm: d.minTerm || '',
+          condition: d.condition || '', features: feats,
           img: (d.images && d.images[0]) || d.img || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
           tag: { type: 'new', text: 'Шинэ зар' }, badges: d.badges || ['new', 'user'],
           loanType: 'Тохиролцоно', monthly: 0,

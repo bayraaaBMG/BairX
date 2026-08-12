@@ -219,6 +219,18 @@
             <div class="info-card-label">Он/Төлөв</div>
             <div class="info-card-value">${l.year}</div>
           </div>
+          ${l.bedrooms ? `
+          <div class="info-card">
+            <div class="info-card-label">Унтлагын өрөө</div>
+            <div class="info-card-value">${l.bedrooms}</div>
+          </div>
+          ` : ''}
+          ${l.bathrooms ? `
+          <div class="info-card">
+            <div class="info-card-label">Ариун цэврийн өрөө</div>
+            <div class="info-card-value">${l.bathrooms}</div>
+          </div>
+          ` : ''}
         </div>
 
         <!-- SELLER CARD -->
@@ -248,6 +260,18 @@
         <div class="modal-section">
           <h4>Барилгын мэргэжлийн мэдээлэл</h4>
           <div class="prof-info-list">
+            ${l.buildingName ? `
+            <div class="prof-info-row">
+              <div class="prof-info-label">Барилгын нэр</div>
+              <div class="prof-info-value">${esc(l.buildingName)}</div>
+            </div>
+            ` : ''}
+            ${l.complex ? `
+            <div class="prof-info-row">
+              <div class="prof-info-label">Хотхон</div>
+              <div class="prof-info-value">${esc(l.complex)}</div>
+            </div>
+            ` : ''}
             <div class="prof-info-row">
               <div class="prof-info-label">Барилгын төрөл</div>
               <div class="prof-info-value">${l.buildingType || '—'}</div>
@@ -260,6 +284,12 @@
               <div class="prof-info-label">Халаалт</div>
               <div class="prof-info-value">${l.heating || '—'}</div>
             </div>
+            ${l.windowDirection ? `
+            <div class="prof-info-row">
+              <div class="prof-info-label">Цонхны чиглэл</div>
+              <div class="prof-info-value">${l.windowDirection}</div>
+            </div>
+            ` : ''}
             <div class="prof-info-row">
               <div class="prof-info-label">Паркинг</div>
               <div class="prof-info-value">${l.parking || '—'}</div>
@@ -268,10 +298,46 @@
               <div class="prof-info-label">Лифт</div>
               <div class="prof-info-value">${l.elevator || '—'}</div>
             </div>
+            ${l.balcony ? `
+            <div class="prof-info-row">
+              <div class="prof-info-label">Тагт</div>
+              <div class="prof-info-value">${l.balcony}</div>
+            </div>
+            ` : ''}
+            ${l.basement ? `
+            <div class="prof-info-row">
+              <div class="prof-info-label">Зоорь</div>
+              <div class="prof-info-value">${l.basement}</div>
+            </div>
+            ` : ''}
+            ${l.furniture ? `
+            <div class="prof-info-row">
+              <div class="prof-info-label">Тавилга</div>
+              <div class="prof-info-value">${l.furniture}</div>
+            </div>
+            ` : ''}
             <div class="prof-info-row">
               <div class="prof-info-label">Засвар/Төлөв</div>
               <div class="prof-info-value">${l.condition || '—'}</div>
             </div>
+            ${l.hoaFee ? `
+            <div class="prof-info-row">
+              <div class="prof-info-label">СӨХ-ийн төлбөр</div>
+              <div class="prof-info-value">${fmt(l.hoaFee)} ₮/сар</div>
+            </div>
+            ` : ''}
+            ${l.deposit ? `
+            <div class="prof-info-row">
+              <div class="prof-info-label">Барьцаа/Урьдчилгаа</div>
+              <div class="prof-info-value">${l.deposit} сая ₮</div>
+            </div>
+            ` : ''}
+            ${l.minTerm ? `
+            <div class="prof-info-row">
+              <div class="prof-info-label">Хамгийн бага хугацаа</div>
+              <div class="prof-info-value">${l.minTerm}</div>
+            </div>
+            ` : ''}
             <div class="prof-info-row highlight">
               <div class="prof-info-label">Нийтийн зардал</div>
               <div class="prof-info-value">${l.utilityCost || '—'}</div>
