@@ -68,7 +68,7 @@
       propertyType: l.propertyType || (l.cat === 'rent' ? 'apartment' : l.cat),
       title: l.title,
       district: districtKeys[l.district] || l.district,
-      khoroo: '',
+      khoroo: l.khoroo ? String(l.khoroo) : '',
       address: l.loc,
       geoLat: l.geoLat || null,
       geoLng: l.geoLng || null,
@@ -284,6 +284,19 @@
           </div>
         </div>
 
+        ${fieldGroup !== 'land' ? `
+        <div class="form-grid-2">
+          <div>
+            <label class="form-label">Барилгын нэр <span class="hint">— заавал биш</span></label>
+            <input type="text" class="form-input" id="alBuildingName" placeholder="Жнь: Хүннү 2222" value="${addListingState.buildingName}" />
+          </div>
+          <div>
+            <label class="form-label">Хотхон</label>
+            <input type="text" class="form-input" id="alComplex" placeholder="Жнь: Зайсан Тольт" value="${addListingState.complex}" />
+          </div>
+        </div>
+        ` : ''}
+
         <div class="form-row">
           <label class="form-label">Дэлгэрэнгүй хаяг <span class="hint">— хороолол, барилгын нэр</span></label>
           <input type="text" class="form-input" id="alAddress" placeholder="Жнь: Зайсан, Хүннү 2222 хороолол" value="${addListingState.address}" />
@@ -371,19 +384,6 @@
           <div>
             <label class="form-label">Нийт давхар</label>
             <input type="number" class="form-input" id="alTotalFloors" placeholder="12" min="1" max="50" value="${addListingState.totalFloors}" />
-          </div>
-        </div>
-        ` : ''}
-
-        ${fieldGroup !== 'land' ? `
-        <div class="form-grid-2">
-          <div>
-            <label class="form-label">Барилгын нэр <span class="hint">— заавал биш</span></label>
-            <input type="text" class="form-input" id="alBuildingName" placeholder="Жнь: Хүннү 2222" value="${addListingState.buildingName}" />
-          </div>
-          <div>
-            <label class="form-label">Хотхон</label>
-            <input type="text" class="form-input" id="alComplex" placeholder="Жнь: Зайсан Тольт" value="${addListingState.complex}" />
           </div>
         </div>
         ` : ''}
@@ -1103,6 +1103,7 @@
       title: s.title || ((districtLabels[s.district] || s.district) + ', ' + (isLand ? 'газар' : (s.rooms || '?') + ' өрөө')),
       loc: (districtLabels[s.district] || s.district) + (s.khoroo ? ' · ' + s.khoroo + '-р хороо' : ''),
       district: s.district || 'sukhbaatar',
+      khoroo: s.khoroo ? parseInt(s.khoroo) : null,
       geoLat: s.geoLat || null,
       geoLng: s.geoLng || null,
       price: p,
@@ -1157,6 +1158,7 @@
         title: newListing.title,
         loc: newListing.loc,
         district: newListing.district,
+        khoroo: newListing.khoroo,
         geoLat: newListing.geoLat,
         geoLng: newListing.geoLng,
         price: newListing.price,

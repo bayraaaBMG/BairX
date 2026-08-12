@@ -290,6 +290,22 @@
   // of a scripted fake compose box; a demo seller just never happens to reply.
   listings.forEach(function(l) { if (!l.ownerId) l.ownerId = 'demo-' + l.id; });
 
+  // Backfill khoroo/complex for demo listings from their loc string (e.g. "Хан-Уул, 15-р
+  // хороо · Зайсан Тольт") so khoroo/complex search works against demo data too, not only
+  // new listings submitted after these fields were added to the Add Listing form.
+  listings.forEach(function(l) {
+    if (!l.loc) return;
+    if (l.khoroo == null) {
+      const m = l.loc.match(/(\d+)-р хороо/);
+      if (m) l.khoroo = parseInt(m[1], 10);
+    }
+    if (!l.complex) {
+      const parts = l.loc.split('·').map(function(s) { return s.trim(); });
+      const tail = parts[parts.length - 1];
+      if (parts.length > 1 && tail && !/^\d+-р хороо$/.test(tail)) l.complex = tail;
+    }
+  });
+
   // Load any user-submitted listings from localStorage
   (function() {
     try {
@@ -338,6 +354,7 @@
           id: numId, firestoreId: doc.id, ownerId: d.ownerId, sellerVerified: !!d.sellerVerified,
           cat: d.category || 'apartment', propertyType: d.propertyType || d.category || 'apartment',
           title: d.title, loc: d.loc, district: d.district,
+          khoroo: d.khoroo || null,
           geoLat: d.geoLat || null, geoLng: d.geoLng || null,
           price: d.price, area: d.area, rooms: d.rooms, floor: d.floor, year: d.year,
           bedrooms: d.bedrooms || null, bathrooms: d.bathrooms || null,

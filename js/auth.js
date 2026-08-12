@@ -76,7 +76,7 @@
             id: numId, firestoreId: doc.id, ownerId: d.ownerId, sellerVerified: !!d.sellerVerified,
             cat: d.category || 'apartment', propertyType: d.propertyType || d.category || 'apartment',
             title: d.title, loc: d.loc,
-            district: d.district, geoLat: d.geoLat || null, geoLng: d.geoLng || null, price: d.price, area: d.area, rooms: d.rooms,
+            district: d.district, khoroo: d.khoroo || null, geoLat: d.geoLat || null, geoLng: d.geoLng || null, price: d.price, area: d.area, rooms: d.rooms,
             floor: d.floor, year: d.year,
             bedrooms: d.bedrooms || null, bathrooms: d.bathrooms || null,
             buildingName: d.buildingName || '', complex: d.complex || '',

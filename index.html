@@ -853,7 +853,17 @@
             <option value="bayangol">Баянгол</option>
             <option value="songinokhairkhan">Сонгинохайрхан</option>
             <option value="nalaikh">Налайх</option>
+            <option value="bagakhangai">Багахангай</option>
+            <option value="baganuur">Багануур</option>
           </select>
+        </div>
+        <div class="filter-field">
+          <label for="fKhoroo">Хороо</label>
+          <input type="number" id="fKhoroo" class="form-input" aria-label="Хороо" placeholder="Жнь: 11" min="1" />
+        </div>
+        <div class="filter-field">
+          <label for="fComplex">Хотхон</label>
+          <input type="text" id="fComplex" class="form-input" aria-label="Хотхон" placeholder="Жнь: Зайсан Тольт" />
         </div>
         <div class="filter-field">
           <label>Үнэ (сая ₮)</label>
@@ -898,6 +908,24 @@
           </div>
         </div>
       </div>
+
+      <div class="filter-field" style="margin-bottom:16px;">
+        <label>Газрын зураг дээрх бүс</label>
+        <div id="radiusMapWrap" style="display:none;">
+          <div id="radiusMap" style="height:180px; border-radius:10px; overflow:hidden; border:1px solid var(--line); margin-bottom:10px;"></div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button type="button" class="filter-toggle radius-toggle" data-radius="1">1 км дотор</button>
+            <button type="button" class="filter-toggle radius-toggle" data-radius="3">3 км дотор</button>
+            <button type="button" class="filter-toggle radius-toggle" data-radius="5">5 км дотор</button>
+            <button type="button" class="btn btn-ghost" style="font-size:12px;" onclick="clearAreaFilter()">Цэгийг арилгах</button>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="areaFilterToggleBtn" style="width:100%; justify-content:center; border:1.5px solid var(--line-2);" onclick="toggleAreaFilterMap()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Газрын зураг дээр цэг сонгож, бүсээр хайх
+        </button>
+      </div>
+
       <div class="filter-toggles">
         <button class="filter-toggle" data-ftoggle="new">Шинэ барилга</button>
         <button class="filter-toggle" data-ftoggle="verified">Баталгаажсан</button>

@@ -1,7 +1,74 @@
 ﻿  // ===== ADVANCED FILTER =====
   let activeFilterToggles = [];
 
-  document.querySelectorAll('.filter-toggle').forEach(t => {
+  // ===== RADIUS / AREA SEARCH (real Leaflet/OpenStreetMap, no API key) =====
+  let areaFilter = null; // { lat, lng, km } once the user has placed a pin + picked a radius
+  let radiusMap = null;
+  let radiusMarker = null;
+  let radiusCircle = null;
+
+  function toggleAreaFilterMap() {
+    const wrap = document.getElementById('radiusMapWrap');
+    const btn = document.getElementById('areaFilterToggleBtn');
+    const opening = wrap.style.display === 'none';
+    wrap.style.display = opening ? 'block' : 'none';
+    if (btn) btn.style.display = opening ? 'none' : '';
+    if (opening && !radiusMap && typeof L !== 'undefined') {
+      const start = (areaFilter && areaFilter.lat) ? [areaFilter.lat, areaFilter.lng] : (typeof UB_CENTER !== 'undefined' ? UB_CENTER : [47.9184, 106.9177]);
+      radiusMap = L.map('radiusMap').setView(start, 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+      }).addTo(radiusMap);
+      radiusMap.on('click', (e) => setAreaFilterCenter(e.latlng.lat, e.latlng.lng));
+      if (areaFilter && areaFilter.lat) setAreaFilterCenter(areaFilter.lat, areaFilter.lng, true);
+    } else if (opening && radiusMap) {
+      setTimeout(() => radiusMap.invalidateSize(), 50);
+    }
+  }
+
+  function setAreaFilterCenter(lat, lng, skipApply) {
+    if (!areaFilter) areaFilter = { lat: null, lng: null, km: null };
+    areaFilter.lat = lat; areaFilter.lng = lng;
+    if (radiusMarker) radiusMarker.setLatLng([lat, lng]);
+    else radiusMarker = L.marker([lat, lng], { draggable: true }).addTo(radiusMap).on('dragend', (e) => {
+      const p = e.target.getLatLng();
+      setAreaFilterCenter(p.lat, p.lng);
+    });
+    drawRadiusCircle();
+    if (!skipApply && areaFilter.km) applyFilters();
+  }
+
+  function drawRadiusCircle() {
+    if (radiusCircle) { radiusMap.removeLayer(radiusCircle); radiusCircle = null; }
+    if (areaFilter && areaFilter.lat && areaFilter.km) {
+      radiusCircle = L.circle([areaFilter.lat, areaFilter.lng], {
+        radius: areaFilter.km * 1000, color: '#1E5BFF', fillColor: '#1E5BFF', fillOpacity: 0.08, weight: 1.5
+      }).addTo(radiusMap);
+      radiusMap.fitBounds(radiusCircle.getBounds(), { padding: [20, 20] });
+    }
+  }
+
+  document.querySelectorAll('.radius-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!areaFilter || !areaFilter.lat) { showToast('Эхлээд газрын зураг дээр цэг сонгоно уу'); return; }
+      const km = parseInt(btn.dataset.radius, 10);
+      document.querySelectorAll('.radius-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      areaFilter.km = km;
+      drawRadiusCircle();
+      applyFilters();
+    });
+  });
+
+  function clearAreaFilter() {
+    areaFilter = null;
+    document.querySelectorAll('.radius-toggle').forEach(b => b.classList.remove('active'));
+    if (radiusCircle && radiusMap) { radiusMap.removeLayer(radiusCircle); radiusCircle = null; }
+    if (radiusMarker && radiusMap) { radiusMap.removeLayer(radiusMarker); radiusMarker = null; }
+    applyFilters();
+  }
+
+  document.querySelectorAll('.filter-toggle:not(.radius-toggle)').forEach(t => {
     t.addEventListener('click', () => {
       t.classList.toggle('active');
       const f = t.dataset.ftoggle;
@@ -17,6 +84,8 @@
   function getFilteredListings() {
     let results = listings.filter(l => !l._inactive);
     const district = document.getElementById('fDistrict')?.value || 'all';
+    const khoroo = parseInt(document.getElementById('fKhoroo')?.value) || 0;
+    const complexQuery = (document.getElementById('fComplex')?.value || '').trim().toLowerCase();
     const priceMin = parseFloat(document.getElementById('fPriceMin')?.value) || 0;
     const priceMax = parseFloat(document.getElementById('fPriceMax')?.value) || Infinity;
     const areaMin = parseFloat(document.getElementById('fAreaMin')?.value) || 0;
@@ -37,6 +106,14 @@
     }
 
     if (district !== 'all') results = results.filter(l => l.district === district);
+    if (khoroo > 0) results = results.filter(l => l.khoroo === khoroo);
+    if (complexQuery) results = results.filter(l => (l.complex || '').toLowerCase().includes(complexQuery));
+    if (areaFilter && areaFilter.lat && areaFilter.km) {
+      results = results.filter(l => {
+        const pos = (l.geoLat && l.geoLng) ? [l.geoLat, l.geoLng] : (typeof approxListingLatLng === 'function' ? approxListingLatLng(l) : null);
+        return pos && haversineKm(areaFilter.lat, areaFilter.lng, pos[0], pos[1]) <= areaFilter.km;
+      });
+    }
     results = results.filter(l => l.cat === 'rent' || (l.price >= priceMin && l.price <= priceMax));
     results = results.filter(l => l.area >= areaMin && l.area <= areaMax);
     if (rooms !== 'all') {
@@ -136,12 +213,15 @@
   function resetFilters() {
     ['fDistrict'].forEach(id => { const el=document.getElementById(id); if(el)el.value='all'; });
     ['fRooms'].forEach(id => { const el=document.getElementById(id); if(el)el.value='all'; });
-    ['fPriceMin','fPriceMax','fAreaMin','fAreaMax','fYearMin','fYearMax','fFloorMin','fFloorMax'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
+    ['fPriceMin','fPriceMax','fAreaMin','fAreaMax','fYearMin','fYearMax','fFloorMin','fFloorMax','fKhoroo','fComplex'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
     const fSearch = document.getElementById('fSearch');
     if (fSearch) fSearch.value = '';
     searchText = '';
     document.querySelectorAll('.filter-toggle').forEach(t => t.classList.remove('active'));
     activeFilterToggles = [];
+    areaFilter = null;
+    if (radiusCircle && radiusMap) { radiusMap.removeLayer(radiusCircle); radiusCircle = null; }
+    if (radiusMarker && radiusMap) { radiusMap.removeLayer(radiusMarker); radiusMarker = null; }
     currentCat = 'all';
     document.querySelectorAll('.filter-pill[data-cat]').forEach(x => x.classList.toggle('active', x.dataset.cat === 'all'));
     const sel = document.getElementById('sortSelect');
