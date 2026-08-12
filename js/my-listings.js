@@ -27,6 +27,12 @@
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 15h16"/></svg>' },
     { id: 'dorm', name: 'Нийтийн байр', desc: 'Дотуур байр', bucket: 'apartment',
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18M15 3v18M3 9h6M3 15h6M15 9h6M15 15h6"/></svg>' },
+    { id: 'meeting-room', name: 'Хурлын өрөө, заал', desc: 'Хурал, арга хэмжээний танхим', bucket: 'office',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="1"/><circle cx="12" cy="12" r="4"/></svg>' },
+    { id: 'daily', name: 'Хоногоор байр', desc: 'Хоног/цагаар түрээслэх', bucket: 'house',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>' },
+    { id: 'hostel', name: 'Hostel', desc: 'Хостел', bucket: 'apartment',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18v-7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v7"/><path d="M3 18h18M6 9V6a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3"/></svg>' },
     { id: 'other', name: 'Бусад', desc: 'Дээрхэд ороогүй', bucket: 'house',
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>' }
   ];
