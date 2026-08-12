@@ -34,16 +34,87 @@
     'bagakhangai': 2.0, 'baganuur': 2.0
   };
 
-  // Same rule-based price-vs-market verdict shown on the listing detail page, factored
-  // out so the compare table can show the identical judgement instead of a second one.
+  // ===== PROPERTY VALUATION (real comparable-sales analysis, not a hardcoded lookup) =====
+  // This used to just read l.tag.type — which every user-submitted listing sets to 'new'
+  // and never 'below'/'above', so the "verdict" was silently meaningless for every real
+  // listing on the platform and only ever worked for hand-authored demo data. It now
+  // finds actual comparable listings from the live `listings` array and computes a real
+  // median ₮/м², narrowing the comparison as far as it can (same хотхон, then district +
+  // similar size, then district, then city-wide) and openly reporting how many
+  // comparables it found and how that narrowing affected confidence. If there simply
+  // isn't enough real data to compare against, it says so instead of guessing.
+  function computeValuation(l) {
+    if (!l || l.cat === 'rent' || typeof l.price !== 'number' || !l.area) {
+      return { available: false, reason: 'not-applicable' };
+    }
+    const subjectPerSqm = (l.price * 1000000) / l.area;
+
+    const pool = (typeof listings !== 'undefined' ? listings : [])
+      .filter(x => x.id !== l.id && x.cat === l.cat && !x._inactive && x.cat !== 'rent'
+        && typeof x.price === 'number' && x.area)
+      .map(x => ({ l: x, perSqm: (x.price * 1000000) / x.area }))
+      .filter(x => isFinite(x.perSqm) && x.perSqm > 0);
+
+    function median(arr) {
+      const vals = arr.map(a => a.perSqm).sort((a, b) => a - b);
+      const mid = Math.floor(vals.length / 2);
+      return vals.length % 2 ? vals[mid] : (vals[mid - 1] + vals[mid]) / 2;
+    }
+
+    let tier, comps;
+    if (l.complex) {
+      comps = pool.filter(a => a.l.district === l.district && a.l.complex === l.complex);
+      tier = 'complex';
+    }
+    if (!comps || comps.length < 3) {
+      comps = pool.filter(a => a.l.district === l.district && Math.abs(a.l.area - l.area) / l.area <= 0.3);
+      tier = 'district-similar';
+    }
+    if (comps.length < 3) {
+      comps = pool.filter(a => a.l.district === l.district);
+      tier = 'district';
+    }
+    if (comps.length < 3) {
+      comps = pool;
+      tier = 'city';
+    }
+
+    if (comps.length < 2) {
+      return { available: false, reason: 'insufficient-data', sampleSize: comps.length };
+    }
+
+    const marketPerSqm = median(comps);
+    const diffPct = (subjectPerSqm - marketPerSqm) / marketPerSqm;
+    let verdict, color;
+    if (diffPct <= -0.08) { verdict = 'Сонирхолтой санал'; color = '#009878'; }
+    else if (diffPct <= 0.08) { verdict = 'Зах зээлийн үнэ'; color = '#1E5BFF'; }
+    else { verdict = 'Зах зээлээс дээгүүр'; color = '#FF4757'; }
+
+    let confidence;
+    if ((tier === 'complex' && comps.length >= 3) || (tier !== 'city' && comps.length >= 8)) confidence = 'high';
+    else if (comps.length >= 5) confidence = 'medium';
+    else confidence = 'low';
+
+    const basisText = {
+      complex: `тухайн хотхон дахь ${comps.length} зартай`,
+      'district-similar': `дүүргийн ижил хэмжээний ${comps.length} зартай`,
+      district: `дүүргийн ${comps.length} зартай`,
+      city: `хотын хэмжээний ${comps.length} зартай (дүүрэгт хангалттай харьцуулах зар олдсонгүй)`
+    }[tier];
+
+    return {
+      available: true, verdict, color, confidence, tier, basisText,
+      sampleSize: comps.length, subjectPerSqm, marketPerSqm, diffPct
+    };
+  }
+
+  // Thin wrapper kept for callers (compare table) that only need a verdict + color and
+  // don't need the full comparable breakdown; falls back to a neutral "not enough data"
+  // state instead of fabricating a verdict when computeValuation() can't find comparables.
   function aiVerdictFor(l) {
-    if (l.tag && l.tag.type === 'below') {
-      return { verdict: 'Сонирхолтой санал', color: '#009878' };
-    }
-    if (l.tag && l.tag.type === 'above') {
-      return { verdict: 'Зах зээлээс дээгүүр', color: '#FF4757' };
-    }
-    return { verdict: 'Зах зээлийн үнэ', color: '#1E5BFF' };
+    const v = computeValuation(l);
+    if (!v.available) return { verdict: 'Мэдээлэл хүрэлцэхгүй', color: 'var(--ink-3)' };
+    return { verdict: v.verdict, color: v.color };
   }
 
   // A transparent 0-100 composite score computed purely from the listing's own data —
@@ -51,10 +122,16 @@
   // verification/trust signals, feature completeness, and photo coverage.
   function propertyScore(l) {
     let score = 50;
-    const perSqm = (l.cat !== 'rent' && l.area && typeof l.price === 'number') ? (l.price * 1000000) / l.area : null;
-    if (perSqm) {
+    // Prefer the real comparable-based diff; only fall back to the coarse district
+    // average if there truly aren't enough comparable listings to analyze yet.
+    const val = computeValuation(l);
+    const diffPct = val.available ? val.diffPct : (() => {
+      const perSqm = (l.cat !== 'rent' && l.area && typeof l.price === 'number') ? (l.price * 1000000) / l.area : null;
+      if (!perSqm) return null;
       const avg = (DISTRICT_MARKET_AVG[l.district] || 4.0) * 1000000;
-      const diffPct = (perSqm - avg) / avg;
+      return (perSqm - avg) / avg;
+    })();
+    if (diffPct != null) {
       if (diffPct <= -0.05) score += 20;
       else if (diffPct <= 0.05) score += 10;
       else if (diffPct <= 0.15) score += 0;

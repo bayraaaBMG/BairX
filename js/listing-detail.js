@@ -104,16 +104,38 @@
       </div>
     `;
 
-    // Мэргэжлийн AI үнэлгээ (verdict/color: aiVerdictFor() — utils.js, дан эх сурвалж)
-    const { verdict: aiVerdict, color: aiColor } = aiVerdictFor(l);
-    let aiReasoning = '';
+    // AI Property Valuation — реал comparable-sales тооцоолол (computeValuation() —
+    // utils.js). Демо тоо биш: платформ дээрх бодит зарууд дундаас адилавтар зар хайж,
+    // тэдгээрийн дундаж ₮/м²-тэй харьцуулна. Хангалттай харьцуулах зар олдоогvй бол
+    // тодорхой "мэдээлэл хvрэлцэхгvй" гэдгийг харуулна — тоо зохиохгvй.
+    const valuation = computeValuation(l);
+    let aiVerdict, aiColor, aiReasoning, aiConfidenceLabel, aiConfidenceColor, aiBasisLine;
 
-    if (l.tag.type === 'below') {
-      aiReasoning = `Зах зээлийн дунджаас доогуур үнэтэй (${l.tag.text}). Гэхдээ <strong>тэр болгон сайн биш</strong>. Дараах зүйлсийг шалгана уу: (1) Барьцаатай эсэх — бэлэн мөнгөөр шилжүүлэх боломжтой эсэх. (2) Эзэмшлийн гэрчилгээний хуулбар. (3) Барилгын чанарын баримт. (4) Хороогоор шалгаж үзэх. Хэрэв эдгээр нь шалгагдаж байвал зах зээлд орох сайн боломж.`;
-    } else if (l.tag.type === 'above') {
-      aiReasoning = `Зах зээлийн дунджаас дээгүүр үнэтэй. Premium байршил, чанар, аль нэг онцлогоос болсон байж болзошгүй. <strong>Үнэ хэлэлцэх боломжтой эсэхийг ярилц</strong>. Эсвэл агентаас "яагаад илүү үнэтэй вэ?" гэдгийг тодорхой тайлбарлуулж аваарай.`;
+    if (!valuation.available) {
+      aiVerdict = 'Мэдээлэл хүрэлцэхгүй';
+      aiColor = 'var(--ink-3)';
+      aiConfidenceLabel = null;
+      aiBasisLine = valuation.sampleSize
+        ? `Одоогоор ${valuation.sampleSize} харьцуулах зар олдсон — найдвартай тооцоолол хийхэд хамгийн багадаа 2 хэрэгтэй.`
+        : 'BairX дээр энэ төрлийн харьцуулах зар одоогоор алга.';
+      aiReasoning = `Энэ байртай харьцуулах хангалттай зар платформ дээр олдсонгүй тул үнийг зах зээлтэй бодитоор харьцуулж чадахгүй байна. Дэлгэц дээрх тоо зохиомол биш — зөвхөн бодит харьцуулах зар байхгvй тул тооцоолол хийхгvй байна. Илvv олон жинхэнэ зар нэмэгдэх тусам энэ тооцоолол ажиллаж эхэлнэ.`;
     } else {
-      aiReasoning = `Үнэ зах зээлийн дунд түвшинд. Энэ бол ердийн сонголт — найдвартай ч давуу талгүй. Бусад заруудтай харьцуулж, заавал биечлэн очиж үзэж, чанар нь үнэдээ таарч буй эсэхийг шалгаарай.`;
+      aiVerdict = valuation.verdict;
+      aiColor = valuation.color;
+      const confMap = { high: ['Өндөр итгэмжтэй', '#009878'], medium: ['Дунд итгэмжтэй', '#C77700'], low: ['Бага итгэмжтэй', '#FF4757'] };
+      [aiConfidenceLabel, aiConfidenceColor] = confMap[valuation.confidence];
+      aiBasisLine = `${valuation.basisText} харьцуулав. Зах зээлийн дундаж ${fmt(valuation.marketPerSqm)}₮/м² (энэ байр ${fmt(valuation.subjectPerSqm)}₮/м², ${valuation.diffPct >= 0 ? '+' : ''}${(valuation.diffPct * 100).toFixed(0)}%).`;
+
+      if (valuation.verdict === 'Сонирхолтой санал') {
+        aiReasoning = `Харьцуулсан зарын дунджаас доогуур үнэтэй. Гэхдээ <strong>тэр болгон сайн биш</strong>. Дараах зүйлсийг шалгана уу: (1) Барьцаатай эсэх — бэлэн мөнгөөр шилжүүлэх боломжтой эсэх. (2) Эзэмшлийн гэрчилгээний хуулбар. (3) Барилгын чанарын баримт. (4) Хороогоор шалгаж үзэх. Хэрэв эдгээр нь шалгагдаж байвал зах зээлд орох сайн боломж.`;
+      } else if (valuation.verdict === 'Зах зээлээс дээгүүр') {
+        aiReasoning = `Харьцуулсан зарын дунджаас дээгүүр үнэтэй. Premium байршил, чанар, аль нэг онцлогоос болсон байж болзошгүй. <strong>Үнэ хэлэлцэх боломжтой эсэхийг ярилц</strong>. Эсвэл агентаас "яагаад илүү үнэтэй вэ?" гэдгийг тодорхой тайлбарлуулж аваарай.`;
+      } else {
+        aiReasoning = `Үнэ харьцуулсан зарын дунд түвшинд. Энэ бол ердийн сонголт — найдвартай ч давуу талгүй. Бусад заруудтай харьцуулж, заавал биечлэн очиж үзэж, чанар нь үнэдээ таарч буй эсэхийг шалгаарай.`;
+      }
+      if (valuation.confidence === 'low') {
+        aiReasoning += ` <strong style="color:#C77700;">Анхаар:</strong> харьцуулах зар цөөн тул энэ дvгнэлт өндөр тодорхойгүй байдалтай — зөвхөн ерөнхий чиг баримжаа болгож vзнэ vv.`;
+      }
     }
 
     // Тогтвортой байдлын үнэлгээ
@@ -427,14 +449,17 @@
           <div style="font-size:11px; color:var(--ink-3); margin-top:10px; font-style:italic;">* Дээрх тооцоолол нь өнгөрсөн жилүүдийн дунджид суурилсан, ирээдүйн өсөлтийг баталгаажуулахгүй. Инфляц, эдийн засгийн нөхцөл байдлаас хамаарч өөрчлөгдөж болно.</div>
         </div>
 
-        <!-- АГЕНТЫН ШИНЖИЛГЭЭ -->
+        <!-- AI PROPERTY VALUATION -->
         <div class="modal-section">
-          <h4>Үл хөдлөхийн мэргэжилтний шинжилгээ</h4>
+          <h4>AI үнэлгээ — зах зээлтэй харьцуулалт</h4>
           <div style="padding:18px; background:var(--paper-2); border-radius:14px;">
-            <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px;">
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
               <div style="padding:6px 12px; background:${aiColor}; color:white; border-radius:100px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">${aiVerdict}</div>
+              ${aiConfidenceLabel ? `<div style="padding:6px 12px; background:${aiConfidenceColor}22; color:${aiConfidenceColor}; border-radius:100px; font-size:11px; font-weight:700;">${aiConfidenceLabel}</div>` : ''}
             </div>
+            <div style="font-size:12.5px; color:var(--ink-3); margin-bottom:10px; font-family:'JetBrains Mono',monospace;">${aiBasisLine}</div>
             <div style="font-size:14px; line-height:1.65; color:var(--ink-2);">${aiReasoning}</div>
+            <div style="font-size:11px; color:var(--ink-3); margin-top:12px; font-style:italic;">* Дүрэм-суурьтай тооцоолол — BairX дээрх бодит зарын дунджид vндэслэсэн, машин сургалт (ML) ашигладаггvй. Тоо зохиомол бишээ, зөвхөн одоо байгаа бодит зар дээр тулгуурлана.</div>
 
             ${stability.length > 0 ? `
             <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
