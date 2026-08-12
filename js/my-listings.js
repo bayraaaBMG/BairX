@@ -1187,6 +1187,14 @@
       id: newId,
       ownerId: currentUser?.uid || null,
       sellerVerified: !!(currentUser && currentUser.emailVerified),
+      // "Verified phone" means THIS listing's contact number matches a number the owner
+      // actually proved via SMS OTP (see dashboard.js's real phone-verification flow) —
+      // not just that the account exists. Recomputed on every save, including edits, so
+      // changing the contact number to an unverified one correctly drops the badge.
+      phoneVerified: !!(currentUser?.verifiedPhone && normalizePhone(s.phone) === currentUser.verifiedPhone),
+      // Admin-only, scam-review signal — never true on a fresh listing or after an edit
+      // (firestore.rules blocks the owner from setting this themselves either way).
+      listingVerified: false,
       expiresAt, _bumpedAt: now,
       cat: s.intent === 'rent' ? 'rent' : propertyTypeBucket(s.propertyType || 'apartment'),
       propertyType: s.propertyType || 'apartment',
@@ -1244,6 +1252,8 @@
         ownerId: currentUser.uid,
         ownerEmail: currentUser.email,
         sellerVerified: newListing.sellerVerified,
+        phoneVerified: newListing.phoneVerified,
+        listingVerified: newListing.listingVerified,
         expiresAt: newListing.expiresAt,
         bumpedAt: newListing._bumpedAt,
         category: newListing.cat,

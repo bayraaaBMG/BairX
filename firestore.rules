@@ -2,11 +2,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // There are no Cloud Functions/custom claims in this app, so "admin" is just a `role`
+    // field on the user's own profile doc — checked here via get(), never trusted from the
+    // client's `currentUser` object. Promoting an account to admin can only be done by
+    // editing that field directly in the Firebase Console (see the `users` rule below for
+    // why a signed-in user can never grant this to themselves).
+    function isAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
     // ===== USERS =====
     // Profile doc, keyed by uid. Only the account owner can read/write it.
     match /users/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
-      allow create, update: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+                    && (!('role' in request.resource.data) || request.resource.data.role == 'user');
+      // `role` may never change through a client write (create or update) — it can only be
+      // 'user' at creation and can only change afterwards via the Firebase Console. Without
+      // this, any signed-in user could set role:'admin' on their own doc and unlock the
+      // admin dashboard / moderation actions below.
+      allow update: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.role == resource.data.role;
       allow delete: if false;
     }
 
@@ -16,11 +33,22 @@ service cloud.firestore {
     match /listings/{listingId} {
       allow read: if true;
 
+      // A brand-new listing can't already be admin-verified — otherwise a malicious
+      // owner could just set listingVerified:true themselves at creation time.
       allow create: if request.auth != null
-                    && request.resource.data.ownerId == request.auth.uid;
+                    && request.resource.data.ownerId == request.auth.uid
+                    && request.resource.data.get('listingVerified', false) == false;
 
-      // Owner can edit/delete their own listing.
-      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      // Owner can edit/delete their own listing, with two guardrails: they can never
+      // flip listingVerified from anything into true (only the admin rule below can —
+      // my-listings.js itself resets it to false on every content edit, since a
+      // verified listing that gets edited needs re-review, and this rule still allows
+      // that false/unchanged write; it only blocks the false→true direction), and they
+      // can never reset their own reportCount (would let a scammer erase their reports).
+      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid
+                    && !(request.resource.data.get('listingVerified', false) == true
+                         && resource.data.get('listingVerified', false) != true)
+                    && request.resource.data.get('reportCount', 0) == resource.data.get('reportCount', 0);
       allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
 
       // Anyone (including logged-out viewers) may bump viewCount by exactly 1, nothing else.
@@ -31,6 +59,11 @@ service cloud.firestore {
       allow update: if request.auth != null
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportCount'])
                     && request.resource.data.reportCount == resource.data.reportCount + 1;
+
+      // Admin moderation from the admin dashboard — scoped to only the two fields it
+      // touches (approve as verified, or take down as suspicious), never full content.
+      allow update: if isAdmin()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'listingVerified']);
     }
 
     // ===== NEW DEVELOPMENTS (барилгын компанийн шинэ төслүүд) =====
@@ -86,10 +119,13 @@ service cloud.firestore {
     }
 
     // ===== REPORTS =====
-    // Write-only from the client. Reading/moderating reports is an admin/Cloud-Functions job.
+    // Write-only from a regular client — reporting a listing never lets you read other
+    // people's reports. The admin dashboard is the one reader/moderator (see isAdmin()).
     match /reports/{reportId} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read, update, delete: if false;
+      allow read: if isAdmin();
+      allow update: if isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      allow delete: if false;
     }
 
     // ===== TRANSACTIONS (boost purchase history — demo payment, real tracking) =====

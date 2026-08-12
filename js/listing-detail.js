@@ -171,6 +171,23 @@
     const isVerified = l.userSubmitted ? !!l.sellerVerified : true;
     const sellerClickable = !!ownerOtherListings;
 
+    // ===== SCAM-PROTECTION STATUS (shown on every listing, positive or not) =====
+    // Owner: Firebase email-verified. Phone: this listing's contact number was proven via
+    // real SMS OTP (dashboard.js). Listing: a human admin reviewed it (admin.js) — none of
+    // these are fabricated "AI trust scores"; each maps to one concrete, checkable fact.
+    // Demo listings are pre-vetted example content, so all three read as true for them.
+    const ownerVerified = l.userSubmitted ? !!l.sellerVerified : true;
+    const phoneStatusVerified = l.userSubmitted ? !!l.phoneVerified : true;
+    const listingStatusVerified = l.userSubmitted ? !!l.listingVerified : true;
+    const verifyPill = (on, label) => `
+      <span class="verify-pill ${on ? 'on' : 'off'}" title="${on ? 'Баталгаажсан' : 'Баталгаажаагүй'}">
+        ${on
+          ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
+          : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/></svg>'}
+        ${label}
+      </span>
+    `;
+
     document.getElementById('modalContent').innerHTML = `
       <button class="modal-close" onclick="closeModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -214,6 +231,11 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             ${l.viewCount || 1} үзсэн
           </span>
+        </div>
+        <div class="verify-status-row">
+          ${verifyPill(ownerVerified, 'Эзэмшигч')}
+          ${verifyPill(phoneStatusVerified, 'Утас')}
+          ${verifyPill(listingStatusVerified, 'Зар')}
         </div>
         <div class="modal-price-row">
           <div>
@@ -592,12 +614,15 @@
         </div>
         ` : ''}
 
-        <!-- REPORT LINK -->
-        <div style="text-align:center;padding:16px 0 8px;">
-          <button onclick="reportListing(${l.id})" style="background:none;border:none;font-size:12px;color:var(--ink-3);cursor:pointer;text-decoration:underline;text-underline-offset:3px;">
-            Зөрчил мэдээлэх
+        <!-- REPORT BUTTON -->
+        ${l.userSubmitted && (!currentUser || l.ownerId !== currentUser.uid) ? `
+        <div class="modal-section" style="text-align:center;">
+          <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger);width:100%;justify-content:center;" onclick="reportListing(${l.id})">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+            Зарыг мэдээлэх
           </button>
         </div>
+        ` : ''}
       </div>
     `;
     document.getElementById('modal').classList.add('open');
@@ -738,6 +763,15 @@
   }
 
   function reportListing(id) {
+    if (!currentUser) { showToast('Зар мэдээлэхийн тулд нэвтэрнэ үү'); openAuth(); return; }
+    const l = listings.find(x => x.id === id);
+    if (l?.ownerId === currentUser.uid) { showToast('Өөрийн зарыг мэдээлэх боломжгүй'); return; }
+    let reported = [];
+    try { reported = JSON.parse(localStorage.getItem('bairxReportedListings') || '[]'); } catch(e) {}
+    if (l?.firestoreId && reported.includes(l.firestoreId)) {
+      showToast('Та энэ зарыг өмнө нь мэдээлсэн байна');
+      return;
+    }
     const reasons = ['Буруу үнэ', 'Хуурамч зар', 'Холбогдохгүй дугаар', 'Давхардсан зар'];
     document.getElementById('modalContent').innerHTML = `
       <button class="modal-close" onclick="closeModal()">
@@ -745,7 +779,7 @@
       </button>
       <div style="padding:32px 28px;">
         <span class="al-eyebrow">Зар #${id}</span>
-        <div class="al-title" style="margin-bottom:6px;">Зөрчил мэдээлэх</div>
+        <div class="al-title" style="margin-bottom:6px;">Зарыг мэдээлэх</div>
         <div style="font-size:13px;color:var(--ink-3);margin-bottom:24px;">Зарын ямар асуудлыг мэдээлэх вэ?</div>
         <div style="display:grid;gap:10px;">
           ${reasons.map(r => `
@@ -763,26 +797,36 @@
 
   async function submitReport(id, reason) {
     closeModal();
-    if (currentUser) {
-      try {
-        await db.collection('reports').add({
-          listingId: id,
-          userId: currentUser.uid,
-          userEmail: currentUser.email,
-          reason,
-          status: 'pending',
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    if (!currentUser) { showToast('Зар мэдээлэхийн тулд нэвтэрнэ үү'); openAuth(); return; }
+    const l = listings.find(x => x.id === id);
+    try {
+      await db.collection('reports').add({
+        listingId: id,
+        listingFsId: l?.firestoreId || null,
+        listingTitle: l?.title || '',
+        userId: currentUser.uid,
+        userEmail: currentUser.email,
+        reason,
+        status: 'pending',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      if (l?.firestoreId) {
+        await db.collection('listings').doc(l.firestoreId).update({
+          reportCount: firebase.firestore.FieldValue.increment(1)
         });
-        // reportCount-г зарт нэмнэ
-        const l = listings.find(x => x.id === id);
-        if (l?.firestoreId) {
-          await db.collection('listings').doc(l.firestoreId).update({
-            reportCount: firebase.firestore.FieldValue.increment(1)
-          });
-        }
-      } catch(e) {}
+        try {
+          const reported = JSON.parse(localStorage.getItem('bairxReportedListings') || '[]');
+          if (!reported.includes(l.firestoreId)) {
+            reported.push(l.firestoreId);
+            localStorage.setItem('bairxReportedListings', JSON.stringify(reported));
+          }
+        } catch(e) {}
+      }
+      showToast('Мэдээлэл хүлээн авлаа. Баярлалаа!', 'success');
+    } catch(e) {
+      console.error('submitReport failed:', e.code, e.message);
+      showToast('Мэдээлэл илгээхэд алдаа гарлаа');
     }
-    showToast('Мэдээлэл хүлээн авлаа. Баярлалаа!', 'success');
   }
 
   function revealPhone(listingId, phone) {

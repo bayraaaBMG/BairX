@@ -24,6 +24,8 @@
         photoURL: fbUser.photoURL || null,
         accountType: 'owner',
         companyName: '',
+        role: 'user',
+        verifiedPhone: isPhone ? normalizePhone(fbUser.phoneNumber) : null,
         isGoogle,
         isPhone
       };
@@ -50,6 +52,12 @@
           if (data.photoURL) currentUser.photoURL = data.photoURL;
           currentUser.accountType = data.accountType || 'owner';
           currentUser.companyName = data.companyName || '';
+          // 'admin' can only ever be set by hand in the Firebase Console (see
+          // firestore.rules) — there is no in-app way to grant it.
+          currentUser.role = data.role || 'user';
+          // Phone-auth accounts are always verified via their sign-in number even if this
+          // predates verifiedPhone being stored on the profile doc (older accounts).
+          currentUser.verifiedPhone = data.verifiedPhone || (isPhone ? normalizePhone(fbUser.phoneNumber) : null);
           updateNavLoggedIn();
         }
       } catch(e) {
@@ -78,6 +86,7 @@
           const feats = d.features || [];
           const entry = {
             id: numId, firestoreId: doc.id, ownerId: d.ownerId, sellerVerified: !!d.sellerVerified,
+            phoneVerified: !!d.phoneVerified, listingVerified: !!d.listingVerified, reportCount: d.reportCount || 0,
             cat: d.category || 'apartment', propertyType: d.propertyType || d.category || 'apartment',
             title: d.title, loc: d.loc,
             district: d.district, khoroo: d.khoroo || null, geoLat: d.geoLat || null, geoLng: d.geoLng || null, price: d.price, area: d.area, rooms: d.rooms,
@@ -123,6 +132,8 @@
       if (userAvatarWrap) userAvatarWrap.style.display = 'none';
       const banner = document.getElementById('emailVerifyBanner');
       if (banner) banner.style.display = 'none';
+      const adminLink = document.getElementById('adminNavLink');
+      if (adminLink) adminLink.style.display = 'none';
       if (typeof subscribeMyChats === 'function') subscribeMyChats();
       if (typeof refreshSavedSearchesCount === 'function') refreshSavedSearchesCount();
       if (typeof renderAccountSidebar === 'function') renderAccountSidebar();
@@ -231,6 +242,9 @@
           firstName: 'Хэрэглэгч',
           lastName: '',
           phoneNumber: fbUser.phoneNumber,
+          // Signing in via phone OTP already proves this number — no separate
+          // verification step needed for phone-auth accounts.
+          verifiedPhone: normalizePhone(fbUser.phoneNumber),
           role: 'user',
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -412,6 +426,8 @@
     }
     if (userDropName) userDropName.textContent = (currentUser.lastName ? currentUser.lastName + ' ' : '') + currentUser.name;
     if (userDropPhone) userDropPhone.textContent = currentUser.isGoogle ? 'Google хэрэглэгч' : (currentUser.isPhone ? (currentUser.phoneNumber || '') : (currentUser.email || ''));
+    const adminLink = document.getElementById('adminNavLink');
+    if (adminLink) adminLink.style.display = currentUser.role === 'admin' ? '' : 'none';
   }
 
   function toggleUserMenu(e) {

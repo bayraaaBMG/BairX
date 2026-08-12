@@ -724,6 +724,39 @@
   .seller-name { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; }
   .seller-verified { font-size: 10px; background: #009878; color: #fff; border-radius: 100px; padding: 1px 7px; font-weight: 700; }
   .seller-meta { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+  /* Scam-protection status row — shown on every listing (real vs. not-yet-verified, never hidden) */
+  .verify-status-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 18px; }
+  .verify-pill {
+    display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 100px;
+    font-size: 11.5px; font-weight: 700; border: 1px solid transparent;
+  }
+  .verify-pill.on { background: rgba(0, 212, 170, 0.12); color: #009878; }
+  .verify-pill.off { background: var(--paper-2); color: var(--ink-3); border-color: var(--line); border-style: dashed; }
+  .verify-pill svg { flex-shrink: 0; }
+
+  /* Admin — suspicious listing cards */
+  .admin-flag-card {
+    display: flex; gap: 16px; padding: 20px; background: white; border: 1px solid var(--line);
+    border-radius: var(--radius-lg); margin-bottom: 16px;
+  }
+  .admin-flag-img { width: 96px; height: 96px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: var(--paper-2); }
+  .admin-flag-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .admin-flag-meta { font-size: 12.5px; color: var(--ink-3); margin-bottom: 10px; }
+  .admin-flag-reasons { margin: 0 0 14px; padding-left: 18px; font-size: 12.5px; color: var(--danger); line-height: 1.7; }
+  .admin-flag-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .admin-flag-actions .btn { padding: 8px 14px; font-size: 12.5px; }
+  .admin-summary-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 28px; }
+  .admin-summary-stat {
+    flex: 1; min-width: 140px; padding: 18px 20px; background: white; border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+  }
+  .admin-summary-stat .num { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; color: var(--danger); }
+  .admin-summary-stat .label { font-size: 12px; color: var(--ink-3); font-weight: 600; margin-top: 2px; }
+  @media (max-width: 640px) {
+    .admin-flag-card { flex-direction: column; }
+    .admin-flag-img { width: 100%; height: 160px; }
+  }
   .seller-stats { display: flex; gap: 16px; font-size: 11px; color: var(--ink-3); margin-top: 6px; }
   .seller-stats span b { color: var(--ink); font-weight: 700; }
 

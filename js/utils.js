@@ -4,6 +4,12 @@
     return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
   function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
+  // Strips everything but digits and keeps the last 8 (Mongolian mobile numbers are 8
+  // digits; this lets "+976 8811-2233", "88112233" and "976-88112233" all compare equal.
+  function normalizePhone(phone) {
+    const digits = String(phone || '').replace(/\D/g, '');
+    return digits.slice(-8);
+  }
 
   // ===== VIDEO / 360° TOUR EMBED SAFETY =====
   // Only http(s) URLs are ever embedded, and video specifically only from YouTube/Vimeo
@@ -207,6 +213,7 @@
     if (activeLink) activeLink.classList.add('active');
     window.scrollTo(0, 0);
     if (target === 'dashboard' && typeof renderDashboard === 'function') renderDashboard();
+    if (target === 'admin' && typeof renderAdminDashboard === 'function') renderAdminDashboard();
   }
 
   function scrollToSection(id) {

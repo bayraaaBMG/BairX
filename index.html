@@ -103,6 +103,10 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
             Зар нэмэх
           </a>
+          <a id="adminNavLink" onclick="showPage('admin'); toggleUserMenu(null)" style="display:none;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Admin
+          </a>
           <a class="danger" onclick="logout()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
             Гарах
@@ -1288,6 +1292,20 @@
 </section>
 
 <!-- ============ SELLER DASHBOARD ============ -->
+<!-- ============ ADMIN — SCAM PROTECTION DASHBOARD ============ -->
+<section class="dash-section" id="admin">
+  <div class="section-inner">
+    <div class="section-head">
+      <div>
+        <span class="section-eyebrow">Луйврын эсрэг хамгаалалт</span>
+        <h2 class="section-title display">Сэжигтэй <em>зарууд</em></h2>
+      </div>
+      <p class="section-sub">Хэрэглэгчдийн мэдээлсэн болон зах зээлийн үнээс огцом хямд зарууд эндээс шалгагдана.</p>
+    </div>
+    <div id="adminContent"></div>
+  </div>
+</section>
+
 <section class="dash-section" id="dashboard">
   <div class="section-inner">
     <div class="section-head">
@@ -2176,6 +2194,7 @@
 <script src="/js/chat.js"></script>
 <script src="/js/education.js"></script>
 <script src="/js/new-developments.js"></script>
+<script src="/js/admin.js"></script>
 <script src="/js/init.js"></script>
 
 <!-- ============ MOBILE BOTTOM NAV ============ -->

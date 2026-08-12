@@ -352,6 +352,7 @@
         const feats = d.features || [];
         const entry = {
           id: numId, firestoreId: doc.id, ownerId: d.ownerId, sellerVerified: !!d.sellerVerified,
+          phoneVerified: !!d.phoneVerified, listingVerified: !!d.listingVerified, reportCount: d.reportCount || 0,
           cat: d.category || 'apartment', propertyType: d.propertyType || d.category || 'apartment',
           title: d.title, loc: d.loc, district: d.district,
           khoroo: d.khoroo || null,
