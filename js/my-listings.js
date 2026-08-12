@@ -1,4 +1,50 @@
 ﻿  // ===== ADD LISTING FORM =====
+  // Full unegui.mn-style property type list. Each type maps to one of the 4 filterable
+  // buckets (apartment/house/land/office) so search/filter pills stay unchanged — the
+  // specific type name is still stored and shown, just grouped under a bucket for filtering.
+  const PROPERTY_TYPES = [
+    { id: 'apartment', name: 'Орон сууц', desc: 'Байр, апартмент', bucket: 'apartment',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4M8 6h.01M8 10h.01M8 14h.01M12 6h.01M12 10h.01M12 14h.01M16 6h.01M16 10h.01M16 14h.01"/></svg>' },
+    { id: 'house', name: 'Хувийн сууц', desc: 'Хаус, тагт орон сууц', bucket: 'house',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l9-9 9 9M5 10v11h14V10"/></svg>' },
+    { id: 'ger', name: 'Монгол гэр', desc: 'Гэр, хашаатай', bucket: 'house',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 6v12H4V9l8-6z"/><path d="M12 3v18M4 13h16"/></svg>' },
+    { id: 'yard-house', name: 'Хашаа байшин', desc: 'Хашаатай байшин', bucket: 'house',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="10" width="18" height="11" rx="1"/><path d="M7 10V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"/></svg>' },
+    { id: 'land', name: 'Газар', desc: 'Эзэмшил, барилгын', bucket: 'land',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 21l6-12 4 6 4-8 4 14"/></svg>' },
+    { id: 'office', name: 'Оффис', desc: 'Захиргаа, ажлын байр', bucket: 'office',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M9 21V9"/></svg>' },
+    { id: 'commercial', name: 'Худалдаа, үйлчилгээ', desc: 'Дэлгүүр, үйлчилгээний талбай', bucket: 'office',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l1-5h16l1 5M4 9h16v11H4z"/><path d="M9 20v-6h6v6"/></svg>' },
+    { id: 'warehouse', name: 'Үйлдвэр, агуулах', desc: 'Агуулах, объект', bucket: 'office',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 20V9l10-6 10 6v11H2z"/><path d="M2 9l10 6 10-6"/></svg>' },
+    { id: 'garage', name: 'Гараж, контейнер', desc: 'Гараж, з-сууц', bucket: 'house',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V9l9-6 9 6v12"/><path d="M5 21v-8h14v8"/></svg>' },
+    { id: 'cottage', name: 'АОС, зуслан', desc: 'Хаус, амралтын газар', bucket: 'house',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V11L12 4l8 7v10"/><path d="M9 21v-6h6v6"/></svg>' },
+    { id: 'basement', name: '00-н өрөө, подвал', desc: 'В1, доод давхар', bucket: 'apartment',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 15h16"/></svg>' },
+    { id: 'dorm', name: 'Нийтийн байр', desc: 'Дотуур байр', bucket: 'apartment',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18M15 3v18M3 9h6M3 15h6M15 9h6M15 15h6"/></svg>' },
+    { id: 'other', name: 'Бусад', desc: 'Дээрхэд ороогүй', bucket: 'house',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>' }
+  ];
+  function propertyTypeBucket(id) {
+    return (PROPERTY_TYPES.find(t => t.id === id) || {}).bucket || 'apartment';
+  }
+
+  // Approximate real-world district centers (Улаанбаатар), used to center the location
+  // picker map before the user places their own exact pin.
+  const DISTRICT_CENTERS = {
+    'khan-uul': [47.8864, 106.9057], 'sukhbaatar': [47.9184, 106.9177],
+    'chingeltei': [47.9280, 106.8935], 'bayanzurkh': [47.9203, 106.9556],
+    'bayangol': [47.9077, 106.8600], 'songinokhairkhan': [47.9298, 106.7600],
+    'nalaikh': [47.7725, 107.2506], 'bagakhangai': [47.5497, 106.7644],
+    'baganuur': [47.8093, 108.3722]
+  };
+  const UB_CENTER = [47.9184, 106.9177];
+
   let editingListingId = null;
 
   function editMyListing(id) {
@@ -18,6 +64,8 @@
       district: districtKeys[l.district] || l.district,
       khoroo: '',
       address: l.loc,
+      geoLat: l.geoLat || null,
+      geoLng: l.geoLng || null,
       area: String(l.area),
       rooms: String(l.rooms),
       floor: (l.floor || '').split('/')[0] || '',
@@ -49,6 +97,8 @@
     district: '',
     khoroo: '',
     address: '',
+    geoLat: null,
+    geoLng: null,
     area: '',
     rooms: '',
     floor: '',
@@ -142,34 +192,13 @@
         <div class="step-section-sub">Зөв ангилал нь зөв хайлтын үр дүнг авчирна</div>
 
         <div class="type-grid">
-          <button class="type-card ${addListingState.propertyType === 'apartment' ? 'active' : ''}" data-type="apartment">
-            <div class="type-card-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4M8 6h.01M8 10h.01M8 14h.01M12 6h.01M12 10h.01M12 14h.01M16 6h.01M16 10h.01M16 14h.01"/></svg>
-            </div>
-            <div class="type-card-name">Орон сууц</div>
-            <div class="type-card-desc">Байр, апартмент</div>
-          </button>
-          <button class="type-card ${addListingState.propertyType === 'house' ? 'active' : ''}" data-type="house">
-            <div class="type-card-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l9-9 9 9M5 10v11h14V10"/></svg>
-            </div>
-            <div class="type-card-name">Хувийн сууц</div>
-            <div class="type-card-desc">Хаус, тагт орон сууц</div>
-          </button>
-          <button class="type-card ${addListingState.propertyType === 'land' ? 'active' : ''}" data-type="land">
-            <div class="type-card-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 21l6-12 4 6 4-8 4 14"/></svg>
-            </div>
-            <div class="type-card-name">Газар</div>
-            <div class="type-card-desc">Эзэмшил, барилгын</div>
-          </button>
-          <button class="type-card ${addListingState.propertyType === 'office' ? 'active' : ''}" data-type="office">
-            <div class="type-card-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M9 21V9"/></svg>
-            </div>
-            <div class="type-card-name">Оффис</div>
-            <div class="type-card-desc">Худалдаа, үйлчилгээ</div>
-          </button>
+          ${PROPERTY_TYPES.map(t => `
+            <button class="type-card ${addListingState.propertyType === t.id ? 'active' : ''}" data-type="${t.id}">
+              <div class="type-card-icon">${t.icon}</div>
+              <div class="type-card-name">${t.name}</div>
+              <div class="type-card-desc">${t.desc}</div>
+            </button>
+          `).join('')}
         </div>
 
         <div class="step-nav">
@@ -223,6 +252,19 @@
         <div class="form-row">
           <label class="form-label">Дэлгэрэнгүй хаяг <span class="hint">— хороолол, барилгын нэр</span></label>
           <input type="text" class="form-input" id="alAddress" placeholder="Жнь: Зайсан, Хүннү 2222 хороолол" value="${addListingState.address}" />
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">Байршил <span class="hint">— газрын зураг дээр тодорхой цэгээ тэмдэглэнэ үү</span></label>
+          ${addListingState.geoLat ? `
+            <div id="alMapPicker" style="height:220px; border-radius:12px; overflow:hidden; border:1px solid var(--line);"></div>
+            <button type="button" class="btn btn-ghost" style="margin-top:8px;" onclick="clearListingLocation()">Цэгийг арилгах</button>
+          ` : `
+            <button type="button" class="btn btn-ghost" style="width:100%; justify-content:center; border:1.5px solid var(--line-2);" onclick="openListingMapPicker()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Газрын зураг дээр байршил тэмдэглэх
+            </button>
+          `}
         </div>
 
         <div class="form-grid-3">
@@ -297,6 +339,70 @@
         </div>
       </div>
     `;
+  }
+
+  // ===== LOCATION PICKER (real Leaflet/OpenStreetMap — no API key needed) =====
+  let listingPickerMap = null;
+  let listingPickerMarker = null;
+  let listingPreviewMap = null;
+
+  function openListingMapPicker() {
+    saveStepData(2);
+    const start = (addListingState.geoLat && addListingState.geoLng)
+      ? [addListingState.geoLat, addListingState.geoLng]
+      : (DISTRICT_CENTERS[addListingState.district] || UB_CENTER);
+    document.getElementById('modalContent').innerHTML = `
+      <div style="padding:0;">
+        <div style="display:flex; align-items:center; gap:12px; padding:20px 24px 12px;">
+          <button class="btn btn-ghost" onclick="document.getElementById('modalContent').innerHTML = renderAddListing(); setTimeout(attachAddListingHandlers, 50);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </button>
+          <div style="font-weight:700; font-size:16px;">Байршил</div>
+        </div>
+        <div id="alMapPickerFull" style="height:60vh; min-height:320px;"></div>
+        <div style="padding:16px 24px;">
+          <div style="font-size:12px; color:var(--ink-3); margin-bottom:12px;">Газрын зураг дээр товшиж эсвэл цэгийг чирж яг байршлаа тэмдэглэнэ үү.</div>
+          <button class="btn btn-blue btn-lg" style="width:100%; justify-content:center;" onclick="saveListingLocation()">Газрын зураг дээр байршлыг хадгалах</button>
+        </div>
+      </div>
+    `;
+    setTimeout(() => {
+      listingPickerMap = L.map('alMapPickerFull').setView(start, 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+      }).addTo(listingPickerMap);
+      listingPickerMarker = L.marker(start, { draggable: true }).addTo(listingPickerMap);
+      listingPickerMap.on('click', (e) => listingPickerMarker.setLatLng(e.latlng));
+    }, 50);
+  }
+
+  function saveListingLocation() {
+    if (!listingPickerMarker) return;
+    const pos = listingPickerMarker.getLatLng();
+    addListingState.geoLat = pos.lat;
+    addListingState.geoLng = pos.lng;
+    document.getElementById('modalContent').innerHTML = renderAddListing();
+    setTimeout(attachAddListingHandlers, 50);
+  }
+
+  function clearListingLocation() {
+    addListingState.geoLat = null;
+    addListingState.geoLng = null;
+    document.getElementById('modalContent').innerHTML = renderAddListing();
+    setTimeout(attachAddListingHandlers, 50);
+  }
+
+  // Small read-only preview map shown on step 2 once a location pin has been saved.
+  function initListingLocationPreview() {
+    const el = document.getElementById('alMapPicker');
+    if (!el || !addListingState.geoLat) return;
+    if (listingPreviewMap) { listingPreviewMap.remove(); listingPreviewMap = null; }
+    const pos = [addListingState.geoLat, addListingState.geoLng];
+    listingPreviewMap = L.map('alMapPicker', { zoomControl: false, dragging: false, scrollWheelZoom: false }).setView(pos, 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+    }).addTo(listingPreviewMap);
+    L.marker(pos).addTo(listingPreviewMap);
   }
 
   function renderStep3() {
@@ -539,7 +645,7 @@
         </div>
 
         <div style="padding:14px; background:var(--paper-2); border-radius:10px; font-size:12px; color:var(--ink-3); line-height:1.5;">
-          Зар нийтлэхээр <strong style="color:var(--ink);">Үйлчилгээний нөхцөл</strong> болон <strong style="color:var(--ink);">Нууцлалын бодлого</strong>-той зөвшөөрсөнд тооцогдоно. Хуурамч мэдээлэл оруулсан тохиолдолд зар нь устгагдаж, бүртгэл блоклогдох эрсдэлтэй.
+          Зар нийтлэхээр <a href="javascript:void(0)" style="color:var(--primary); font-weight:600;" onclick="saveStepData(5); openInfoPage('terms', 'addListing')">Үйлчилгээний нөхцөл</a> болон <a href="javascript:void(0)" style="color:var(--primary); font-weight:600;" onclick="saveStepData(5); openInfoPage('privacy', 'addListing')">Нууцлалын бодлого</a>-той зөвшөөрсөнд тооцогдоно. Хуурамч мэдээлэл оруулсан тохиолдолд зар нь устгагдаж, бүртгэл блоклогдох эрсдэлтэй.
         </div>
 
         <div class="step-nav">
@@ -587,6 +693,8 @@
 
   // ===== Add Listing handlers =====
   function attachAddListingHandlers() {
+    initListingLocationPreview();
+
     // Intent cards
     document.querySelectorAll('.intent-card').forEach(c => {
       c.addEventListener('click', () => {
@@ -732,6 +840,13 @@
     }
   }
 
+  // Scrolls/focuses the first invalid field so a validation failure is never silent —
+  // without this, a rejected step just looks like the button did nothing.
+  function focusFirstInvalid() {
+    const el = document.querySelector('.form-input.err, .form-select.err, .form-textarea.err');
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus(); }
+  }
+
   function validateStep(step) {
     document.querySelectorAll('.form-input.err, .form-select.err, .form-textarea.err').forEach(el => el.classList.remove('err'));
     if (step === 1) {
@@ -751,7 +866,7 @@
       if (!district.value) { district.classList.add('err'); ok = false; }
       if (!area.value || parseFloat(area.value) < 1) { area.classList.add('err'); ok = false; }
       if (rooms && !rooms.value) { rooms.classList.add('err'); ok = false; }
-      if (!ok) showToast('Заавал бөглөх талбаруудыг шалгана уу');
+      if (!ok) { showToast('Заавал бөглөх талбаруудыг шалгана уу'); focusFirstInvalid(); }
       return ok;
     }
     if (step === 3) {
@@ -760,7 +875,7 @@
       const desc = document.getElementById('alDescription');
       if (!price.value || parseFloat(price.value) < 1) { price.classList.add('err'); ok = false; }
       if (!desc.value || !desc.value.trim()) { desc.classList.add('err'); ok = false; }
-      if (!ok) showToast('Заавал бөглөх талбаруудыг шалгана уу');
+      if (!ok) { showToast('Заавал бөглөх талбаруудыг шалгана уу'); focusFirstInvalid(); }
       return ok;
     }
     if (step === 4) {
@@ -771,11 +886,16 @@
       return true;
     }
     if (step === 5) {
+      let ok = true;
       const phone = document.getElementById('alPhone');
-      if (!phone.value || phone.value.length !== 8) { phone.classList.add('err'); showToast('Утасны дугаараа 8 оронтой зөв оруулна уу'); return false; }
+      if (!phone.value || phone.value.length !== 8) { phone.classList.add('err'); ok = false; }
       const name = document.getElementById('alName');
-      if (!name.value) { name.classList.add('err'); showToast('Нэрээ оруулна уу'); return false; }
-      return true;
+      if (!name.value) { name.classList.add('err'); ok = false; }
+      if (!ok) {
+        showToast(!phone.value || phone.value.length !== 8 ? 'Утасны дугаараа 8 оронтой зөв оруулна уу' : 'Нэрээ оруулна уу');
+        focusFirstInvalid();
+      }
+      return ok;
     }
     return true;
   }
@@ -802,6 +922,15 @@
 
   async function submitListing() {
     if (!validateStep(5)) return;
+    try {
+      await doSubmitListing();
+    } catch(e) {
+      console.error('submitListing failed:', e);
+      showToast('Зар нийтлэхэд алдаа гарлаа. Дахин оролдоно уу.');
+    }
+  }
+
+  async function doSubmitListing() {
     saveStepData(5);
 
     const s = addListingState;
@@ -829,11 +958,13 @@
       ownerId: currentUser?.uid || null,
       sellerVerified: !!(currentUser && currentUser.emailVerified),
       expiresAt, _bumpedAt: now,
-      cat: s.intent === 'rent' ? 'rent' : (s.propertyType || 'apartment'),
+      cat: s.intent === 'rent' ? 'rent' : propertyTypeBucket(s.propertyType || 'apartment'),
       propertyType: s.propertyType || 'apartment',
       title: s.title || ((districtLabels[s.district] || s.district) + ', ' + (isLand ? 'газар' : (s.rooms || '?') + ' өрөө')),
       loc: (districtLabels[s.district] || s.district) + (s.khoroo ? ' · ' + s.khoroo + '-р хороо' : ''),
       district: s.district || 'sukhbaatar',
+      geoLat: s.geoLat || null,
+      geoLng: s.geoLng || null,
       price: p,
       pricePerSqm: (a && p) ? parseFloat((p / a).toFixed(2)) : 0,
       area: a,
@@ -874,6 +1005,8 @@
         title: newListing.title,
         loc: newListing.loc,
         district: newListing.district,
+        geoLat: newListing.geoLat,
+        geoLng: newListing.geoLng,
         price: newListing.price,
         area: newListing.area,
         rooms: newListing.rooms,
@@ -1240,7 +1373,7 @@
       closeModal();
       addListingState = {
         step: 1, intent: 'sell', propertyType: '',
-        title: '', district: '', khoroo: '', address: '', area: '', rooms: '',
+        title: '', district: '', khoroo: '', address: '', geoLat: null, geoLng: null, area: '', rooms: '',
         floor: '', totalFloors: '', year: '', price: '', buildingType: '',
         heating: '', condition: '', description: '', features: [], images: [],
         phone: '', name: '', role: 'owner', plan: 'basic'
@@ -1251,7 +1384,7 @@
       closeModal();
       addListingState = {
         step: 1, intent: 'sell', propertyType: '',
-        title: '', district: '', khoroo: '', address: '', area: '', rooms: '',
+        title: '', district: '', khoroo: '', address: '', geoLat: null, geoLng: null, area: '', rooms: '',
         floor: '', totalFloors: '', year: '', price: '', buildingType: '',
         heating: '', condition: '', description: '', features: [], images: [],
         phone: '', name: '', role: 'owner', plan: 'basic'

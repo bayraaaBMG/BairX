@@ -306,15 +306,19 @@
           </div>
         </div>
 
-        <!-- БАЙРШИЛ (бодит Google Maps) -->
+        <!-- БАЙРШИЛ -->
         <div class="modal-section">
           <h4>Байршил</h4>
           <div style="border-radius:14px;overflow:hidden;border:1px solid var(--line);">
+            ${(l.geoLat && l.geoLng) ? `
+            <div id="listingDetailMap" style="width:100%;height:220px;"></div>
+            ` : `
             <iframe
               width="100%" height="220" style="border:0;display:block;"
               loading="lazy" referrerpolicy="no-referrer-when-downgrade"
               src="https://www.google.com/maps?q=${encodeURIComponent(l.loc + ', ' + growth.label + ' дүүрэг, Улаанбаатар, Монгол улс')}&output=embed">
             </iframe>
+            `}
           </div>
           <div style="font-size:13px;color:var(--ink-2);margin-top:8px;display:flex;align-items:center;gap:5px;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -469,6 +473,17 @@
     document.getElementById('modal').classList.add('open');
     document.body.style.overflow = 'hidden';
     if (history.pushState) history.pushState(null, '', '#listing-' + id);
+    if (l.geoLat && l.geoLng) {
+      setTimeout(() => {
+        const mapEl = document.getElementById('listingDetailMap');
+        if (!mapEl || typeof L === 'undefined') return;
+        const m = L.map('listingDetailMap', { zoomControl: false, dragging: false, scrollWheelZoom: false }).setView([l.geoLat, l.geoLng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+        }).addTo(m);
+        L.marker([l.geoLat, l.geoLng]).addTo(m);
+      }, 50);
+    }
   }
 
   function shareListingModal(id, title) {

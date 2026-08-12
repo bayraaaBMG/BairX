@@ -75,7 +75,7 @@
             id: numId, firestoreId: doc.id, ownerId: d.ownerId, sellerVerified: !!d.sellerVerified,
             cat: d.category || 'apartment', propertyType: d.propertyType || d.category || 'apartment',
             title: d.title, loc: d.loc,
-            district: d.district, price: d.price, area: d.area, rooms: d.rooms,
+            district: d.district, geoLat: d.geoLat || null, geoLng: d.geoLng || null, price: d.price, area: d.area, rooms: d.rooms,
             floor: d.floor, year: d.year, condition: d.condition || '', features: d.features || [],
             img: (d.images && d.images[0]) || d.img || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
             tag: { type: 'new', text: 'Шинэ зар' }, badges: d.badges || ['user'],

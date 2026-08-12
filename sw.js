@@ -1,4 +1,4 @@
-const CACHE = 'bairx-v2';
+const CACHE = 'bairx-v3';
 const OFFLINE_PAGE = '/';
 
 const PRECACHE = [
