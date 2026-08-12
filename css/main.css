@@ -204,7 +204,10 @@
     font-family: inherit;
   }
   .portal-cat-btn:hover { border-color: var(--primary); background: var(--primary-soft); transform: translateY(-2px); box-shadow: var(--shadow-md); }
-  .portal-cat-icon { font-size: 28px; line-height: 1; }
+  .portal-cat-icon {
+    width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--cat-color-soft, var(--primary-soft)); color: var(--cat-color, var(--primary));
+  }
   .portal-cat-name { font-size: 13px; font-weight: 700; color: var(--ink-2); }
   .portal-section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; }
   .portal-section-title { font-size: clamp(26px, 3vw, 38px); }
@@ -215,7 +218,8 @@
   @media (max-width: 600px) {
     .portal-cats { grid-template-columns: repeat(5, 1fr); gap: 8px; }
     .portal-cat-btn { padding: 14px 6px; }
-    .portal-cat-icon { font-size: 22px; }
+    .portal-cat-icon { width: 36px; height: 36px; }
+    .portal-cat-icon svg { width: 18px; height: 18px; }
     .portal-cat-name { font-size: 10px; }
   }
   .listings-section { background: var(--paper); }
@@ -259,7 +263,11 @@
   .listing-card:hover .listing-img img { transform: scale(1.05); }
 
   .listing-badges {
-    position: absolute; top: 12px; left: 12px; display: flex; gap: 6px; z-index: 2;
+    /* right is reserved so a card with several badges (demo + new/hot + agent +
+       verified) wraps onto a second line instead of running under the favorite
+       button and getting clipped — the two sit at the same z-index and the button
+       paints on top since it's later in the DOM. */
+    position: absolute; top: 12px; left: 12px; right: 56px; display: flex; flex-wrap: wrap; gap: 6px; z-index: 2;
   }
   .badge {
     padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
@@ -773,6 +781,7 @@
   .modal-loc { color: var(--ink-3); font-size: 14px; margin-bottom: 24px; display: flex; align-items: center; gap: 6px; }
   .modal-price-row { display: flex; align-items: baseline; gap: 12px; padding: 20px; background: var(--paper-2); border-radius: 14px; margin-bottom: 24px; }
   .modal-price { font-family: 'Fraunces', serif; font-size: 36px; font-weight: 700; color: var(--primary); }
+  .modal-price-tags { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
   .price-alert-btn {
     display: inline-flex; align-items: center; gap: 6px; margin: -14px 0 20px;
     padding: 8px 14px; border-radius: 100px; border: 1px solid var(--line);
@@ -2692,6 +2701,23 @@
     .nav-actions .btn-ghost { display: none; }
     .modal-body { padding: 24px; }
     .modal-actions { flex-direction: column; }
+
+    /* The price row used to force the price and the tag/score column onto the same
+       line at 36px font — at phone widths that left the price too little room and
+       "605 сая ₮" would wrap mid-string, dropping the ₮ onto its own line. Stack the
+       tag/score column below the price instead of squeezing it into the same row. */
+    .modal-price-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .modal-price { font-size: 30px; }
+    .modal-price-tags { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
+
+    /* Nav overflow fix — logo + all icon buttons + "Зар нэмэх" + the hamburger toggle
+       don't fit on one row at phone widths, and previously just overflowed past the
+       viewport edge instead of wrapping, pushing .mobile-toggle off-screen and making
+       it impossible to open the nav menu at all. Favorites and "Зар нэмэх" are already
+       one tap away from the bottom mobile nav, so hide their (redundant) top-nav
+       duplicates here instead of cramming everything into the same row. */
+    .nav-inner { padding: 14px 16px; gap: 10px; }
+    .nav-fav-btn, #addListingBtn { display: none; }
   }
 
   /* ============ MOBILE BOTTOM NAV ============ */

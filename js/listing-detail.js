@@ -242,7 +242,7 @@
             <div class="modal-price">${fmtPrice(l.price)}</div>
             <div style="font-size:13px; color:var(--ink-3); margin-top:4px;">${pricePerSqmText(l)}</div>
           </div>
-          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+          <div class="modal-price-tags">
             <span class="price-tag ${l.tag.type === 'normal' ? '' : l.tag.type}">${l.tag.text}</span>
             <span title="Property Score — үнийн шударга байдал, баталгаажилт, тоноглол, зурган баримтжуулалтаас тооцсон 0-100 үзүүлэлт" style="display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:100px; background:${pScoreColor}18; color:${pScoreColor}; font-size:11px; font-weight:700; font-family:'JetBrains Mono',monospace; cursor:help;">
               Score ${pScore}/100

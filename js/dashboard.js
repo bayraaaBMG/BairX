@@ -60,7 +60,7 @@
     if (!chart) return;
     const list = (myActiveListings || []).slice(0, 7);
     if (list.length === 0) {
-      chart.innerHTML = `<div style="width:100%;text-align:center;color:var(--ink-3);font-size:13px;padding:20px 0;">Идэвхтэй зар нэмэхэд статистик энд харагдана</div>`;
+      chart.innerHTML = `<div style="width:100%;align-self:center;text-align:center;color:var(--ink-3);font-size:13px;">Идэвхтэй зар нэмэхэд статистик энд харагдана</div>`;
       return;
     }
     const max = Math.max(...list.map(l => l.viewCount || 0), 1);
