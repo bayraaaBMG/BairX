@@ -44,6 +44,7 @@
     <div class="nav-links">
       <a onclick="showPage('listings')">Зар хайх</a>
       <a onclick="showPage('rent')">Түрээс</a>
+      <a onclick="showPage('newdev')">Шинэ орон сууц</a>
       <a onclick="showPage('calc')">Тооцоолуур</a>
       <a onclick="showPage('resources')">Зөвлөгөө</a>
       <a onclick="currentUser ? showPage('dashboard') : openAuth()">Миний самбар</a>
@@ -117,6 +118,7 @@
   <div class="mobile-menu" id="mobileMenu">
     <a onclick="showPage('listings'); toggleMobileMenu()">Зар хайх</a>
     <a onclick="showPage('rent'); toggleMobileMenu()">Түрээс</a>
+    <a onclick="showPage('newdev'); toggleMobileMenu()">Шинэ орон сууц</a>
     <a onclick="showPage('compare'); toggleMobileMenu()">Авах vs Түрээслэх</a>
     <a onclick="showPage('calc'); toggleMobileMenu()">Зээл тооцоолуур</a>
     <a onclick="showPage('resources'); toggleMobileMenu()">Зөвлөгөө</a>
@@ -258,6 +260,10 @@
       <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{activeFilterToggles=['new']; document.querySelectorAll('.filter-toggle').forEach(t=>t.classList.toggle('active',t.dataset.ftoggle==='new')); currentCat='all'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='all')); applyListingFilter();}, 100)">
         <div class="portal-cat-icon">✨</div>
         <div class="portal-cat-name">Шинэ барилга</div>
+      </button>
+      <button class="portal-cat-btn" onclick="showPage('newdev')">
+        <div class="portal-cat-icon">🏙️</div>
+        <div class="portal-cat-name">Шинэ орон сууц</div>
       </button>
       <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{activeFilterToggles=['loan']; document.querySelectorAll('.filter-toggle').forEach(t=>t.classList.toggle('active',t.dataset.ftoggle==='loan')); currentCat='all'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='all')); applyListingFilter();}, 100)">
         <div class="portal-cat-icon">🏦</div>
@@ -1020,6 +1026,34 @@
     </div>
 
     <div class="rent-grid" id="rentGrid">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ============ NEW DEVELOPMENTS (Шинэ орон сууц) ============ -->
+<section class="newdev-section" id="newdev">
+  <div class="section-inner">
+    <div class="section-head">
+      <div>
+        <span class="section-eyebrow">Барилгын компаниудын шинэ төслүүд</span>
+        <h2 class="section-title display">Шинээр <em>баригдаж</em> буй орон сууц</h2>
+      </div>
+      <p class="section-sub">Компаниас шууд, урьдчилсан захиалгаар авах боломжтой шинэ төслүүд — 1м² үнэ, давхарын төлөвлөгөө, төлбөрийн нөхцөлийн хамт.</p>
+    </div>
+
+    <div class="newdev-cta">
+      <div class="newdev-cta-content">
+        <h4>Та барилгын компани мөн үү?</h4>
+        <p>Төслөө BairX дээр нийтэлж, худалдан авагчидтай шууд холбогдоорой — компани, байршил, 1м² үнэ, давхарын төлөвлөгөө, floor plan, 3D/360° танилцуулга, төлбөрийн нөхцөл, ипотекийн мэдээллээ оруулна уу.</p>
+      </div>
+      <a class="btn btn-blue btn-lg" onclick="openAddProject()">
+        Төсөл нэмэх
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+
+    <div class="newdev-grid" id="newdevGrid">
       <!-- Rendered by JS -->
     </div>
   </div>
@@ -2141,6 +2175,7 @@
 <script src="/js/gallery.js"></script>
 <script src="/js/chat.js"></script>
 <script src="/js/education.js"></script>
+<script src="/js/new-developments.js"></script>
 <script src="/js/init.js"></script>
 
 <!-- ============ MOBILE BOTTOM NAV ============ -->

@@ -1915,6 +1915,47 @@
   }
   .rent-cta-content p { font-size: 14px; color: var(--ink-2); line-height: 1.55; max-width: 600px; }
 
+  /* ============ NEW DEVELOPMENTS (Шинэ орон сууц) ============ */
+  .newdev-section { padding: 90px 32px 100px; background: var(--paper); }
+  .newdev-cta {
+    margin-bottom: 32px; padding: 28px; border-radius: 18px;
+    background: linear-gradient(135deg, rgba(30, 91, 255, 0.1) 0%, rgba(123, 44, 191, 0.08) 100%);
+    border: 1px solid rgba(30, 91, 255, 0.2); display: grid;
+    grid-template-columns: 1fr auto; align-items: center; gap: 24px;
+  }
+  .newdev-cta-content h4 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; margin-bottom: 6px; color: var(--ink); }
+  .newdev-cta-content p { font-size: 14px; color: var(--ink-2); line-height: 1.55; max-width: 600px; }
+  .newdev-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .newdev-card {
+    background: white; border-radius: var(--radius-lg); overflow: hidden;
+    border: 1px solid var(--line); transition: all 0.3s ease; cursor: pointer; position: relative;
+  }
+  .newdev-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--primary); }
+  .newdev-img { position: relative; aspect-ratio: 16/10; overflow: hidden; background: var(--paper-2); }
+  .newdev-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+  .newdev-card:hover .newdev-img img { transform: scale(1.05); }
+  .newdev-badge {
+    position: absolute; top: 12px; left: 12px; z-index: 2;
+    padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+    color: white; background: rgba(30, 91, 255, 0.92); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  }
+  .newdev-units-badge {
+    position: absolute; top: 12px; right: 12px; z-index: 2;
+    background: rgba(255, 255, 255, 0.95); padding: 5px 10px; border-radius: 6px;
+    font-size: 11px; font-weight: 700; color: var(--ink-2);
+  }
+  .newdev-body { padding: 18px; }
+  .newdev-company { font-size: 11.5px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .newdev-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
+  .newdev-loc { font-size: 13px; color: var(--ink-3); margin-bottom: 12px; display: flex; align-items: center; gap: 4px; }
+  .newdev-price-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 12px; border-top: 1px solid var(--line); }
+  .newdev-price { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--ink); }
+  .newdev-price-unit { font-size: 12px; color: var(--ink-3); font-weight: 500; }
+  .newdev-complete { font-size: 12px; color: var(--ink-2); font-weight: 600; }
+  .newdev-empty { text-align: center; padding: 60px 20px; color: var(--ink-3); }
+  @media (max-width: 900px) { .newdev-grid { grid-template-columns: repeat(2, 1fr); } .newdev-cta { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .newdev-grid { grid-template-columns: 1fr; } }
+
   /* ============ BUY vs RENT CALCULATOR ============ */
   .compare-section { padding: 100px 32px; background: white; }
   .compare-card {

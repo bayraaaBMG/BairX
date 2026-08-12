@@ -19,6 +19,7 @@
   renderMyListings();
   renderBuyerDocs();
   loadPublicListings();
+  loadProjects();
   renderAccountSidebar();
 
   // Initialize page router + listing hash restore
