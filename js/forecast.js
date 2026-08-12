@@ -7,8 +7,8 @@
       compareList.splice(idx, 1);
       btn.classList.remove('active');
     } else {
-      if (compareList.length >= 3) {
-        showToast('Хамгийн ихдээ 3 байр харьцуулна');
+      if (compareList.length >= 4) {
+        showToast('Хамгийн ихдээ 4 байр харьцуулна');
         return;
       }
       compareList.push(id);
@@ -72,25 +72,48 @@
 
   function openCompareModal() {
     const props = compareList.map(id => listings.find(x => x.id === id));
-    // Determine best values
+
+    // ---- Determine "best" value per metric across the selected properties ----
     const minPrice = Math.min(...props.map(p => p.price));
     const perSqmOf = p => (p.cat !== 'rent' && p.area && typeof p.price === 'number') ? (p.price * 1000000) / p.area : null;
-    const minPricePerSqm = Math.min(...props.map(perSqmOf).filter(v => v != null));
+    const perSqmVals = props.map(perSqmOf).filter(v => v != null);
+    const minPricePerSqm = perSqmVals.length ? Math.min(...perSqmVals) : null;
     const maxArea = Math.max(...props.map(p => p.area));
+    const yearVals = props.map(p => p.year).filter(y => typeof y === 'number');
+    const maxYear = yearVals.length ? Math.max(...yearVals) : null;
+    const hoaVals = props.map(p => p.hoaFee).filter(v => typeof v === 'number' && v > 0);
+    const minHoa = hoaVals.length ? Math.min(...hoaVals) : null;
+    const scores = props.map(p => propertyScore(p));
+    const maxScore = Math.max(...scores);
+    const loanEligible = p => Array.isArray(p.features) && p.features.includes('loan') || (p.loanType && !p.loanType.includes('Бэлэн'));
+
+    // Boolean-style feature cell: check badge when present, dash when not.
+    const boolCell = truthy => truthy
+      ? '<span style="color:#009878; font-weight:700;">✓ Тийм</span>'
+      : '<span style="color:var(--ink-3);">— Үгүй</span>';
 
     const rows = [
       { label: 'Үнэ', get: p => fmtPrice(p.price), best: p => p.price === minPrice },
-      { label: 'м² үнэ', get: p => pricePerSqmText(p) || '—', best: p => perSqmOf(p) === minPricePerSqm },
+      { label: '₮/м²', get: p => pricePerSqmText(p) || '—', best: p => perSqmOf(p) != null && perSqmOf(p) === minPricePerSqm },
       { label: 'Талбай', get: p => p.area + ' м²', best: p => p.area === maxArea },
       { label: 'Өрөө', get: p => p.rooms, best: () => false },
       { label: 'Давхар', get: p => p.floor, best: () => false },
-      { label: 'Он', get: p => p.year, best: () => false },
-      { label: 'Зээл', get: p => p.loanType, best: () => false },
-      { label: 'Сар бүр', get: p => typeof p.monthly === 'number' ? p.monthly.toFixed(2) + ' сая ₮' : p.monthly, best: () => false },
-      { label: 'Барьцаа', get: p => p.collateral || '—', best: p => p.collateral && p.collateral.includes('Барьцаагүй') },
-      { label: 'Засвар', get: p => p.condition || '—', best: () => false },
-      { label: 'Дулаалга', get: p => p.insulation || '—', best: () => false },
-      { label: 'Үнэлгээ', get: p => p.tag.text, best: p => p.tag.type === 'below' }
+      { label: 'Барилгын он', get: p => p.year, best: p => typeof p.year === 'number' && p.year === maxYear },
+      { label: 'Байршил', get: p => esc(p.loc), best: () => false },
+      { label: 'Паркинг', get: p => boolCell(!!p.parking), best: p => !!p.parking },
+      { label: 'Лифт', get: p => boolCell(!!p.elevator), best: p => !!p.elevator },
+      { label: 'Тавилга', get: p => boolCell(!!p.furniture), best: p => !!p.furniture },
+      { label: 'Ипотек', get: p => boolCell(loanEligible(p)), best: p => loanEligible(p) },
+      { label: 'СӨХ', get: p => typeof p.hoaFee === 'number' && p.hoaFee > 0 ? fmt(p.hoaFee) + ' ₮/сар' : '—', best: p => minHoa != null && p.hoaFee === minHoa },
+      { label: 'AI үнэлгээ', get: p => {
+          const v = aiVerdictFor(p);
+          return `<span style="color:${v.color}; font-weight:700;">${v.verdict}</span>`;
+        }, best: p => aiVerdictFor(p).verdict === 'Сонирхолтой санал' },
+      { label: 'Property Score', get: p => {
+          const s = propertyScore(p);
+          const c = s >= 70 ? '#009878' : s >= 45 ? '#C77700' : '#FF4757';
+          return `<span style="font-family:'JetBrains Mono',monospace; font-weight:700; color:${c};">${s}/100</span>`;
+        }, best: p => propertyScore(p) === maxScore }
     ];
 
     document.getElementById('modalContent').innerHTML = `
@@ -107,8 +130,9 @@
                 <th class="row-label"></th>
                 ${props.map(p => `
                   <th class="compare-prop-head">
-                    <img class="compare-prop-img" src="${p.img}" alt="" />
-                    <div class="compare-prop-title">${p.title}</div>
+                    <img class="compare-prop-img" src="${esc(p.img)}" alt="" />
+                    <div class="compare-prop-title">${esc(p.title)}</div>
+                    <div style="font-size:13px; font-weight:700; color:var(--primary); font-family:'Fraunces',serif;">${fmtPrice(p.price)}</div>
                   </th>
                 `).join('')}
               </tr>
@@ -122,12 +146,16 @@
               `).join('')}
               <tr>
                 <td class="row-label"></td>
-                ${props.map(p => `<td><button class="btn btn-blue" style="width:100%; justify-content:center; font-size:12px; padding:8px;" onclick="closeModal(); setTimeout(() => openListing(${p.id}), 300)">Үзэх</button></td>`).join('')}
+                ${props.map(p => `<td><button class="btn btn-blue" style="width:100%; justify-content:center; font-size:12px; padding:8px;" onclick="closeModal(); setTimeout(() => openListing(${p.id}), 300)">Дэлгэрэнгүй</button></td>`).join('')}
               </tr>
             </tbody>
           </table>
         </div>
-        <div style="margin-top:16px; font-size:12px; color:var(--ink-3); line-height:1.5;">✓ тэмдэг нь тухайн үзүүлэлтээр хамгийн сайн сонголтыг харуулна (хямд үнэ, том талбай, барьцаагүй гэх мэт).</div>
+        <div style="margin-top:16px; font-size:12px; color:var(--ink-3); line-height:1.5;">
+          ✓ тэмдэг нь тухайн үзүүлэлтээр хамгийн сайн сонголтыг харуулна.<br>
+          <strong>AI үнэлгээ</strong> — үнийг дүүргийн зах зээлийн дунджтай харьцуулсан дүрэм-суурьтай тооцоолол (жинхэнэ AI/машин сургалт биш).<br>
+          <strong>Property Score</strong> — үнийн шударга байдал, баталгаажилт, тоноглол, зурган баримтжуулалт зэргээс тооцсон 0-100 онооны нэгдсэн үзүүлэлт.
+        </div>
       </div>
     `;
     document.getElementById('modal').classList.add('open');

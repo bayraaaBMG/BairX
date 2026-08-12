@@ -26,6 +26,52 @@
     return p + ' сая ₮';
   }
 
+  // Дүүргийн ойролцоогоор зах зээлийн дундаж м² үнэ (сая ₮/м²) — нэг эх сурвалж,
+  // Add-listing-ий үнийн зөвлөмж болон Property Score хоёулаа үүнийг ашиглана.
+  const DISTRICT_MARKET_AVG = {
+    'khan-uul': 5.2, 'sukhbaatar': 5.8, 'chingeltei': 4.0, 'bayanzurkh': 3.8,
+    'bayangol': 3.5, 'songinokhairkhan': 3.2, 'nalaikh': 1.8,
+    'bagakhangai': 2.0, 'baganuur': 2.0
+  };
+
+  // Same rule-based price-vs-market verdict shown on the listing detail page, factored
+  // out so the compare table can show the identical judgement instead of a second one.
+  function aiVerdictFor(l) {
+    if (l.tag && l.tag.type === 'below') {
+      return { verdict: 'Сонирхолтой санал', color: '#009878' };
+    }
+    if (l.tag && l.tag.type === 'above') {
+      return { verdict: 'Зах зээлээс дээгүүр', color: '#FF4757' };
+    }
+    return { verdict: 'Зах зээлийн үнэ', color: '#1E5BFF' };
+  }
+
+  // A transparent 0-100 composite score computed purely from the listing's own data —
+  // not a machine-learned model, just a documented rule-based blend of price fairness,
+  // verification/trust signals, feature completeness, and photo coverage.
+  function propertyScore(l) {
+    let score = 50;
+    const perSqm = (l.cat !== 'rent' && l.area && typeof l.price === 'number') ? (l.price * 1000000) / l.area : null;
+    if (perSqm) {
+      const avg = (DISTRICT_MARKET_AVG[l.district] || 4.0) * 1000000;
+      const diffPct = (perSqm - avg) / avg;
+      if (diffPct <= -0.05) score += 20;
+      else if (diffPct <= 0.05) score += 10;
+      else if (diffPct <= 0.15) score += 0;
+      else score -= 10;
+    }
+    if (l.sellerVerified) score += 8;
+    if (Array.isArray(l.badges) && l.badges.includes('verified')) score += 7;
+    const feats = ['parking', 'elevator', 'balcony', 'furnished', 'loan'];
+    const haveFeats = feats.filter(f => Array.isArray(l.features) && l.features.includes(f)).length;
+    score += haveFeats * 4;
+    const photoCount = (l.images && l.images.length) || (l._gallery && l._gallery.length) || (l.img ? 1 : 0);
+    if (photoCount >= 5) score += 10; else if (photoCount >= 2) score += 5;
+    const infoFields = [l.buildingType, l.heating, l.insulation, l.condition];
+    score += infoFields.filter(Boolean).length * 2.5;
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
   function showToast(msg, type) {
     const t = document.getElementById('toast');
     t.textContent = msg;

@@ -900,18 +900,7 @@
     if (!box) return;
     const district = document.getElementById('alDistrict')?.value || addListingState.district;
     const pricePerSqm = price / area;
-
-    // Дүүргийн ойролцоогоор зах зээлийн дундаж м² үнэ (сая ₮/м²)
-    const marketAvg = {
-      'khan-uul': 5.2,
-      'sukhbaatar': 5.8,
-      'chingeltei': 4.0,
-      'bayanzurkh': 3.8,
-      'bayangol': 3.5,
-      'songinokhairkhan': 3.2,
-      'nalaikh': 1.8
-    };
-    const avg = marketAvg[district] || 4.0;
+    const avg = DISTRICT_MARKET_AVG[district] || 4.0;
     const diff = ((pricePerSqm - avg) / avg) * 100;
 
     let msg, color;
