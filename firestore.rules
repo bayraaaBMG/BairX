@@ -38,7 +38,9 @@ service cloud.firestore {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow update: if false;
+      // Owner may update their own favorite doc (used to track priceAtSave for price-drop alerts).
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == request.auth.uid;
     }
 
     // ===== SAVED SEARCHES =====
@@ -47,6 +49,19 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
       allow update: if false;
+    }
+
+    // ===== NOTIFICATIONS =====
+    // Written client-side (no Cloud Functions): saved-search matches and price-drop alerts
+    // are created by the current user's own browser after checking real listings, so create
+    // is scoped to the owner just like reads. Delete is disallowed — "mark all read" only
+    // ever flips `read`, never removes the doc.
+    match /notifications/{notifId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if false;
     }
 
     // ===== REPORTS =====

@@ -21,9 +21,6 @@
   loadPublicListings();
   renderAccountSidebar();
 
-  // Simulate a live notification after 12 seconds
-  setTimeout(simulateLiveNotif, 12000);
-
   // Initialize page router + listing hash restore
   (function() {
     const hash = location.hash.replace('#', '');

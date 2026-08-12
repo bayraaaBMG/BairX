@@ -227,6 +227,12 @@
             </span>
           </div>
         </div>
+        ${l.firestoreId && (!currentUser || l.ownerId !== currentUser.uid) ? `
+        <button id="priceAlertBtn-${l.id}" class="price-alert-btn ${favorites.includes(l.id) ? 'active' : ''}" onclick="togglePriceAlert(${l.id})">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          ${favorites.includes(l.id) ? 'Үнийн мэдэгдэл идэвхтэй' : 'Үнэ буувал мэдэгд'}
+        </button>
+        ` : ''}
         <div class="modal-info-grid">
           <div class="info-card">
             <div class="info-card-label">Талбай</div>
@@ -695,6 +701,29 @@
       svg.setAttribute('fill', isFav ? '#FF4757' : 'none');
       svg.setAttribute('stroke', isFav ? '#FF4757' : 'currentColor');
     }
+  }
+
+  // Same underlying favorite (toggleFav writes priceAtSave, which drives the real price-drop
+  // check in notifications.js) — this button is just an explicit, named entry point to it,
+  // so it stays in sync with the heart icon in the header.
+  function togglePriceAlert(id) {
+    if (!currentUser) { showToast('Мэдэгдэл авахын тулд нэвтэрнэ үү'); openAuth(); return; }
+    const wasFav = favorites.includes(id);
+    const btn = document.getElementById('priceAlertBtn-' + id);
+    toggleFav(btn, id);
+    const nowFav = favorites.includes(id);
+    if (btn) {
+      btn.classList.toggle('active', nowFav);
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>${nowFav ? 'Үнийн мэдэгдэл идэвхтэй' : 'Үнэ буувал мэдэгд'}`;
+    }
+    const heartBtn = document.getElementById('detailFavBtn');
+    const svg = heartBtn?.querySelector('svg');
+    if (svg) {
+      svg.setAttribute('fill', nowFav ? '#FF4757' : 'none');
+      svg.setAttribute('stroke', nowFav ? '#FF4757' : 'currentColor');
+    }
+    if (nowFav && !wasFav) showToast('Үнэ буурвал танд мэдэгдэнэ', 'success');
+    else if (!nowFav && wasFav) showToast('Үнийн мэдэгдэл цуцлагдлаа');
   }
 
   function shareListingModal(id, title) {

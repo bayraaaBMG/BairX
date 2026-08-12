@@ -38,13 +38,13 @@
         <span class="al-eyebrow">Хайлт хадгалах</span>
         <div class="al-title" style="margin-bottom:6px;">Хайлтыг хадгалах</div>
         <div style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">${label}</div>
-        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:14px;background:var(--paper-2);border-radius:12px;margin-bottom:20px;">
-          <input type="checkbox" id="saveSearchEmail" style="width:16px;height:16px;accent-color:var(--primary);" />
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:14px;background:var(--paper-2);border-radius:12px;margin-bottom:20px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <div>
-            <div style="font-weight:700;font-size:14px;">И-мэйлээр мэдэгдэл авах</div>
-            <div style="font-size:12px;color:var(--ink-3);">Шинэ зар орвол ${currentUser.email} руу илгээнэ</div>
+            <div style="font-weight:700;font-size:14px;">Мэдэгдэл BairX-ийн хонхны цэсэд ирнэ</div>
+            <div style="font-size:12px;color:var(--ink-3);">Энэ нөхцөлд тохирох шинэ зар орох бүрт BairX-ыг нээх/шинэчлэх үед мэдэгдэнэ. И-мэйлээр илгээхгүй.</div>
           </div>
-        </label>
+        </div>
         <button class="btn btn-blue btn-lg" style="width:100%;justify-content:center;" onclick="confirmSaveSearch(${JSON.stringify({ district, priceMin, priceMax, areaMin, areaMax, rooms, keyword, category: currentCat, toggles: activeFilterToggles, label }).replace(/"/g, '&quot;')})">
           Хадгалах
         </button>
@@ -55,18 +55,17 @@
   }
 
   async function confirmSaveSearch(filters) {
-    const emailNotify = document.getElementById('saveSearchEmail')?.checked || false;
     try {
       await db.collection('savedSearches').add({
         userId: currentUser.uid,
         userEmail: currentUser.email,
         ...filters,
-        emailNotify,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       closeModal();
       showToast('Хайлт хадгалагдлаа', 'success');
       refreshSavedSearchesCount();
+      if (typeof checkNotificationTriggers === 'function') checkNotificationTriggers();
     } catch(e) {
       showToast('Хадгалахад алдаа гарлаа');
     }
@@ -101,7 +100,7 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
             <div style="flex:1;">
               <div style="font-weight:700;font-size:14px;">${d.label || 'Хайлт'}</div>
-              <div style="font-size:11px;color:var(--ink-3);">${d.emailNotify ? '📧 и-мэйл мэдэгдэлтэй' : 'Мэдэгдэлгүй'}</div>
+              <div style="font-size:11px;color:var(--ink-3);">🔔 тохирох шинэ зар орвол мэдэгдэнэ</div>
             </div>
             <button onclick="event.stopPropagation();deleteSavedSearch('${doc.id}',this.closest('div[style]'))" style="background:none;border:none;cursor:pointer;color:var(--danger);padding:4px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>

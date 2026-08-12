@@ -28,8 +28,11 @@
           await db.collection('favorites').add({
             userId: currentUser.uid,
             listingId: id,
+            firestoreId: l?.firestoreId || null,
+            priceAtSave: l?.price ?? null,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
+          if (typeof checkNotificationTriggers === 'function') checkNotificationTriggers();
         } catch(e) {}
       }
       if (l?.firestoreId) {

@@ -97,7 +97,8 @@
             loanType: 'Тохиролцоно', monthly: 0,
             userSubmitted: true, _inactive: d.status === 'inactive',
             viewCount: d.viewCount || 0, favoriteCount: d.favoriteCount || 0, contactCount: d.contactCount || 0,
-            expiresAt: d.expiresAt || null, _bumpedAt: d.bumpedAt || numId
+            expiresAt: d.expiresAt || null, _bumpedAt: d.bumpedAt || numId,
+            _createdAtMs: d.createdAt?.toMillis?.() || 0
           };
           listings.push(entry);
           if (d.images && d.images.length > 0) listingExtras[numId] = { coords: { x: 50, y: 50 }, gallery: d.images };
@@ -110,6 +111,8 @@
       if (typeof subscribeMyChats === 'function') subscribeMyChats();
       if (typeof refreshSavedSearchesCount === 'function') refreshSavedSearchesCount();
       if (typeof renderAccountSidebar === 'function') renderAccountSidebar();
+      if (typeof subscribeNotifications === 'function') subscribeNotifications();
+      if (typeof checkNotificationTriggers === 'function') checkNotificationTriggers();
     } else {
       currentUser = null;
       const loginBtn = document.getElementById('loginBtn');
@@ -123,6 +126,7 @@
       if (typeof subscribeMyChats === 'function') subscribeMyChats();
       if (typeof refreshSavedSearchesCount === 'function') refreshSavedSearchesCount();
       if (typeof renderAccountSidebar === 'function') renderAccountSidebar();
+      if (typeof subscribeNotifications === 'function') subscribeNotifications();
     }
   });
 
