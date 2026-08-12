@@ -4,6 +4,35 @@
     return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
   function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
+
+  // ===== VIDEO / 360° TOUR EMBED SAFETY =====
+  // Only http(s) URLs are ever embedded, and video specifically only from YouTube/Vimeo
+  // (converted to their real embed URL) — never a raw user-supplied src otherwise.
+  function safeEmbedUrl(url) {
+    try {
+      const u = new URL(url);
+      if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+      return u.href;
+    } catch (e) { return null; }
+  }
+  function videoEmbedUrl(url) {
+    try {
+      const u = new URL(url);
+      if (u.hostname.includes('youtu.be') || u.hostname.includes('youtube.com')) {
+        let id = null;
+        if (u.hostname.includes('youtu.be')) id = u.pathname.slice(1);
+        else if (u.pathname === '/watch') id = u.searchParams.get('v');
+        else if (u.pathname.startsWith('/embed/')) id = u.pathname.split('/embed/')[1];
+        else if (u.pathname.startsWith('/shorts/')) id = u.pathname.split('/shorts/')[1];
+        return id ? `https://www.youtube.com/embed/${id}` : null;
+      }
+      if (u.hostname.includes('vimeo.com')) {
+        const seg = u.pathname.split('/').filter(Boolean)[0];
+        return seg && /^\d+$/.test(seg) ? `https://player.vimeo.com/video/${seg}` : null;
+      }
+      return null;
+    } catch (e) { return null; }
+  }
   // Great-circle distance between two lat/lng points, in kilometers (Haversine formula).
   function haversineKm(lat1, lng1, lat2, lng2) {
     const R = 6371;

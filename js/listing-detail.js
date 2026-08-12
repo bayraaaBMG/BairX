@@ -106,9 +106,11 @@
 
     // AI Property Valuation — реал comparable-sales тооцоолол (computeValuation() —
     // utils.js). Демо тоо биш: платформ дээрх бодит зарууд дундаас адилавтар зар хайж,
-    // тэдгээрийн дундаж ₮/м²-тэй харьцуулна. Хангалттай харьцуулах зар олдоогvй бол
-    // тодорхой "мэдээлэл хvрэлцэхгvй" гэдгийг харуулна — тоо зохиохгvй.
+    // тэдгээрийн дундаж ₮/м²-тэй харьцуулна. Хангалттай харьцуулах зар олдоогүй бол
+    // тодорхой "мэдээлэл хүрэлцэхгүй" гэдгийг харуулна — тоо зохиохгүй.
     const valuation = computeValuation(l);
+    const pScore = propertyScore(l);
+    const pScoreColor = pScore >= 70 ? '#009878' : pScore >= 45 ? '#C77700' : '#FF4757';
     let aiVerdict, aiColor, aiReasoning, aiConfidenceLabel, aiConfidenceColor, aiBasisLine;
 
     if (!valuation.available) {
@@ -118,7 +120,7 @@
       aiBasisLine = valuation.sampleSize
         ? `Одоогоор ${valuation.sampleSize} харьцуулах зар олдсон — найдвартай тооцоолол хийхэд хамгийн багадаа 2 хэрэгтэй.`
         : 'BairX дээр энэ төрлийн харьцуулах зар одоогоор алга.';
-      aiReasoning = `Энэ байртай харьцуулах хангалттай зар платформ дээр олдсонгүй тул үнийг зах зээлтэй бодитоор харьцуулж чадахгүй байна. Дэлгэц дээрх тоо зохиомол биш — зөвхөн бодит харьцуулах зар байхгvй тул тооцоолол хийхгvй байна. Илvv олон жинхэнэ зар нэмэгдэх тусам энэ тооцоолол ажиллаж эхэлнэ.`;
+      aiReasoning = `Энэ байртай харьцуулах хангалттай зар платформ дээр олдсонгүй тул үнийг зах зээлтэй бодитоор харьцуулж чадахгүй байна. Дэлгэц дээрх тоо зохиомол биш — зөвхөн бодит харьцуулах зар байхгүй тул тооцоолол хийхгүй байна. Илүү олон жинхэнэ зар нэмэгдэх тусам энэ тооцоолол ажиллаж эхэлнэ.`;
     } else {
       aiVerdict = valuation.verdict;
       aiColor = valuation.color;
@@ -134,7 +136,7 @@
         aiReasoning = `Үнэ харьцуулсан зарын дунд түвшинд. Энэ бол ердийн сонголт — найдвартай ч давуу талгүй. Бусад заруудтай харьцуулж, заавал биечлэн очиж үзэж, чанар нь үнэдээ таарч буй эсэхийг шалгаарай.`;
       }
       if (valuation.confidence === 'low') {
-        aiReasoning += ` <strong style="color:#C77700;">Анхаар:</strong> харьцуулах зар цөөн тул энэ дvгнэлт өндөр тодорхойгүй байдалтай — зөвхөн ерөнхий чиг баримжаа болгож vзнэ vv.`;
+        aiReasoning += ` <strong style="color:#C77700;">Анхаар:</strong> харьцуулах зар цөөн тул энэ дүгнэлт өндөр тодорхойгүй байдалтай — зөвхөн ерөнхий чиг баримжаа болгож үзнэ үү.`;
       }
     }
 
@@ -172,6 +174,9 @@
     document.getElementById('modalContent').innerHTML = `
       <button class="modal-close" onclick="closeModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <button class="modal-share-btn" id="detailFavBtn" onclick="event.stopPropagation(); toggleFavDetail(${l.id})" title="Хадгалах" style="right:104px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="${favorites.includes(l.id) ? '#FF4757' : 'none'}" stroke="${favorites.includes(l.id) ? '#FF4757' : 'currentColor'}" stroke-width="2.5"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
       </button>
       <button class="modal-share-btn" onclick="shareListingModal(${l.id}, '${esc(l.title)}')" title="Хуваалцах">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
@@ -215,7 +220,12 @@
             <div class="modal-price">${fmtPrice(l.price)}</div>
             <div style="font-size:13px; color:var(--ink-3); margin-top:4px;">${pricePerSqmText(l)}</div>
           </div>
-          <span class="price-tag ${l.tag.type === 'normal' ? '' : l.tag.type}">${l.tag.text}</span>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+            <span class="price-tag ${l.tag.type === 'normal' ? '' : l.tag.type}">${l.tag.text}</span>
+            <span title="Property Score — үнийн шударга байдал, баталгаажилт, тоноглол, зурган баримтжуулалтаас тооцсон 0-100 үзүүлэлт" style="display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:100px; background:${pScoreColor}18; color:${pScoreColor}; font-size:11px; font-weight:700; font-family:'JetBrains Mono',monospace; cursor:help;">
+              Score ${pScore}/100
+            </span>
+          </div>
         </div>
         <div class="modal-info-grid">
           <div class="info-card">
@@ -247,6 +257,31 @@
           </div>
           ` : ''}
         </div>
+
+        ${l.videoUrl && videoEmbedUrl(l.videoUrl) ? `
+        <div class="modal-section">
+          <h4>Видео</h4>
+          <div style="border-radius:14px; overflow:hidden; aspect-ratio:16/9; background:#0A1628;">
+            <iframe width="100%" height="100%" src="${esc(videoEmbedUrl(l.videoUrl))}" title="Зарын видео" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          </div>
+        </div>
+        ` : ''}
+
+        ${l.tourUrl && safeEmbedUrl(l.tourUrl) ? `
+        <div class="modal-section">
+          <h4>360° тойрох</h4>
+          <div style="border-radius:14px; overflow:hidden; aspect-ratio:16/9; background:#0A1628;">
+            <iframe width="100%" height="100%" src="${esc(safeEmbedUrl(l.tourUrl))}" title="360° тойрох" frameborder="0" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          </div>
+        </div>
+        ` : ''}
+
+        ${l.floorPlan ? `
+        <div class="modal-section">
+          <h4>Планировка</h4>
+          <img src="${esc(l.floorPlan)}" alt="Планировка" style="width:100%; border-radius:14px; border:1px solid var(--line); display:block;" />
+        </div>
+        ` : ''}
 
         <!-- SELLER CARD -->
         <div class="modal-section">
@@ -405,6 +440,11 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
             ${esc(l.loc)}
           </div>
+          <div id="nearbyAmenities" style="margin-top:14px;">
+            ${(l.geoLat && l.geoLng)
+              ? `<div style="font-size:12px;color:var(--ink-3);">Ойролцоох сургууль, цэцэрлэг, эмнэлэг зэргийг ачаалж байна...</div>`
+              : `<div style="font-size:12px;color:var(--ink-3);">Энэ зар яг байршлаа газрын зураг дээр тэмдэглээгүй тул ойролцоох цэгүүдийг харуулах боломжгүй.</div>`}
+          </div>
         </div>
 
         <!-- ЗЭЭЛИЙН САНАЛ -->
@@ -459,7 +499,7 @@
             </div>
             <div style="font-size:12.5px; color:var(--ink-3); margin-bottom:10px; font-family:'JetBrains Mono',monospace;">${aiBasisLine}</div>
             <div style="font-size:14px; line-height:1.65; color:var(--ink-2);">${aiReasoning}</div>
-            <div style="font-size:11px; color:var(--ink-3); margin-top:12px; font-style:italic;">* Дүрэм-суурьтай тооцоолол — BairX дээрх бодит зарын дунджид vндэслэсэн, машин сургалт (ML) ашигладаггvй. Тоо зохиомол бишээ, зөвхөн одоо байгаа бодит зар дээр тулгуурлана.</div>
+            <div style="font-size:11px; color:var(--ink-3); margin-top:12px; font-style:italic;">* Дүрэм-суурьтай тооцоолол — BairX дээрх бодит зарын дунджид үндэслэсэн, машин сургалт (ML) ашигладаггүй. Тоо зохиомол биш — зөвхөн одоо байгаа бодит зар дээр тулгуурлана.</div>
 
             ${stability.length > 0 ? `
             <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
@@ -567,6 +607,93 @@
         }).addTo(m);
         L.marker([l.geoLat, l.geoLng]).addTo(m);
       }, 50);
+      loadNearbyAmenities(l.id, l.geoLat, l.geoLng);
+    }
+  }
+
+  // ===== NEARBY AMENITIES — real OpenStreetMap data (Overpass API), not invented POIs =====
+  // The old browse-map used to show fixed, made-up "Сургууль/Эмнэлэг/Худалдаа" pins at
+  // arbitrary positions. This queries real school/kindergarten/hospital/mall/bus-stop
+  // points around the listing's actual saved pin and reports genuine distances — or a
+  // clear "couldn't load" message on failure, never a guess.
+  const nearbyAmenitiesCache = {};
+  const AMENITY_CATS = [
+    { key: 'school', label: 'Хамгийн ойрхон сургууль' },
+    { key: 'kindergarten', label: 'Хамгийн ойрхон цэцэрлэг' },
+    { key: 'hospital', label: 'Хамгийн ойрхон эмнэлэг' },
+    { key: 'mall', label: 'Хамгийн ойрхон худалдааны төв' },
+    { key: 'bus', label: 'Хамгийн ойрхон автобусны буудал' }
+  ];
+  function categorizeAmenity(tags) {
+    if (!tags) return null;
+    if (tags.amenity === 'school') return 'school';
+    if (tags.amenity === 'kindergarten') return 'kindergarten';
+    if (tags.amenity === 'hospital' || tags.amenity === 'clinic') return 'hospital';
+    if (tags.shop === 'mall') return 'mall';
+    if (tags.highway === 'bus_stop') return 'bus';
+    return null;
+  }
+  function renderNearbyAmenities(grouped) {
+    const rows = AMENITY_CATS.map(({ key, label }) => {
+      const items = grouped[key];
+      if (!items || !items.length) {
+        return `<div class="prof-info-row"><div class="prof-info-label">${label}</div><div class="prof-info-value">Ойролцоо (2-3км дотор) олдсонгүй</div></div>`;
+      }
+      const nearest = items[0];
+      const distText = nearest.dist < 1000 ? Math.round(nearest.dist) + ' м' : (nearest.dist / 1000).toFixed(1) + ' км';
+      return `<div class="prof-info-row"><div class="prof-info-label">${label}</div><div class="prof-info-value">${esc(nearest.name)} · ${distText}</div></div>`;
+    }).join('');
+    return `<div class="prof-info-list">${rows}</div><div style="font-size:10.5px;color:var(--ink-3);margin-top:8px;font-style:italic;">Эх сурвалж: OpenStreetMap — нийтийн бодит газрын зургийн өгөгдөл, зарын эзний оруулсан мэдээлэл биш.</div>`;
+  }
+  async function loadNearbyAmenities(listingId, lat, lng) {
+    const box = document.getElementById('nearbyAmenities');
+    if (!box) return;
+    if (nearbyAmenitiesCache[listingId]) {
+      box.innerHTML = renderNearbyAmenities(nearbyAmenitiesCache[listingId]);
+      return;
+    }
+    const query = `[out:json][timeout:12];(
+      node["amenity"="school"](around:1500,${lat},${lng});
+      node["amenity"="kindergarten"](around:1500,${lat},${lng});
+      node["amenity"="hospital"](around:2500,${lat},${lng});
+      node["amenity"="clinic"](around:2000,${lat},${lng});
+      node["shop"="mall"](around:3000,${lat},${lng});
+      node["highway"="bus_stop"](around:800,${lat},${lng});
+    );out body;`;
+    try {
+      const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query });
+      if (!res.ok) throw new Error('overpass http ' + res.status);
+      const data = await res.json();
+      const grouped = {};
+      (data.elements || []).forEach(el => {
+        const cat = categorizeAmenity(el.tags);
+        if (!cat || el.lat == null || el.lon == null) return;
+        const dist = haversineKm(lat, lng, el.lat, el.lon) * 1000;
+        const name = (el.tags && el.tags.name) || AMENITY_CATS.find(c => c.key === cat).label.replace('Хамгийн ойрхон ', '');
+        (grouped[cat] = grouped[cat] || []).push({ name, dist });
+      });
+      Object.values(grouped).forEach(list => list.sort((a, b) => a.dist - b.dist));
+      nearbyAmenitiesCache[listingId] = grouped;
+      const stillOpen = document.getElementById('nearbyAmenities');
+      if (stillOpen) stillOpen.innerHTML = renderNearbyAmenities(grouped);
+    } catch (e) {
+      console.error('Nearby amenities fetch failed:', e);
+      const stillOpen = document.getElementById('nearbyAmenities');
+      if (stillOpen) stillOpen.innerHTML = `<div style="font-size:12px;color:var(--ink-3);">Ойролцоох цэгүүдийг татаж чадсангүй (сүлжээний алдаа). Дараа дахин оролдоно уу.</div>`;
+    }
+  }
+
+  // toggleFav() (favorites.js) toggles the .faved class, which the card layout styles
+  // via CSS — this header button instead renders its filled/outline state inline, so
+  // update that directly after the underlying favorite state has flipped.
+  function toggleFavDetail(id) {
+    const btn = document.getElementById('detailFavBtn');
+    toggleFav(btn, id);
+    const svg = btn?.querySelector('svg');
+    if (svg) {
+      const isFav = favorites.includes(id);
+      svg.setAttribute('fill', isFav ? '#FF4757' : 'none');
+      svg.setAttribute('stroke', isFav ? '#FF4757' : 'currentColor');
     }
   }
 

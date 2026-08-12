@@ -87,6 +87,7 @@
             furniture: feats.includes('furnished') ? 'Тавилгатай' : '',
             deposit: d.deposit || null, minTerm: d.minTerm || '',
             condition: d.condition || '', features: feats,
+            videoUrl: d.videoUrl || '', tourUrl: d.tourUrl || '', floorPlan: d.floorPlan || null,
             img: (d.images && d.images[0]) || d.img || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
             tag: { type: 'new', text: 'Шинэ зар' }, badges: d.badges || ['user'],
             loanType: 'Тохиролцоно', monthly: 0,

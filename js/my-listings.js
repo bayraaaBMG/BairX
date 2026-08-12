@@ -93,6 +93,9 @@
       description: '',
       features: Array.isArray(l.features) ? l.features.slice() : [],
       images: listingExtras[l.id]?.gallery || (l.img ? [l.img] : []),
+      videoUrl: l.videoUrl || '',
+      tourUrl: l.tourUrl || '',
+      floorPlan: l.floorPlan || null,
       phone: '',
       name: ''
     });
@@ -137,6 +140,9 @@
     features: [],
     // Step 4 - images
     images: [],
+    videoUrl: '',
+    tourUrl: '',
+    floorPlan: null,
     // Step 5 - contact
     phone: '',
     name: '',
@@ -652,6 +658,38 @@
           </div>
         </div>
 
+        <div class="step-section-title" style="margin-top:28px;">Нэмэлт медиа <span class="hint">— заавал биш</span></div>
+        <div class="step-section-sub">Байгаа бол оруулна уу — байхгүй бол хоосон орхиж болно</div>
+
+        <div class="form-row">
+          <label class="form-label">Видео холбоос <span class="hint">— YouTube эсвэл Vimeo линк</span></label>
+          <input type="url" class="form-input" id="alVideoUrl" placeholder="https://youtube.com/watch?v=..." value="${addListingState.videoUrl || ''}" />
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">360° тойрох холбоос <span class="hint">— Matterport, Kuula гэх мэт embed линк</span></label>
+          <input type="url" class="form-input" id="alTourUrl" placeholder="https://my.matterport.com/show/?m=..." value="${addListingState.tourUrl || ''}" />
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">Планировкын зураг (Floor plan)</label>
+          ${addListingState.floorPlan ? `
+            <div style="position:relative; display:inline-block;">
+              <img src="${addListingState.floorPlan}" alt="" style="max-width:220px; border-radius:10px; border:1px solid var(--line); display:block;" />
+              <button type="button" class="remove-img" style="position:absolute; top:6px; right:6px;" onclick="clearFloorPlan()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          ` : `
+            <label class="image-upload-box" for="floorPlanInput" style="max-width:220px;">
+              <input type="file" id="floorPlanInput" accept="image/*" style="display:none" onchange="handleFloorPlanUpload(event)" />
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18M3 9h18"/></svg>
+              <div class="image-upload-text">Планировка оруулах</div>
+              <div class="image-upload-hint">JPG, PNG</div>
+            </label>
+          `}
+        </div>
+
         <div class="step-nav">
           <button class="btn btn-ghost btn-back" onclick="prevStep(4)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
@@ -970,6 +1008,10 @@
       addListingState.minTerm = document.getElementById('alMinTerm')?.value || '';
       addListingState.description = document.getElementById('alDescription')?.value || '';
     }
+    if (step === 4) {
+      addListingState.videoUrl = document.getElementById('alVideoUrl')?.value || '';
+      addListingState.tourUrl = document.getElementById('alTourUrl')?.value || '';
+    }
     if (step === 5) {
       addListingState.phone = document.getElementById('alPhone')?.value || '';
       addListingState.name = document.getElementById('alName')?.value || '';
@@ -1057,6 +1099,44 @@
     document.getElementById('imageGrid').innerHTML = renderImageBoxes();
   }
 
+  // Floor plan — same resize-then-base64 approach as the profile photo (dashboard.js),
+  // just a larger max dimension since floor plans need readable text/labels.
+  function handleFloorPlanUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { showToast('Зурган файл сонгоно уу'); return; }
+    if (file.size > 8 * 1024 * 1024) { showToast('Зураг 8MB-аас бага байх ёстой'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 900;
+        let { width, height } = img;
+        if (width > height && width > maxDim) { height = Math.round(height * maxDim / width); width = maxDim; }
+        else if (height >= width && height > maxDim) { width = Math.round(width * maxDim / height); height = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        addListingState.floorPlan = canvas.toDataURL('image/jpeg', 0.85);
+        // Re-rendering the step would otherwise revert alVideoUrl/alTourUrl to their
+        // last-saved (possibly stale) state, discarding whatever the user just typed
+        // into those fields before touching the floor plan uploader.
+        saveStepData(4);
+        document.getElementById('modalContent').innerHTML = renderAddListing();
+        setTimeout(attachAddListingHandlers, 50);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearFloorPlan() {
+    saveStepData(4);
+    addListingState.floorPlan = null;
+    document.getElementById('modalContent').innerHTML = renderAddListing();
+    setTimeout(attachAddListingHandlers, 50);
+  }
+
   async function submitListing() {
     if (!validateStep(5)) return;
     try {
@@ -1139,6 +1219,9 @@
       furniture: s.features.includes('furnished') ? 'Тавилгатай' : '',
       deposit: (s.intent === 'rent' && !isLand) ? (parseFloat(s.deposit) || null) : null,
       minTerm: (s.intent === 'rent' && !isLand) ? (minTermLabels[s.minTerm] || '') : '',
+      videoUrl: (s.videoUrl && videoEmbedUrl(s.videoUrl)) ? s.videoUrl.trim() : '',
+      tourUrl: (s.tourUrl && safeEmbedUrl(s.tourUrl)) ? s.tourUrl.trim() : '',
+      floorPlan: s.floorPlan || null,
       utilityCost: '', ownership: 'Хувийн өмчлөл',
       cadastre: '', collateral: '', taxDebt: '',
       condition: conditionLabels[s.condition] || s.condition || '',
@@ -1187,6 +1270,9 @@
         features: newListing.features,
         img: newListing.img,
         images: allImages,
+        videoUrl: newListing.videoUrl,
+        tourUrl: newListing.tourUrl,
+        floorPlan: newListing.floorPlan,
         sellerName: s.name || currentUser.name || 'Хэрэглэгч',
         sellerPhone: s.phone || '',
         sellerType: s.role === 'agent' ? 'Агент' : (s.role === 'company' ? 'Компани' : 'Хувь хүн'),
@@ -1202,6 +1288,9 @@
       if (JSON.stringify(fsDoc).length > 900000) {
         fsDoc.images = allImages.slice(0, 1);
       }
+      if (JSON.stringify(fsDoc).length > 900000) {
+        fsDoc.floorPlan = null; // still too large even with just the cover photo — drop the plan too
+      }
       try {
         if (editingListingId) {
           const existingFsId = listings.find(x => x.id === editingListingId)?.firestoreId;
@@ -1216,7 +1305,7 @@
         firestoreSaveFailed = true;
         console.error('Listing Firestore save failed:', e.code, e.message);
         const reason = e.code === 'permission-denied'
-          ? ' (зөвшөөрөл татгалзагдлаа — Firestore Rules Publish хийгдээгvй байж болзошгvй)'
+          ? ' (зөвшөөрөл татгалзагдлаа — Firestore Rules Publish хийгдээгүй байж болзошгүй)'
           : (e.code ? ' (' + e.code + ')' : '');
         showToast('Сервер лүү илгээхэд алдаа гарлаа — зар зөвхөн энэ төхөөрөмж дээр хадгалагдлаа' + reason);
       }
@@ -1552,6 +1641,7 @@
         bedrooms: '', bathrooms: '', floor: '', totalFloors: '', year: '', buildingName: '', complex: '',
         price: '', buildingType: '', heating: '', insulationType: '', windowDirection: '', hoaFee: '',
         condition: '', deposit: '', minTerm: '', description: '', features: [], images: [],
+        videoUrl: '', tourUrl: '', floorPlan: null,
         phone: '', name: '', role: 'owner', plan: 'basic'
       };
       return;
@@ -1564,6 +1654,7 @@
         bedrooms: '', bathrooms: '', floor: '', totalFloors: '', year: '', buildingName: '', complex: '',
         price: '', buildingType: '', heating: '', insulationType: '', windowDirection: '', hoaFee: '',
         condition: '', deposit: '', minTerm: '', description: '', features: [], images: [],
+        videoUrl: '', tourUrl: '', floorPlan: null,
         phone: '', name: '', role: 'owner', plan: 'basic'
       };
     }
