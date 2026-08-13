@@ -130,6 +130,7 @@
     closeModal();
     applyFilters();
     showPage('listings');
+    if (typeof expandAdvancedFiltersIfActive === 'function') expandAdvancedFiltersIfActive();
     showToast('Хайлт ачааллагдлаа', 'success');
   }
 

@@ -873,7 +873,7 @@
           <input type="text" id="fSearch" class="form-input" aria-label="Хайлтын үг" placeholder="Жнь: Зайсан 2 өрөө, шинэ барилга…" oninput="searchText=this.value; applyListingFilter();" style="padding-left:38px;" />
         </div>
       </div>
-      <div class="filter-grid">
+      <div class="filter-grid-basic">
         <div class="filter-field">
           <label for="fDistrict">Дүүрэг</label>
           <select id="fDistrict">
@@ -890,27 +890,11 @@
           </select>
         </div>
         <div class="filter-field">
-          <label for="fKhoroo">Хороо</label>
-          <input type="number" id="fKhoroo" class="form-input" aria-label="Хороо" placeholder="Жнь: 11" min="1" />
-        </div>
-        <div class="filter-field">
-          <label for="fComplex">Хотхон</label>
-          <input type="text" id="fComplex" class="form-input" aria-label="Хотхон" placeholder="Жнь: Зайсан Тольт" />
-        </div>
-        <div class="filter-field">
           <label>Үнэ (сая ₮)</label>
           <div class="filter-range">
             <input type="number" id="fPriceMin" aria-label="Үнэ, доод (сая ₮)" placeholder="Доод" />
             <span>—</span>
             <input type="number" id="fPriceMax" aria-label="Үнэ, дээд (сая ₮)" placeholder="Дээд" />
-          </div>
-        </div>
-        <div class="filter-field">
-          <label>Талбай (м²)</label>
-          <div class="filter-range">
-            <input type="number" id="fAreaMin" aria-label="Талбай, доод (м²)" placeholder="Доод" />
-            <span>—</span>
-            <input type="number" id="fAreaMax" aria-label="Талбай, дээд (м²)" placeholder="Дээд" />
           </div>
         </div>
         <div class="filter-field">
@@ -923,51 +907,78 @@
             <option value="4">4+ өрөө</option>
           </select>
         </div>
-        <div class="filter-field">
-          <label>Барилгын он</label>
-          <div class="filter-range">
-            <input type="number" id="fYearMin" aria-label="Барилгын он, доод" placeholder="2000" min="1950" max="2030" />
-            <span>—</span>
-            <input type="number" id="fYearMax" aria-label="Барилгын он, дээд" placeholder="2025" min="1950" max="2030" />
+      </div>
+
+      <button type="button" class="filter-advanced-toggle" id="advancedFilterToggleBtn" onclick="toggleAdvancedFilters()">
+        <span>Нэмэлт шүүлтүүр</span>
+        <svg id="advancedFilterChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s;"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+
+      <div class="filter-advanced" id="advancedFilterFields" style="display:none;">
+        <div class="filter-grid">
+          <div class="filter-field">
+            <label for="fKhoroo">Хороо</label>
+            <input type="number" id="fKhoroo" class="form-input" aria-label="Хороо" placeholder="Жнь: 11" min="1" />
+          </div>
+          <div class="filter-field">
+            <label for="fComplex">Хотхон</label>
+            <input type="text" id="fComplex" class="form-input" aria-label="Хотхон" placeholder="Жнь: Зайсан Тольт" />
+          </div>
+          <div class="filter-field">
+            <label>Талбай (м²)</label>
+            <div class="filter-range">
+              <input type="number" id="fAreaMin" aria-label="Талбай, доод (м²)" placeholder="Доод" />
+              <span>—</span>
+              <input type="number" id="fAreaMax" aria-label="Талбай, дээд (м²)" placeholder="Дээд" />
+            </div>
+          </div>
+          <div class="filter-field">
+            <label>Барилгын он</label>
+            <div class="filter-range">
+              <input type="number" id="fYearMin" aria-label="Барилгын он, доод" placeholder="2000" min="1950" max="2030" />
+              <span>—</span>
+              <input type="number" id="fYearMax" aria-label="Барилгын он, дээд" placeholder="2025" min="1950" max="2030" />
+            </div>
+          </div>
+          <div class="filter-field">
+            <label>Давхар</label>
+            <div class="filter-range">
+              <input type="number" id="fFloorMin" aria-label="Давхар, доод" placeholder="1" min="1" />
+              <span>—</span>
+              <input type="number" id="fFloorMax" aria-label="Давхар, дээд" placeholder="20" min="1" />
+            </div>
           </div>
         </div>
-        <div class="filter-field">
-          <label>Давхар</label>
-          <div class="filter-range">
-            <input type="number" id="fFloorMin" aria-label="Давхар, доод" placeholder="1" min="1" />
-            <span>—</span>
-            <input type="number" id="fFloorMax" aria-label="Давхар, дээд" placeholder="20" min="1" />
+
+        <div class="filter-field" style="margin-bottom:16px;">
+          <label>Газрын зураг дээрх бүс</label>
+          <div id="radiusMapWrap" style="display:none;">
+            <div id="radiusMap" style="height:180px; border-radius:10px; overflow:hidden; border:1px solid var(--line); margin-bottom:10px;"></div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button type="button" class="filter-toggle radius-toggle" data-radius="1">1 км дотор</button>
+              <button type="button" class="filter-toggle radius-toggle" data-radius="3">3 км дотор</button>
+              <button type="button" class="filter-toggle radius-toggle" data-radius="5">5 км дотор</button>
+              <button type="button" class="btn btn-ghost" style="font-size:12px;" onclick="clearAreaFilter()">Цэгийг арилгах</button>
+            </div>
           </div>
+          <button type="button" class="btn btn-ghost" id="areaFilterToggleBtn" style="width:100%; justify-content:center; border:1.5px solid var(--line-2);" onclick="toggleAreaFilterMap()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Газрын зураг дээр цэг сонгож, бүсээр хайх
+          </button>
+        </div>
+
+        <div class="filter-toggles" style="margin-top:0; padding-top:0; border-top:none;">
+          <button class="filter-toggle" data-ftoggle="new">Шинэ барилга</button>
+          <button class="filter-toggle" data-ftoggle="verified">Баталгаажсан</button>
+          <button class="filter-toggle" data-ftoggle="loan">Зээлд хамрагдах</button>
+          <button class="filter-toggle" data-ftoggle="below">Зах зээлээс хямд</button>
+          <button class="filter-toggle" data-ftoggle="parking">Паркингтай</button>
+          <button class="filter-toggle" data-ftoggle="furnished">Тавилгатай</button>
+          <button class="filter-toggle" data-ftoggle="vip">⭐ VIP зар</button>
+          <button class="filter-toggle" data-ftoggle="withphoto">Зурагтай</button>
         </div>
       </div>
 
-      <div class="filter-field" style="margin-bottom:16px;">
-        <label>Газрын зураг дээрх бүс</label>
-        <div id="radiusMapWrap" style="display:none;">
-          <div id="radiusMap" style="height:180px; border-radius:10px; overflow:hidden; border:1px solid var(--line); margin-bottom:10px;"></div>
-          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <button type="button" class="filter-toggle radius-toggle" data-radius="1">1 км дотор</button>
-            <button type="button" class="filter-toggle radius-toggle" data-radius="3">3 км дотор</button>
-            <button type="button" class="filter-toggle radius-toggle" data-radius="5">5 км дотор</button>
-            <button type="button" class="btn btn-ghost" style="font-size:12px;" onclick="clearAreaFilter()">Цэгийг арилгах</button>
-          </div>
-        </div>
-        <button type="button" class="btn btn-ghost" id="areaFilterToggleBtn" style="width:100%; justify-content:center; border:1.5px solid var(--line-2);" onclick="toggleAreaFilterMap()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Газрын зураг дээр цэг сонгож, бүсээр хайх
-        </button>
-      </div>
-
-      <div class="filter-toggles">
-        <button class="filter-toggle" data-ftoggle="new">Шинэ барилга</button>
-        <button class="filter-toggle" data-ftoggle="verified">Баталгаажсан</button>
-        <button class="filter-toggle" data-ftoggle="loan">Зээлд хамрагдах</button>
-        <button class="filter-toggle" data-ftoggle="below">Зах зээлээс хямд</button>
-        <button class="filter-toggle" data-ftoggle="parking">Паркингтай</button>
-        <button class="filter-toggle" data-ftoggle="furnished">Тавилгатай</button>
-        <button class="filter-toggle" data-ftoggle="vip">⭐ VIP зар</button>
-        <button class="filter-toggle" data-ftoggle="withphoto">Зурагтай</button>
-      </div>
       <div class="filter-actions">
         <div class="filter-result-count"><strong id="filterCount">6</strong> зар олдлоо</div>
         <button class="btn btn-ghost" onclick="saveCurrentSearch()" title="Хайлтыг хадгалах" style="font-size:13px;">

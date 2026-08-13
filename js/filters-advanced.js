@@ -1,6 +1,31 @@
 ﻿  // ===== ADVANCED FILTER =====
   let activeFilterToggles = [];
 
+  // Дvvрэг/vнэ/өрөө show by default; хороо, хотхон, талбай, он, давхар, газрын
+  // зураг, quick-filter chips stay behind this toggle so the panel reads as a
+  // quick search first rather than a wall of fields (unegui.mn-style progressive
+  // disclosure, not a copy of its layout).
+  function toggleAdvancedFilters() {
+    const panel = document.getElementById('advancedFilterFields');
+    const btn = document.getElementById('advancedFilterToggleBtn');
+    if (!panel || !btn) return;
+    const opening = panel.style.display === 'none';
+    panel.style.display = opening ? 'flex' : 'none';
+    btn.classList.toggle('open', opening);
+    const label = btn.querySelector('span');
+    if (label) label.textContent = opening ? 'Нэмэлт шүүлтүүрийг хураах' : 'Нэмэлт шүүлтүүр';
+  }
+
+  // Called after any code path that can set an advanced-only field programmatically
+  // (e.g. applying a saved search) so a filter someone set doesn't stay invisible
+  // behind the collapsed toggle.
+  function expandAdvancedFiltersIfActive() {
+    const ids = ['fKhoroo', 'fComplex', 'fAreaMin', 'fAreaMax', 'fYearMin', 'fYearMax', 'fFloorMin', 'fFloorMax'];
+    const hasActive = ids.some(id => document.getElementById(id)?.value) || activeFilterToggles.length > 0 || (areaFilter && areaFilter.lat);
+    const panel = document.getElementById('advancedFilterFields');
+    if (hasActive && panel && panel.style.display === 'none') toggleAdvancedFilters();
+  }
+
   // ===== RADIUS / AREA SEARCH (real Leaflet/OpenStreetMap, no API key) =====
   let areaFilter = null; // { lat, lng, km } once the user has placed a pin + picked a radius
   let radiusMap = null;
