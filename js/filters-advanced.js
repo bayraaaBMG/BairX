@@ -201,8 +201,19 @@
 
   function updateFilterCount() {
     const count = getFilteredListings().length;
+    const total = listings.filter(l => !l._inactive).length;
     const el = document.getElementById('filterCount');
     if (el) el.textContent = count;
+    const totalEl = document.getElementById('filterTotalCount');
+    if (totalEl) totalEl.textContent = total;
+
+    // The "view all" link only makes sense (and is only shown) once an active filter has
+    // actually narrowed the grid below the full active-listing count — otherwise there's
+    // nothing left to "view all" of.
+    const viewAllWrap = document.getElementById('viewAllWrap');
+    const totalListingCountEl = document.getElementById('totalListingCount');
+    if (totalListingCountEl) totalListingCountEl.textContent = total;
+    if (viewAllWrap) viewAllWrap.style.display = (count < total) ? 'block' : 'none';
   }
 
   function updateCatPillCounts() {

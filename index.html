@@ -854,7 +854,7 @@
         <span class="section-eyebrow">Идэвхтэй зар</span>
         <h2 class="section-title display">Баталгаажсан <em>заруудаас</em> сонго</h2>
       </div>
-      <p class="section-sub">Хүн бүр өөрийн утасны дугаараар бүртгүүлсэн, AI-аар үнэ нь шалгагдсан зөвхөн жинхэнэ зарууд.</p>
+      <p class="section-sub">Эзэмшигч, утас, зарын баталгаажилтын тэмдэгтэй, үнийг нь зах зээлийн харьцуулалтаар шалгасан зарууд. Жишээ зарууд «Жишээ зар» гэж тод тэмдэглэгдсэн байна.</p>
     </div>
 
     <!-- Advanced filter panel -->
@@ -980,7 +980,7 @@
       </div>
 
       <div class="filter-actions">
-        <div class="filter-result-count"><strong id="filterCount">6</strong> зар олдлоо</div>
+        <div class="filter-result-count"><strong id="filterCount">6</strong> / <span id="filterTotalCount">30</span> зар олдлоо</div>
         <button class="btn btn-ghost" onclick="saveCurrentSearch()" title="Хайлтыг хадгалах" style="font-size:13px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Хадгалах
@@ -1025,9 +1025,11 @@
       <!-- Cards will be rendered here by JS -->
     </div>
 
-    <div style="text-align:center; margin-top:48px;">
-      <a class="btn btn-primary btn-lg" onclick="showToast('Удахгүй: Илүү олон зар')">
-        Бүх <span id="totalListingCount">30</span> заруудыг үзэх
+    <!-- Only shown when a filter has narrowed the grid below the full active-listing count —
+         clicking it really clears the filters (resetFilters), not a fake "coming soon" toast. -->
+    <div style="text-align:center; margin-top:48px; display:none;" id="viewAllWrap">
+      <a class="btn btn-primary btn-lg" onclick="resetFilters()">
+        Бүх <span id="totalListingCount">30</span> зарыг үзэх (шүүлтүүр цэвэрлэх)
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </a>
     </div>
