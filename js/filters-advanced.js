@@ -1,7 +1,7 @@
 ﻿  // ===== ADVANCED FILTER =====
   let activeFilterToggles = [];
 
-  // Дvvрэг/vнэ/өрөө show by default; хороо, хотхон, талбай, он, давхар, газрын
+  // Дүүрэг/үнэ/өрөө show by default; хороо, хотхон, талбай, он, давхар, газрын
   // зураг, quick-filter chips stay behind this toggle so the panel reads as a
   // quick search first rather than a wall of fields (unegui.mn-style progressive
   // disclosure, not a copy of its layout).
@@ -189,7 +189,13 @@
       return bv - av || b.id - a.id;
     });
     else if (currentSort === 'date-asc') results.sort((a, b) => a.id - b.id);
-    else results.sort((a, b) => (b._bumpedAt || b.id) - (a._bumpedAt || a.id)); // default: newest/bumped first
+    // Default: VIP/Featured-plan listings first (the plan's actual promised benefit),
+    // newest/bumped first within each tier.
+    else results.sort((a, b) => {
+      const av = a.badges && a.badges.includes('vip') ? 1 : 0;
+      const bv = b.badges && b.badges.includes('vip') ? 1 : 0;
+      return (bv - av) || ((b._bumpedAt || b.id) - (a._bumpedAt || a.id));
+    });
 
     return results;
   }

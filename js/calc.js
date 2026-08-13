@@ -1,33 +1,77 @@
 ﻿  // ===== CALCULATOR =====
-  // Суурь хүү (currentRate, доор) Монголбанкны нийтэлсэн шинээр олгосон орон сууцны
-  // ипотекийн зээлийн системийн дундаж хүүнд (17.5%, 2026 оны 4-р сарын байдлаар) үндэслэсэн.
-  // Эх сурвалж: mongolbank.mn статистик. Банк тус бүрийн rateAdj нь ХАРЬЦАНГУЙ, ойролцоо
-  // байршил үзүүлэх зорилготой — яг одоогийн бодит хүүг тухайн банкны сайтаас (url) шалгана уу.
+  // Суурь хүү (currentRate, доор) Монголбанкны нийтлэдэг арилжааны банкуудын орон сууцны
+  // ипотекийн зээлийн жигнэсэн дундаж хүүний тайланд (stat.mongolbank.mn/finance) үндэслэсэн
+  // ойролцоо тоо — энэ хуудсыг script-ээр уншиж шинэчилж чадаагүй тул хэрэглэгч өөрөө
+  // шалгахыг зөвлөж байна (доорх сануулга харна уу).
+  //
+  // ЭХ СУРВАЛЖИЙН ТАЙЛБАР (2026-08-13-нд шалгасан): доорх банк бүрийн хүү/нөхцөл ЗӨВХӨН
+  // тухайн банкны албан ёсны вэбсайтаас шууд уншиж баталгаажуулсан утга (verified: true) эсвэл
+  // "Тодорхойгүй" гэж илэрхий тэмдэглэсэн (verified: false). Олон банкны вэбсайт JavaScript-аар
+  // рендерлэгддэг тул автомат хэрэгслээр агуулгыг татаж чадаагүй тохиолдолд тоо ЗОХИОГООГҮЙ —
+  // харин "Тодорхойгүй" гэж үлдээсэн. Хуучирсан эсвэл өөрчлөгдсөн байж болзошгүй тул эцсийн
+  // шийдвэр гаргахын өмнө sourceUrl-аар орж баталгаажуулна уу.
   const banks = [
-    { name: 'Хаан Банк', short: 'ХБ', color: '#0066B3', rateAdj: 0, note: 'Стандарт нөхцөл', url: 'https://www.khanbank.com/personal/product/detail/personal-6-mortgage-loan/' },
-    { name: 'Худалдаа Хөгжлийн', short: 'ХХБ', color: '#003F87', rateAdj: 0, note: 'Урт хугацаа дэмжсэн', url: 'https://www.tdbm.mn/en/retail/loans/oron-suutsnii-zeel' },
-    { name: 'Голомт Банк', short: 'ГБ', color: '#E31E24', rateAdj: 0.1, note: 'Хурдан шийдвэр', url: 'https://www.golomtbank.com/retail/loans/786' },
-    { name: 'Төрийн Банк', short: 'ТБ', color: '#FFB81C', rateAdj: 0.2, dark: true, note: 'Төрийн ажилтанд хөнгөлөлттэй', url: 'https://www.statebank.mn/product/813' },
-    { name: 'Хас Банк', short: 'ХА', color: '#00A651', rateAdj: 0.5, note: 'Залуу гэр бүлд хөнгөлөлттэй', url: 'https://xacbank.mn/mortgage' },
-    { name: 'Капитрон', short: 'КБ', color: '#7B2CBF', rateAdj: 0.6, note: 'Уян хатан нөхцөл', url: 'https://www.capitronbank.mn/c/%D0%BE%D1%80%D0%BE%D0%BD-%D1%81%D1%83%D1%83%D1%86%D0%BD%D1%8B-%D0%B7%D1%8D%D1%8D%D0%BB' },
-    { name: 'Богд Банк', short: 'ББ', color: '#0A1628', rateAdj: 0.6, note: 'Стандарт нөхцөл', url: 'https://www.bogdbank.com/personal/product/23' },
-    { name: 'Ариг Банк', short: 'АБ', color: '#FF6B35', rateAdj: 1.1, note: 'Стандарт нөхцөл', url: 'https://loan.arigbank.mn/' }
+    {
+      name: 'Голомт Банк', short: 'ГБ', color: '#E31E24',
+      productName: 'Амины орон сууц худалдан авах зээл',
+      annualRateText: '16.8–21.6%', downPaymentText: '40%-иас багагүй', loanTermText: '240 сар хүртэл',
+      feeText: '10,000₮ хүсэлтийн хураамж + зээлийн дүнгийн 1%',
+      verified: true, sourceUrl: 'https://www.golomtbank.com/retail/loans/786', lastUpdated: '2026-08-13'
+    },
+    {
+      name: 'Хас Банк', short: 'ХБ', color: '#00A651',
+      productName: 'Хөнгөлөлттэй хөтөлбөрийн орон сууцны зээл',
+      annualRateText: '6%', downPaymentText: 'Тодорхойгүй', loanTermText: '240 сар хүртэл',
+      feeText: 'Тодорхойгүй',
+      verified: true, sourceUrl: 'https://xacbank.mn/mortgage', lastUpdated: '2026-08-13'
+    },
+    {
+      name: 'Төрийн Банк', short: 'ТБ', color: '#FFB81C', dark: true,
+      productName: 'Орон сууцны ипотекийн зээл',
+      annualRateText: '6%', downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй',
+      feeText: 'Тодорхойгүй',
+      verified: true, sourceUrl: 'https://www.statebank.mn/personal/product/10054', lastUpdated: '2026-08-13'
+    },
+    {
+      name: 'Хаан Банк', short: 'ХБ', color: '#0066B3',
+      productName: 'Орон сууц худалдан авах зээл', annualRateText: 'Тодорхойгүй',
+      downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй',
+      verified: false, sourceUrl: 'https://www.khanbank.com/personal/product/detail/39/', lastUpdated: '2026-08-13'
+    },
+    {
+      name: 'Худалдаа Хөгжлийн Банк', short: 'ХХБ', color: '#003F87',
+      productName: 'Орон сууцны зээл', annualRateText: 'Тодорхойгүй',
+      downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй',
+      verified: false, sourceUrl: 'https://www.tdbm.mn/mn/taxonomy/term/60', lastUpdated: '2026-08-13'
+    },
+    {
+      name: 'Капитрон Банк', short: 'КБ', color: '#7B2CBF',
+      productName: 'Орон сууцны зээл', annualRateText: 'Тодорхойгүй',
+      downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй',
+      verified: false, sourceUrl: 'https://www.capitronbank.mn/c/%D0%BE%D1%80%D0%BE%D0%BD-%D1%81%D1%83%D1%83%D1%86%D0%BD%D1%8B-%D0%B7%D1%8D%D1%8D%D0%BB', lastUpdated: '2026-08-13'
+    },
+    {
+      name: 'Богд Банк', short: 'ББ', color: '#0A1628',
+      productName: 'Орон сууц худалдан авах зээл', annualRateText: 'Тодорхойгүй',
+      downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй',
+      verified: false, sourceUrl: 'https://www.bogdbank.com/personal/product/22', lastUpdated: '2026-08-13'
+    },
+    {
+      name: 'Ариг Банк', short: 'АБ', color: '#FF6B35',
+      productName: 'Орон сууцны зээл', annualRateText: 'Тодорхойгүй',
+      downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй',
+      verified: false, sourceUrl: 'https://www.arigbank.mn/mn', lastUpdated: '2026-08-13'
+    }
   ];
 
   let currentRate = 17.5;
   let currentLoanName = 'Энгийн ипотек 17.5%';
-  let currentLoanCap = null; // сая ₮ — зарим зээлийн төрөл (жиш. ХАСН 8%/ШНХС) улсын хөтөлбөрийн хэмжээгээр хязгаарлагддаг
-  let bestBankUrl = null;
+  let currentLoanCap = null; // сая ₮ — зарим зээлийн төрөл (жиш. хөнгөлөлттэй 6% хөтөлбөр) улсын хөтөлбөрийн хэмжээгээр хязгаарлагддаг
 
   // Сайт даяар ганц стандарт орлогын дарамтын (DTI) аюулгүй дээд хязгаар — энэ тооцоолуур,
-  // стресс тест, шаардлагатай орлогын тооцоо, "хамгийн ашигтай" зээлийн санал бүгд үүнийг
-  // л ашиглана. Өмнө нь 40%/45%/47.7%/50% гэсэн 4 өөр тоо газар бүрт зөрүүтэй байсан.
+  // стресс тест, шаардлагатай орлогын тооцоо бүгд үүнийг л ашиглана. Өмнө нь 40%/45%/47.7%/50%
+  // гэсэн 4 өөр тоо газар бүрт зөрүүтэй байсан.
   const SAFE_DTI = 40;
-
-  function applyToBestBank() {
-    if (bestBankUrl) window.open(bestBankUrl, '_blank', 'noopener');
-    else showToast('Зарын эзэнтэй холбогдоно уу');
-  }
 
   function calculate() {
     const price = parseInt(document.getElementById('priceSlider').value);
@@ -37,7 +81,7 @@
 
     const downAmt = Math.round(price * downPct / 100);
     const neededLoan = price - downAmt;
-    // Some loan products (e.g. ХАСН 8% / ШНХС) are capped by the government program's own
+    // Some loan products (e.g. the 6% government-backed program) are capped by the program's own
     // limit, not by what the buyer needs — if the needed amount exceeds that cap, only the
     // capped amount is actually financed; the rest is a real gap the buyer must cover from
     // savings or a second loan, so it's surfaced explicitly rather than silently shown as
@@ -108,8 +152,6 @@
       document.getElementById('dti').textContent = '0%';
       document.getElementById('loanAmt').textContent = '0 ₮';
       document.getElementById('bestBankTitle').textContent = 'Бэлэн мөнгөөр';
-      document.getElementById('applyBtnText').textContent = 'Зарын эзэнтэй холбогдох';
-      bestBankUrl = null;
       document.getElementById('bankList').innerHTML = '<div style="text-align:center; color:rgba(255,255,255,0.5); padding:20px; font-size:13px;">Бэлэн мөнгөөр худалдан авахад зээл шаардахгүй</div>';
       // Hide early payoff for cash
       document.querySelector('.early-payoff').style.opacity = '0.4';
@@ -135,37 +177,36 @@
     dtiEl.className = 'small-result-amount ' + (dti < SAFE_DTI ? 'green' : dti < 50 ? 'warn' : 'danger');
     document.getElementById('loanAmt').textContent = loanAmt + ' сая ₮';
 
-    // Bank list with adjusted rates
-    const bankResults = banks.map(b => {
-      const r = (currentRate + b.rateAdj) / 100 / 12;
-      const m = (loanAmt * 1000000 * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1);
-      return { ...b, rate: currentRate + b.rateAdj, monthly: m };
-    }).sort((a, b) => a.monthly - b.monthly);
-
-    // The cheapest monthly payment isn't automatically "the best deal" if it still eats
-    // more than the site-wide safe DTI threshold — flag that instead of calling it
-    // "хамгийн ашигтай" so the label never contradicts the DTI shown right above it.
-    const bestDti = (bankResults[0].monthly / (income * 1000)) * 100;
-    const bestIsRisky = bestDti > SAFE_DTI;
-    if (bestIsRisky) {
-      document.getElementById('bestBankTitle').innerHTML = `${esc(bankResults[0].name)} — <span style="color:var(--warning);">⚠ орлогын дарамт өндөр (${bestDti.toFixed(0)}%)</span>`;
+    // The results title now reflects the safety of THIS calculation (the loan type/terms the
+    // user themselves picked), not a "best bank" — see the bank list below for why we stopped
+    // ranking banks by a computed monthly payment: only 3 of 8 banks have a verified real rate,
+    // and computing/ranking payments for the other 5 would mean inventing numbers for them.
+    if (dti > SAFE_DTI) {
+      document.getElementById('bestBankTitle').innerHTML = `⚠ <span style="color:var(--warning);">Орлогын дарамт өндөр байна (${dti.toFixed(0)}%)</span>`;
     } else {
-      document.getElementById('bestBankTitle').textContent = `${bankResults[0].name} — хамгийн ашигтай`;
+      document.getElementById('bestBankTitle').textContent = `✓ Санхүүгийн дарамт аюулгүй түвшинд байна`;
     }
-    document.getElementById('applyBtnText').textContent = `${bankResults[0].name}-ны зээлд хүсэлт гаргах`;
-    bestBankUrl = bankResults[0].url;
 
-    document.getElementById('bankList').innerHTML = bankResults.map((b, i) => `
-      <div class="bank-row${i === 0 ? ' best' : ''}" onclick="window.open('${b.url}', '_blank', 'noopener')" style="cursor:pointer;" title="${esc(b.name)} — банкны хуудас руу очих">
+    // Bank list — informational only, not ranked or computed. Each bank's rate/terms are either
+    // verified straight from that bank's own official page (verified:true, with source + date)
+    // or explicitly marked "Тодорхойгүй" — never estimated or guessed. See the `banks` array
+    // above for the full verification note.
+    document.getElementById('bankList').innerHTML = banks.map(b => `
+      <div class="bank-row ${b.verified ? 'verified' : 'unverified'}" onclick="window.open('${b.sourceUrl}', '_blank', 'noopener')" style="cursor:pointer;" title="${esc(b.name)} — банкны албан ёсны хуудас руу очих">
         <div class="bank-name">
           <div class="bank-logo" style="background:${b.color};${b.dark ? 'color:#0A1628;' : ''}">${b.short}</div>
-          ${b.name}
+          <div>
+            <div>${esc(b.name)}</div>
+            <div style="font-size:10.5px;color:rgba(255,255,255,0.45);font-weight:500;">${esc(b.productName)}</div>
+          </div>
         </div>
-        <div class="bank-rate">~${b.rate.toFixed(1)}%</div>
-        <div class="bank-monthly">${fmt(b.monthly)} ₮</div>
-        <div>${i === 0 ? (bestIsRisky ? '<span class="best-tag" style="background:var(--warning);">⚠ Дарамт өндөр</span>' : '<span class="best-tag">★ Хамгийн сайн</span>') : ''}</div>
+        <div class="bank-rate">${b.verified ? esc(b.annualRateText) : 'Тодорхойгүй'}</div>
+        <div class="bank-monthly" style="font-size:11px;color:rgba(255,255,255,0.55);">${b.verified ? 'Шалгасан: ' + b.lastUpdated : 'Банкны сайтаас шалгана уу'}</div>
+        <div>${b.verified
+          ? '<span class="best-tag" style="background:rgba(0,212,170,0.22);color:#00D4AA;">✓ Шалгасан</span>'
+          : '<span class="best-tag" style="background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);">Шалгаагүй</span>'}</div>
       </div>
-    `).join('') + '<div style="text-align:center;font-size:11px;color:rgba(255,255,255,0.45);margin-top:12px;">Ойролцоо тооцоолол — яг одоогийн хүүг тухайн банкны хуудаснаас (дарж орох) шалгана уу</div>';
+    `).join('') + '<div style="text-align:center;font-size:11px;color:rgba(255,255,255,0.5);margin-top:12px;line-height:1.6;">Дээрх хүү, нөхцөл нь тухайн банкны албан ёсны вэбсайтаас шалгасан үзүүлэлт (эсвэл "Тодорхойгүй" гэж тэмдэглэсэн). Зээлийн хүү, шимтгэл болон бусад нөхцөл банкны шийдвэр, бүтээгдэхүүнээс хамаарч өөрчлөгдөж болно. Эцсийн нөхцөлийг тухайн банкнаас баталгаажуулна уу.</div>';
 
     // Update early payoff calculation
     calculateEarlyPayoff(loanAmt * 1000000, monthlyRate, monthly, months);

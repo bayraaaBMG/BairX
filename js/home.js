@@ -2,7 +2,11 @@
   function renderHomeListings() {
     const grid = document.getElementById('homeListingsGrid');
     if (!grid) return;
-    const recent = listings.filter(l => !l._inactive).sort((a, b) => b.id - a.id).slice(0, 8);
+    // VIP/Featured plans promise homepage placement — boosted listings sort first (by
+    // recency among themselves), everything else fills the remaining slots by recency.
+    const recent = listings.filter(l => !l._inactive)
+      .sort((a, b) => (b.badges.includes('vip') - a.badges.includes('vip')) || (b.id - a.id))
+      .slice(0, 8);
     grid.innerHTML = recent.map(l => `
       <article class="listing-card" onclick="showPage('listings'); setTimeout(()=>openListing(${l.id}),150)">
         <div class="listing-img">

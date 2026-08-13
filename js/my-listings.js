@@ -778,7 +778,7 @@
             <div class="plan-price-period">30 хоног идэвхтэй</div>
             <ul class="plan-features">
               <li>30 хоног идэвхтэй</li>
-              <li>10 хүртэл зураг</li>
+              <li>8 хүртэл зураг</li>
               <li>Энгийн хайлтад харагдана</li>
             </ul>
           </button>
@@ -788,10 +788,9 @@
             <div class="plan-price-period">60 хоног идэвхтэй</div>
             <ul class="plan-features">
               <li>60 хоног идэвхтэй</li>
-              <li>15 зураг хүртэл</li>
+              <li>8 хүртэл зураг</li>
               <li>"VIP" тэмдэглэгээтэй</li>
-              <li>Хайлтын эхэнд гарна</li>
-              <li>Илүү дэлгэрэнгүй талбарууд</li>
+              <li>Хайлт болон нүүр хуудсанд эхэнд гарна</li>
             </ul>
           </button>
           <button class="plan-card ${addListingState.plan === 'featured' ? 'active' : ''}" data-plan="featured">
@@ -800,11 +799,10 @@
             <div class="plan-price-period">90 хоног идэвхтэй</div>
             <ul class="plan-features">
               <li>90 хоног идэвхтэй</li>
-              <li>20 зураг хүртэл</li>
-              <li>Нүүр хуудсан дээр</li>
-              <li>"Шилдэг сонголт" хэсэгт</li>
-              <li>AI үнэлгээний тайлан</li>
-              <li>Статистик мэдээлэл</li>
+              <li>8 хүртэл зураг</li>
+              <li>"VIP" тэмдэглэгээтэй</li>
+              <li>Хайлт болон нүүр хуудсанд эхэнд гарна</li>
+              <li>Хамгийн урт хугацаагаар идэвхтэй</li>
             </ul>
           </button>
         </div>
@@ -1215,7 +1213,9 @@
       buildingName: isLand ? '' : (s.buildingName || ''),
       complex: isLand ? '' : (s.complex || ''),
       tag: { type: 'new', text: 'Шинэ зар' },
-      badges: ['new', 'user'],
+      // VIP/Featured plans promise a "VIP" badge on the card — that only actually happens
+      // if the chosen plan is reflected here, not just in expiresAt's longer duration.
+      badges: (s.plan === 'vip' || s.plan === 'featured') ? ['new', 'user', 'vip'] : ['new', 'user'],
       loanType: 'Тохиролцоно',
       monthly: 0,
       img: allImages[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
@@ -1295,8 +1295,8 @@
         // ride along on the listing itself the same way sellerVerified already does.
         sellerCompany: currentUser.companyName || '',
         status: 'active',
-        badges: ['new', 'user'],
-        boosted: false,
+        badges: newListing.badges,
+        boosted: s.plan === 'vip' || s.plan === 'featured',
         userSubmitted: true,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
