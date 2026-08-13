@@ -1,15 +1,18 @@
 ﻿  // ===== CALCULATOR =====
   // Суурь хүү (currentRate, доор) Монголбанкны нийтлэдэг арилжааны банкуудын орон сууцны
-  // ипотекийн зээлийн жигнэсэн дундаж хүүний тайланд (stat.mongolbank.mn/finance) үндэслэсэн
-  // ойролцоо тоо — энэ хуудсыг script-ээр уншиж шинэчилж чадаагүй тул хэрэглэгч өөрөө
-  // шалгахыг зөвлөж байна (доорх сануулга харна уу).
+  // ипотекийн зээлийн жигнэсэн дундаж хүүний тайланд (stat.mongolbank.mn/finance, 2026 оны
+  // 4-р сарын мэдээллээр) үндэслэсэн ойролцоо тоо. Энэ статистикийн хуудас JavaScript-аар
+  // рендерлэгддэг тул script-ээр шинэчилж чадаагүй — 2026-08-13-нд дахин шалгахыг оролдоход
+  // ч шинэ мэдээлэл олдоогүй тул огноог UI дээр тодорхой харуулж байна (доорх сануулга).
   //
-  // ЭХ СУРВАЛЖИЙН ТАЙЛБАР (2026-08-13-нд шалгасан): доорх банк бүрийн хүү/нөхцөл ЗӨВХӨН
+  // ЭХ СУРВАЛЖИЙН ТАЙЛБАР (сүүлд шалгасан: 2026-08-13): доорх банк бүрийн хүү/нөхцөл ЗӨВХӨН
   // тухайн банкны албан ёсны вэбсайтаас шууд уншиж баталгаажуулсан утга (verified: true) эсвэл
-  // "Тодорхойгүй" гэж илэрхий тэмдэглэсэн (verified: false). Олон банкны вэбсайт JavaScript-аар
-  // рендерлэгддэг тул автомат хэрэгслээр агуулгыг татаж чадаагүй тохиолдолд тоо ЗОХИОГООГҮЙ —
-  // харин "Тодорхойгүй" гэж үлдээсэн. Хуучирсан эсвэл өөрчлөгдсөн байж болзошгүй тул эцсийн
-  // шийдвэр гаргахын өмнө sourceUrl-аар орж баталгаажуулна уу.
+  // "Тодорхойгүй" гэж илэрхий тэмдэглэсэн (verified: false). Зарим банкны вэбсайт JavaScript-аар
+  // рендерлэгддэг тул зөвхөн хуудасны гарчиг/навигацид байгаа мэдээлэл (ж: бүтээгдэхүүний нэр,
+  // "6%" гэсэн гарчигт байгаа хүү) шууд уншигдсан бол verified:true, харин дэлгэрэнгүй нөхцөл
+  // (урьдчилгаа, хугацаа, шимтгэл) уншигдаагүй бол тухайн талбарууд "Тодорхойгүй" хэвээр —
+  // ямар ч тоо ЗОХИОГООГҮЙ. Хуучирсан эсвэл өөрчлөгдсөн байж болзошгүй тул эцсийн шийдвэр
+  // гаргахын өмнө sourceUrl-аар орж баталгаажуулна уу.
   const banks = [
     {
       name: 'Голомт Банк', short: 'ГБ', color: '#E31E24',
@@ -33,39 +36,40 @@
       verified: true, sourceUrl: 'https://www.statebank.mn/personal/product/10054', lastUpdated: '2026-08-13'
     },
     {
-      name: 'Хаан Банк', short: 'ХБ', color: '#0066B3',
-      productName: 'Орон сууц худалдан авах зээл', annualRateText: 'Тодорхойгүй',
-      downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй',
-      verified: false, sourceUrl: 'https://www.khanbank.com/personal/product/detail/39/', lastUpdated: '2026-08-13'
+      name: 'Худалдаа Хөгжлийн Банк', short: 'ХХБ', color: '#003F87',
+      productName: 'Орон сууц худалдан авах зээл',
+      annualRateText: '18.60–20.40% (бодит өртөг 19.07–20.87%)', downPaymentText: '20%-иас багагүй (нэмэлт барьцаагүй тохиолдолд 40%+)',
+      loanTermText: '240 сар хүртэл (20 жил)', feeText: 'Үйлчилгээний хураамж зээлийн дүнгийн 1% (дээд тал нь 1,500,000₮)',
+      verified: true, sourceUrl: 'https://www.tdbm.mn/mn/retail/loans/oron-suutsnii-zeel/oron-suuc-khudaldan-avakh-zeel', lastUpdated: '2026-08-13'
     },
     {
-      name: 'Худалдаа Хөгжлийн Банк', short: 'ХХБ', color: '#003F87',
-      productName: 'Орон сууцны зээл', annualRateText: 'Тодорхойгүй',
+      name: 'Богд Банк', short: 'ББ', color: '#0A1628',
+      productName: 'Орон сууцны ипотекийн 6% зээл',
+      annualRateText: '6%', downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй',
+      verified: true, sourceUrl: 'https://www.bogdbank.com/product/53', lastUpdated: '2026-08-13'
+    },
+    {
+      name: 'Ариг Банк', short: 'АБ', color: '#FF6B35',
+      productName: 'Ипотекийн зээл 6%',
+      annualRateText: '6%', downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй',
+      verified: true, sourceUrl: 'https://www.arigbank.mn/mn/product/loan/26', lastUpdated: '2026-08-13'
+    },
+    {
+      name: 'Хаан Банк', short: 'ХБ', color: '#0066B3',
+      productName: 'Орон сууц худалдан авах зээл (5 жил тутам хувьсах хүүтэй)', annualRateText: 'Тодорхойгүй',
       downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй',
-      verified: false, sourceUrl: 'https://www.tdbm.mn/mn/taxonomy/term/60', lastUpdated: '2026-08-13'
+      verified: false, sourceUrl: 'https://www.khanbank.com/personal/product/detail/39/', lastUpdated: '2026-08-13'
     },
     {
       name: 'Капитрон Банк', short: 'КБ', color: '#7B2CBF',
       productName: 'Орон сууцны зээл', annualRateText: 'Тодорхойгүй',
       downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй',
       verified: false, sourceUrl: 'https://www.capitronbank.mn/c/%D0%BE%D1%80%D0%BE%D0%BD-%D1%81%D1%83%D1%83%D1%86%D0%BD%D1%8B-%D0%B7%D1%8D%D1%8D%D0%BB', lastUpdated: '2026-08-13'
-    },
-    {
-      name: 'Богд Банк', short: 'ББ', color: '#0A1628',
-      productName: 'Орон сууц худалдан авах зээл', annualRateText: 'Тодорхойгүй',
-      downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй',
-      verified: false, sourceUrl: 'https://www.bogdbank.com/personal/product/22', lastUpdated: '2026-08-13'
-    },
-    {
-      name: 'Ариг Банк', short: 'АБ', color: '#FF6B35',
-      productName: 'Орон сууцны зээл', annualRateText: 'Тодорхойгүй',
-      downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй',
-      verified: false, sourceUrl: 'https://www.arigbank.mn/mn', lastUpdated: '2026-08-13'
     }
   ];
 
   let currentRate = 17.5;
-  let currentLoanName = 'Энгийн ипотек 17.5%';
+  let currentLoanName = 'Энгийн ипотек ~17.5% (2026.04)';
   let currentLoanCap = null; // сая ₮ — зарим зээлийн төрөл (жиш. хөнгөлөлттэй 6% хөтөлбөр) улсын хөтөлбөрийн хэмжээгээр хязгаарлагддаг
 
   // Сайт даяар ганц стандарт орлогын дарамтын (DTI) аюулгүй дээд хязгаар — энэ тооцоолуур,
