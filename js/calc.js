@@ -16,7 +16,13 @@
 
   let currentRate = 17.5;
   let currentLoanName = 'Энгийн ипотек 17.5%';
+  let currentLoanCap = null; // сая ₮ — зарим зээлийн төрөл (жиш. ХАСН 8%/ШНХС) улсын хөтөлбөрийн хэмжээгээр хязгаарлагддаг
   let bestBankUrl = null;
+
+  // Сайт даяар ганц стандарт орлогын дарамтын (DTI) аюулгүй дээд хязгаар — энэ тооцоолуур,
+  // стресс тест, шаардлагатай орлогын тооцоо, "хамгийн ашигтай" зээлийн санал бүгд үүнийг
+  // л ашиглана. Өмнө нь 40%/45%/47.7%/50% гэсэн 4 өөр тоо газар бүрт зөрүүтэй байсан.
+  const SAFE_DTI = 40;
 
   function applyToBestBank() {
     if (bestBankUrl) window.open(bestBankUrl, '_blank', 'noopener');
@@ -30,7 +36,25 @@
     const term = parseInt(document.getElementById('termSlider').value);
 
     const downAmt = Math.round(price * downPct / 100);
-    const loanAmt = price - downAmt;
+    const neededLoan = price - downAmt;
+    // Some loan products (e.g. ХАСН 8% / ШНХС) are capped by the government program's own
+    // limit, not by what the buyer needs — if the needed amount exceeds that cap, only the
+    // capped amount is actually financed; the rest is a real gap the buyer must cover from
+    // savings or a second loan, so it's surfaced explicitly rather than silently shown as
+    // if the whole purchase were financed at that rate.
+    const capShortfall = (currentLoanCap && neededLoan > currentLoanCap) ? neededLoan - currentLoanCap : 0;
+    const loanAmt = capShortfall > 0 ? currentLoanCap : neededLoan;
+
+    const capNotice = document.getElementById('loanCapNotice');
+    if (capNotice) {
+      if (capShortfall > 0) {
+        document.getElementById('loanCapNoticeText').textContent =
+          `Танд ${fmt(neededLoan)} сая ₮ санхүүжилт хэрэгтэй, гэвч "${currentLoanName}" дээд тал нь ${fmt(currentLoanCap)} сая ₮ хүртэл олгодог тул үлдэгдэл ~${fmt(capShortfall)} сая ₮-ийг өөр эх үүсвэрээс (бэлэн мөнгө/нэмэлт зээл) бүрдүүлэх шаардлагатай.`;
+        capNotice.style.display = 'flex';
+      } else {
+        capNotice.style.display = 'none';
+      }
+    }
 
     // Update slider value displays
     document.getElementById('priceVal').textContent = price >= 1000 ? (price/1000).toFixed(2) + ' тэрбум ₮' : price + ' сая ₮';
@@ -39,12 +63,12 @@
     document.getElementById('termVal').textContent = term + ' жил';
 
     // ===== AUTO: Required income calculation =====
-    // Calculate required income for THIS price (assuming 50% DTI ratio)
+    // Calculate required income for THIS price at the site-wide safe DTI threshold
     if (currentRate > 0) {
       const r = currentRate / 100 / 12;
       const n = term * 12;
       const reqMonthly = (loanAmt * 1000000 * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-      const reqIncome = reqMonthly / 0.5; // 50% DTI
+      const reqIncome = reqMonthly / (SAFE_DTI / 100);
 
       const reqIncomeEl = document.getElementById('requiredIncome');
       const incomeHintEl = document.getElementById('incomeHint');
@@ -108,7 +132,7 @@
     document.getElementById('totalInterest').textContent = (totalInterest / 1000000).toFixed(1) + ' сая ₮';
     const dtiEl = document.getElementById('dti');
     dtiEl.textContent = dti.toFixed(1) + '%';
-    dtiEl.className = 'small-result-amount ' + (dti < 35 ? 'green' : dti < 50 ? 'warn' : '');
+    dtiEl.className = 'small-result-amount ' + (dti < SAFE_DTI ? 'green' : dti < 50 ? 'warn' : 'danger');
     document.getElementById('loanAmt').textContent = loanAmt + ' сая ₮';
 
     // Bank list with adjusted rates
@@ -118,7 +142,16 @@
       return { ...b, rate: currentRate + b.rateAdj, monthly: m };
     }).sort((a, b) => a.monthly - b.monthly);
 
-    document.getElementById('bestBankTitle').textContent = `${bankResults[0].name} — хамгийн ашигтай`;
+    // The cheapest monthly payment isn't automatically "the best deal" if it still eats
+    // more than the site-wide safe DTI threshold — flag that instead of calling it
+    // "хамгийн ашигтай" so the label never contradicts the DTI shown right above it.
+    const bestDti = (bankResults[0].monthly / (income * 1000)) * 100;
+    const bestIsRisky = bestDti > SAFE_DTI;
+    if (bestIsRisky) {
+      document.getElementById('bestBankTitle').innerHTML = `${esc(bankResults[0].name)} — <span style="color:var(--warning);">⚠ орлогын дарамт өндөр (${bestDti.toFixed(0)}%)</span>`;
+    } else {
+      document.getElementById('bestBankTitle').textContent = `${bankResults[0].name} — хамгийн ашигтай`;
+    }
     document.getElementById('applyBtnText').textContent = `${bankResults[0].name}-ны зээлд хүсэлт гаргах`;
     bestBankUrl = bankResults[0].url;
 
@@ -130,7 +163,7 @@
         </div>
         <div class="bank-rate">~${b.rate.toFixed(1)}%</div>
         <div class="bank-monthly">${fmt(b.monthly)} ₮</div>
-        <div>${i === 0 ? '<span class="best-tag">★ Хамгийн сайн</span>' : ''}</div>
+        <div>${i === 0 ? (bestIsRisky ? '<span class="best-tag" style="background:var(--warning);">⚠ Дарамт өндөр</span>' : '<span class="best-tag">★ Хамгийн сайн</span>') : ''}</div>
       </div>
     `).join('') + '<div style="text-align:center;font-size:11px;color:rgba(255,255,255,0.45);margin-top:12px;">Ойролцоо тооцоолол — яг одоогийн хүүг тухайн банкны хуудаснаас (дарж орох) шалгана уу</div>';
 
@@ -216,8 +249,8 @@
     const history = document.getElementById('affHistory').value;
     const otherDebt = parseInt(document.getElementById('affOther').value) || 0;
 
-    // Max 50% of income for loan, minus other debts
-    const maxMonthly = (income * 0.5) - otherDebt;
+    // Same site-wide safe DTI threshold as calculate() above, minus other debts
+    const maxMonthly = (income * SAFE_DTI / 100) - otherDebt;
 
     // Adjust for credit history
     const historyMult = history === 'A' ? 1.0 : history === 'B' ? 0.9 : history === 'C' ? 0.75 : 0.6;
@@ -232,6 +265,8 @@
     const maxPriceHigh = maxPriceLow * 1.12;
 
     document.getElementById('affResultAmt').textContent = `${Math.round(maxPriceLow)} — ${Math.round(maxPriceHigh)} сая ₮`;
+    const affDetailEl = document.getElementById('affResultDetail');
+    if (affDetailEl) affDetailEl.textContent = `8% зээл, 20 жилийн хугацаатай. Орлогын ${SAFE_DTI}% хүртэл сар бүрийн төлбөр гэж тооцов.`;
     document.getElementById('affMaxLoan').textContent = `${Math.round(maxLoan / 1000000)} сая ₮`;
     document.getElementById('affMonthly').textContent = `${(adjMonthly / 1000000).toFixed(2)} сая ₮`;
     document.getElementById('affDownDisp').textContent = `${Math.round(down / 1000000)} сая ₮`;
@@ -264,6 +299,7 @@
       t.classList.add('active');
       currentRate = parseFloat(t.dataset.rate);
       currentLoanName = t.dataset.name;
+      currentLoanCap = t.dataset.cap ? parseFloat(t.dataset.cap) : null;
       calculate();
     });
   });

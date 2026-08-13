@@ -383,7 +383,7 @@
           <div class="journey-step-num">1</div>
           <div class="journey-step-body">
             <div class="journey-step-title">Төсвөө үнэнээр тогтоо</div>
-            <div class="journey-step-desc">Сарын орлогынхоо 40-45%-иас илүүг зээлийн төлбөрт зориулж болохгүй. Урьдчилгаа (ихэвчлэн 30%), нэмэлт зардал (гэрчилгээ, татвар, нүүлгэлт) бэлдсэн эсэхээ тооцоол.</div>
+            <div class="journey-step-desc">Сарын орлогынхоо 40%-иас илүүг зээлийн төлбөрт зориулж болохгүй. Урьдчилгаа (ихэвчлэн 30%), нэмэлт зардал (гэрчилгээ, татвар, нүүлгэлт) бэлдсэн эсэхээ тооцоол.</div>
             <div class="journey-step-tip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>Зээлийн төлбөр өндөр байх тусам амьдралын чанар буурдаг. Бага байр авч тайван амьдрах нь дээр.</div>
           </div>
         </div>
@@ -464,7 +464,7 @@
         </div>
         <div class="warning-card">
           <div class="warning-card-head"><div class="warning-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div><div class="warning-card-title">Чадахаасаа их зээл авах</div></div>
-          <div class="warning-card-desc">Орлогынхоо 50%+ зээлд өгвөл өчүүхэн хямрал (ажилгүйдэл, өвчин) гарахад л төлбөрөө барагдуулж чадахгүй болно.</div>
+          <div class="warning-card-desc">Орлогынхоо 40%+ зээлд өгвөл өчүүхэн хямрал (ажилгүйдэл, өвчин) гарахад л төлбөрөө барагдуулж чадахгүй болно.</div>
           <div class="warning-card-fix"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Зээлийн төлбөр орлогын 40%-аас хэтрэхгүй байх нь аюулгүй.</div>
         </div>
         <div class="warning-card">
@@ -700,16 +700,16 @@
         <div class="econ-card-sub">400 сая ₮ байр, 280 сая зээл, 20 жил — нөхцөл өөрчлөгдвөл юу болох вэ?</div>
         <div class="stress-grid">
           <div class="stress-card">
-            <div class="stress-scenario safe">Хэвийн нөхцөл</div>
-            <div class="stress-payment" style="color:#009878;">3.56 сая ₮</div>
+            <div class="stress-scenario warn">Хэвийн нөхцөл</div>
+            <div class="stress-payment" style="color:#C77700;">3.56 сая ₮</div>
             <div class="stress-desc">Хүү 14.4%, сар бүрийн төлбөр. Орлого 8 сая бол дарамт 45%.</div>
-            <div class="stress-ratio" style="color:#009878;"><strong>Аюулгүй</strong> — орлогын 45%</div>
+            <div class="stress-ratio" style="color:#C77700;"><strong>Анхаар</strong> — орлогын 45% (аюулгүй босго 40%-иас дээгүүр)</div>
           </div>
           <div class="stress-card">
-            <div class="stress-scenario warn">Хүү өсвөл (+3%)</div>
-            <div class="stress-payment" style="color:#C77700;">4.19 сая ₮</div>
+            <div class="stress-scenario danger">Хүү өсвөл (+3%)</div>
+            <div class="stress-payment" style="color:#FF4757;">4.19 сая ₮</div>
             <div class="stress-desc">Хүү 17.4% болбол. Сар бүр 630 мянга нэмэгдэнэ. Жилд +7.6 сая.</div>
-            <div class="stress-ratio" style="color:#C77700;"><strong>Анхаар</strong> — орлогын 52%</div>
+            <div class="stress-ratio" style="color:#FF4757;"><strong>Эрсдэлтэй</strong> — орлогын 52%</div>
           </div>
           <div class="stress-card">
             <div class="stress-scenario danger">Орлого буурвал (−25%)</div>
@@ -1487,8 +1487,8 @@
           </div>
           <div class="auto-card-body">
             <div class="auto-card-label">Энэ байрыг авахад танд хэрэгтэй сарын орлого</div>
-            <div class="auto-card-value" id="requiredIncome">~ 4,500,000 ₮</div>
-            <div class="auto-card-hint" id="incomeHint">Орлогын 50% нь зээлийн төлбөрт зориулагдана гэж тооцов</div>
+            <div class="auto-card-value" id="requiredIncome">~ 10,534,593 ₮</div>
+            <div class="auto-card-hint" id="incomeHint">Орлогын 40% нь зээлийн төлбөрт зориулагдана гэж тооцов</div>
           </div>
         </div>
 
@@ -1524,7 +1524,7 @@
             <span class="input-label-text">Зээлийн төрөл</span>
           </div>
           <div class="loan-type-grid">
-            <button class="loan-type" data-rate="8" data-name="ХАСН 8% (хязгаарлагдмал)">
+            <button class="loan-type" data-rate="8" data-name="ХАСН 8% (хязгаарлагдмал)" data-cap="200">
               <div class="loan-type-name">ХАСН 8%</div>
               <div class="loan-type-rate">Жилийн 8% · ШНХС-аар</div>
             </button>
@@ -1554,27 +1554,32 @@
           <div class="results-eyebrow">Тооцоолсон үр дүн</div>
           <h3 class="results-title" id="bestBankTitle">Хаан Банк — хамгийн ашигтай</h3>
 
+          <div id="loanCapNotice" style="display:none; align-items:flex-start; gap:8px; background:rgba(255,176,32,0.14); border:1px solid rgba(255,176,32,0.35); border-radius:10px; padding:10px 12px; margin-bottom:16px; font-size:12.5px; line-height:1.5; color:#FFD37A;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+            <span id="loanCapNoticeText"></span>
+          </div>
+
           <div class="big-result">
             <div class="big-result-label">Сар бүр төлөх</div>
-            <div class="big-result-amount"><span id="monthlyAmt">1,668,500</span><em> ₮</em></div>
+            <div class="big-result-amount"><span id="monthlyAmt">4,213,837</span><em> ₮</em></div>
           </div>
 
           <div class="results-grid">
             <div class="small-result">
               <div class="small-result-label">Нийт төлөх</div>
-              <div class="small-result-amount" id="totalPay">400.4 сая ₮</div>
+              <div class="small-result-amount" id="totalPay">1011.3 сая ₮</div>
             </div>
             <div class="small-result">
               <div class="small-result-label">Хүүгийн нийт</div>
-              <div class="small-result-amount" id="totalInterest">200.9 сая ₮</div>
+              <div class="small-result-amount" id="totalInterest">731.3 сая ₮</div>
             </div>
             <div class="small-result">
               <div class="small-result-label">Орлогын харьцаа</div>
-              <div class="small-result-amount green" id="dti">47.7%</div>
+              <div class="small-result-amount danger" id="dti">93.6%</div>
             </div>
             <div class="small-result">
               <div class="small-result-label">Зээлийн хэмжээ</div>
-              <div class="small-result-amount" id="loanAmt">199.5 сая ₮</div>
+              <div class="small-result-amount" id="loanAmt">280 сая ₮</div>
             </div>
           </div>
 
@@ -1673,7 +1678,7 @@
           <div class="afford-result">
             <div class="afford-result-label">★ Таны худалдан авах боломжтой үнэ</div>
             <div class="afford-result-amount" id="affResultAmt">285 — 320 сая ₮</div>
-            <div class="afford-result-detail" id="affResultDetail">8% зээл, 20 жилийн хугацаатай. Орлогын 47% хүртэл сар бүрийн төлбөр.</div>
+            <div class="afford-result-detail" id="affResultDetail">8% зээл, 20 жилийн хугацаатай. Орлогын 40% хүртэл сар бүрийн төлбөр гэж тооцов.</div>
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px;">
@@ -1696,7 +1701,7 @@
           </div>
 
           <div style="margin-top:20px; padding:16px; background:rgba(30, 91, 255, 0.15); border-radius:12px; border:1px solid rgba(77, 124, 255, 0.3);">
-            <div style="font-size:12px; color:#a8c0ff; font-weight:600; margin-bottom:6px;">AI зөвлөгөө</div>
+            <div style="font-size:12px; color:#a8c0ff; font-weight:600; margin-bottom:6px;">Тооцооллын зөвлөмж</div>
             <div style="font-size:13px; line-height:1.5; color:rgba(255,255,255,0.85);" id="affAdvice">Таны нөхцөл дээр Зайсан, Сүхбаатар дүүргийн 2-3 өрөөтэй байр хамгийн ашигтай. 12 идэвхтэй зар таны үнийн хязгаарт байна.</div>
           </div>
         </div>
@@ -1800,8 +1805,9 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3v1h6v-1c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
               </div>
               <div>
-                <div style="font-weight:700; font-size:14px; margin-bottom:4px;">AI хөрөнгө оруулалтын зөвлөгөө</div>
+                <div style="font-weight:700; font-size:14px; margin-bottom:4px;">Хөрөнгө оруулалтын дүн шинжилгээ</div>
                 <div style="font-size:13px; color:var(--ink-3); line-height:1.5;">Хан-Уул дүүргийн сүүлийн 5 жилийн жилийн дундаж өсөлт <strong>7.2%</strong>. Зайсан, Яармаг хамгийн өндөр эрэлттэй бүс. Тогтвортой <strong style="color:var(--ink);">хөрөнгө оруулалтын</strong> сонголт.</div>
+                <div style="font-size:12px; color:var(--ink-3); line-height:1.5; margin-top:10px; padding-top:10px; border-top:1px solid var(--primary-soft);">* Энэ бол сүүлийн 5 жилийн түүхэн дундаж өсөлт дээр үндэслэсэн тооцоолол — ирээдүйн үнийн өсөлт баталгаагүй. Хүн амын бүтцийн урт хугацааны хандлага (ганц бие өрх, түрээслэгчийн эзлэх хувь өсөх) эндээс өөр чиглэлтэй байж болзошгүй тул доорх <a onclick="scrollToSection('demo')" style="color:var(--primary); cursor:pointer; text-decoration:underline;">"БНСУ-ын замаар" хэсгийг</a> мөн үзнэ үү.</div>
               </div>
             </div>
           </div>

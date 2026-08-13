@@ -544,6 +544,7 @@
   .small-result-amount { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 600; }
   .small-result-amount.green { color: var(--accent); }
   .small-result-amount.warn { color: var(--warning); }
+  .small-result-amount.danger { color: var(--danger); }
 
   .bank-comparison { padding-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
   .bank-row {
