@@ -55,13 +55,16 @@
             <span class="listing-meta-item"><strong>${l.floor}</strong></span>
             <span class="listing-meta-item"><strong>${l.year}</strong></span>
           </div>
-          ${l.cat !== 'rent' ? `<div class="listing-loan-strip">
+          ${l.cat !== 'rent' ? (l.monthly ? `<div class="listing-loan-strip">
             <div>
-              <div class="loan-strip-label">${l.loanType} сар бүр</div>
+              <div class="loan-strip-label">${esc(l.loanType)} сар бүр</div>
               <div class="loan-strip-amt">${typeof l.monthly === 'number' ? l.monthly.toFixed(2) + ' сая ₮' : l.monthly}</div>
             </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary-deep)" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>
-          </div>` : `<div class="listing-loan-strip"><div><div class="loan-strip-label">Барьцаа</div><div class="loan-strip-amt">${l.legalNotes.split('·')[0].trim()}</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary-deep)" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></div>`}
+          </div>` : `<div class="listing-loan-strip">
+            <div><div class="loan-strip-label">Зээлийн нөхцөл</div><div class="loan-strip-amt">${esc(l.loanType)}</div></div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary-deep)" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>
+          </div>`) : `<div class="listing-loan-strip"><div><div class="loan-strip-label">Барьцаа</div><div class="loan-strip-amt">${l.legalNotes.split('·')[0].trim()}</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary-deep)" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></div>`}
         </div>
       </article>
     `).join('');
