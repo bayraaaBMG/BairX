@@ -1034,6 +1034,14 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </a>
     </div>
+
+    <!-- Fetches the next page of real (Firestore) active listings — demo listings are all
+         already loaded locally, so this only ever has more to fetch once real listings exist. -->
+    <div style="text-align:center; margin-top:20px; display:none;" id="loadMoreListingsWrap">
+      <button class="btn btn-ghost btn-lg" id="loadMoreListingsBtn" onclick="loadMorePublicListings()">
+        Цааш үзэх
+      </button>
+    </div>
   </div>
 </section>
 
@@ -1445,9 +1453,11 @@
     <div class="dash-main-grid">
       <div>
         <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
-          <button class="mytab active" id="myTab-active" onclick="renderMyListings('active')">Идэвхтэй</button>
-          <button class="mytab" id="myTab-pending" onclick="renderMyListings('pending')">Хүлээгдэж буй</button>
-          <button class="mytab" id="myTab-ended" onclick="renderMyListings('ended')">Дууссан</button>
+          <button class="mytab active" id="myTab-active" onclick="renderMyListings('active')">Нийтлэгдсэн</button>
+          <button class="mytab" id="myTab-pending" onclick="renderMyListings('pending')">Хянагдаж байна</button>
+          <button class="mytab" id="myTab-rejected" onclick="renderMyListings('rejected')">Буцаагдсан</button>
+          <button class="mytab" id="myTab-expired" onclick="renderMyListings('expired')">Хаагдсан</button>
+          <button class="mytab" id="myTab-sold" onclick="renderMyListings('sold')">Зарагдсан/Түрээслэгдсэн</button>
         </div>
 
         <div id="myListingsGrid" class="listings-grid"></div>

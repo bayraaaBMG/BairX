@@ -1,13 +1,23 @@
-  // ===== ADMIN — SCAM PROTECTION DASHBOARD =====
+  // ===== ADMIN — SCAM PROTECTION + LISTING MODERATION DASHBOARD =====
   // There is no backend/Cloud Functions in this app, so "admin" is purely a `role` field
   // on the user's own Firestore profile doc (see firestore.rules' isAdmin()) — it can only
   // ever be set to 'admin' by hand in the Firebase Console, never through the app itself.
   // This page's own currentUser.role check below is just UX (redirect a non-admin away
-  // from a page with nothing on it); the real access control is the Firestore rule that
-  // denies `reports` reads and listing status/listingVerified writes to non-admins.
+  // from a page with nothing on it); the real access control is the Firestore rules that
+  // deny `reports` reads and listing status/listingVerified/rejectionReason writes (and now
+  // deletes) to non-admins.
   let _adminLoading = false;
+  let _adminTab = 'flagged';
+  const ADMIN_TABS = [
+    { id: 'flagged', label: 'Сэжигтэй' },
+    { id: 'pending', label: 'Хянагдаж буй' },
+    { id: 'active', label: 'Идэвхтэй' },
+    { id: 'expired', label: 'Хугацаа дууссан' },
+    { id: 'sold', label: 'Зарагдсан/Түрээслэгдсэн' },
+    { id: 'rejected', label: 'Буцаагдсан' }
+  ];
 
-  async function renderAdminDashboard() {
+  async function renderAdminDashboard(tab) {
     const el = document.getElementById('adminContent');
     if (!el) return;
     if (!currentUser || currentUser.role !== 'admin') {
@@ -20,10 +30,27 @@
       `;
       return;
     }
+    _adminTab = tab || _adminTab;
+    el.innerHTML = `
+      <div class="admin-summary-row" id="adminSummaryRow" style="display:none;"></div>
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+        ${ADMIN_TABS.map(t => `<button class="mytab ${t.id === _adminTab ? 'active' : ''}" onclick="renderAdminDashboard('${t.id}')">${esc(t.label)}</button>`).join('')}
+      </div>
+      <div id="adminTabContent"><div style="text-align:center;padding:60px;color:var(--ink-3);">Ачааллаж байна…</div></div>
+    `;
+    if (_adminTab === 'flagged') {
+      await renderAdminFlaggedTab();
+    } else if (_adminTab === 'sold') {
+      await renderAdminStatusTab(['sold', 'rented'], 'Зарагдсан/Түрээслэгдсэн зар алга байна.');
+    } else {
+      await renderAdminStatusTab([_adminTab], 'Энэ төлөвтэй зар алга байна.');
+    }
+  }
+
+  // ===== FLAGGED TAB (reported + price-anomaly review — original admin dashboard) =====
+  async function renderAdminFlaggedTab() {
     if (_adminLoading) return;
     _adminLoading = true;
-    el.innerHTML = `<div style="text-align:center;padding:60px;color:var(--ink-3);">Ачааллаж байна…</div>`;
-
     const reportsByListing = await fetchPendingReportsGrouped();
     const anomalies = computePriceAnomalies();
 
@@ -46,7 +73,7 @@
 
     const items = Object.values(flagged).sort((a, b) => b.reasons.length - a.reasons.length);
     _adminLoading = false;
-    renderAdminList(items, Object.keys(reportsByListing).length, anomalies.length);
+    renderAdminFlaggedList(items, Object.keys(reportsByListing).length, anomalies.length);
   }
 
   async function fetchPendingReportsGrouped() {
@@ -80,18 +107,20 @@
       .sort((a, b) => a.val.diffPct - b.val.diffPct);
   }
 
-  function renderAdminList(items, reportedCount, anomalyCount) {
-    const el = document.getElementById('adminContent');
+  function renderAdminFlaggedList(items, reportedCount, anomalyCount) {
+    const summaryEl = document.getElementById('adminSummaryRow');
+    const el = document.getElementById('adminTabContent');
     if (!el) return;
-    const summary = `
-      <div class="admin-summary-row">
+    if (summaryEl) {
+      summaryEl.style.display = 'flex';
+      summaryEl.innerHTML = `
         <div class="admin-summary-stat"><div class="num">${items.length}</div><div class="label">Сэжигтэй зар</div></div>
         <div class="admin-summary-stat"><div class="num">${reportedCount}</div><div class="label">Мэдээлэгдсэн зар</div></div>
         <div class="admin-summary-stat"><div class="num">${anomalyCount}</div><div class="label">Огцом хямд үнэтэй зар</div></div>
-      </div>
-    `;
+      `;
+    }
     if (items.length === 0) {
-      el.innerHTML = summary + `
+      el.innerHTML = `
         <div style="text-align:center;padding:60px 20px;color:var(--ink-3);">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.35;margin:0 auto 12px;"><polyline points="20 6 9 17 4 12"/></svg>
           <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px;">Сэжигтэй зар алга</div>
@@ -100,7 +129,7 @@
       `;
       return;
     }
-    el.innerHTML = summary + items.map(item => adminFlagCard(item)).join('');
+    el.innerHTML = items.map(item => adminFlagCard(item)).join('');
   }
 
   function adminFlagCard({ l, reasons, reportIds }) {
@@ -123,7 +152,7 @@
           </ul>
           <div class="admin-flag-actions">
             <button class="btn btn-blue" onclick="adminVerifyListing('${l.firestoreId}')">Баталгаажуулах</button>
-            <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger);" onclick="adminDeactivateListing('${l.firestoreId}')">Идэвхгүй болгох</button>
+            <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger);" onclick="adminArchiveListing('${l.firestoreId}')">Архивлах</button>
             ${reportIds && reportIds.length ? `<button class="btn btn-ghost" onclick="adminDismissReports('${l.firestoreId}', ${JSON.stringify(reportIds).replace(/"/g, '&quot;')})">Мэдээллийг хаах</button>` : ''}
             <button class="btn btn-ghost" onclick="showPage('listings'); setTimeout(()=>openListing(${l.id}), 150)">Дэлгэрэнгүй</button>
           </div>
@@ -138,25 +167,10 @@
       const l = listings.find(x => x.firestoreId === fsId);
       if (l) l.listingVerified = true;
       showToast('Зар баталгаажлаа', 'success');
-      renderAdminDashboard();
+      renderAdminDashboard(_adminTab);
       renderListings(getFilteredListings()); renderHomeListings();
     } catch(e) {
       console.error('adminVerifyListing failed:', e.code, e.message);
-      showToast('Алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : ''));
-    }
-  }
-
-  async function adminDeactivateListing(fsId) {
-    if (!confirm('Энэ зарыг идэвхгүй болгох уу?')) return;
-    try {
-      await db.collection('listings').doc(fsId).update({ status: 'inactive' });
-      const l = listings.find(x => x.firestoreId === fsId);
-      if (l) l._inactive = true;
-      showToast('Зар идэвхгүй боллоо', 'success');
-      renderAdminDashboard();
-      renderListings(getFilteredListings()); renderHomeListings();
-    } catch(e) {
-      console.error('adminDeactivateListing failed:', e.code, e.message);
       showToast('Алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : ''));
     }
   }
@@ -165,9 +179,158 @@
     try {
       await Promise.all(reportIds.map(id => db.collection('reports').doc(id).update({ status: 'resolved' })));
       showToast('Мэдээллүүдийг хаалаа', 'success');
-      renderAdminDashboard();
+      renderAdminDashboard(_adminTab);
     } catch(e) {
       console.error('adminDismissReports failed:', e.code, e.message);
+      showToast('Алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : ''));
+    }
+  }
+
+  // ===== STATUS TABS (Pending / Active / Expired / Sold-Rented / Rejected) =====
+  // Fetched straight from Firestore rather than the local `listings` array, since that
+  // array only ever holds the current visitor's OWN listings plus whatever's publicly
+  // active — an admin needs to see every user's listing in every status.
+  async function adminFetchListingsByStatus(statuses) {
+    try {
+      const results = [];
+      for (const st of statuses) {
+        const snap = await db.collection('listings').where('status', '==', st).get();
+        snap.forEach(doc => results.push(Object.assign({ fsId: doc.id }, doc.data())));
+      }
+      return results;
+    } catch(e) {
+      console.error('adminFetchListingsByStatus failed:', e.code, e.message);
+      return [];
+    }
+  }
+
+  async function renderAdminStatusTab(statuses, emptyMsg) {
+    const summaryEl = document.getElementById('adminSummaryRow');
+    if (summaryEl) summaryEl.style.display = 'none';
+    const el = document.getElementById('adminTabContent');
+    if (!el) return;
+    const items = await adminFetchListingsByStatus(statuses);
+    if (items.length === 0) {
+      el.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;color:var(--ink-3);">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.35;margin:0 auto 12px;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+          <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px;">Хоосон байна</div>
+          <div style="font-size:13px;">${esc(emptyMsg)}</div>
+        </div>
+      `;
+      return;
+    }
+    el.innerHTML = items.map(d => adminListingCard(d)).join('');
+  }
+
+  function adminListingCard(d) {
+    const status = d.status || 'active';
+    const img = d.img || (d.images && d.images[0]) || '';
+    let actions;
+    if (status === 'pending') {
+      actions = `
+        <button class="btn btn-blue" onclick="adminApproveListing('${d.fsId}')">Батлах</button>
+        <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger);" onclick="adminRejectListing('${d.fsId}')">Татгалзах</button>
+        <button class="btn btn-ghost" onclick="adminDeleteListing('${d.fsId}')">Устгах</button>
+      `;
+    } else if (status === 'rejected') {
+      actions = `
+        <button class="btn btn-blue" onclick="adminApproveListing('${d.fsId}')">Батлах</button>
+        <button class="btn btn-ghost" onclick="adminDeleteListing('${d.fsId}')">Устгах</button>
+      `;
+    } else if (status === 'active') {
+      actions = `
+        <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger);" onclick="adminArchiveListing('${d.fsId}')">Архивлах</button>
+        <button class="btn btn-ghost" onclick="adminDeleteListing('${d.fsId}')">Устгах</button>
+        ${d.ownerId ? `<button class="btn btn-ghost" onclick="adminBlockUser('${d.ownerId}')">Хэрэглэгч блоклох</button>` : ''}
+      `;
+    } else {
+      // expired, sold, rented
+      actions = `<button class="btn btn-ghost" onclick="adminDeleteListing('${d.fsId}')">Устгах</button>`;
+    }
+    return `
+      <div class="admin-flag-card">
+        <img class="admin-flag-img" src="${esc(img)}" alt="" onerror="this.style.display='none';" />
+        <div style="flex:1;min-width:0;">
+          <div class="admin-flag-title">${esc(d.title || '')}</div>
+          <div class="admin-flag-meta">${esc(d.loc || '')} · ${fmtPrice(d.price || 0)} · ${esc(d.sellerName || 'Тодорхойгүй')} (${esc(d.sellerPhone || '—')})</div>
+          ${status === 'rejected' && d.rejectionReason ? `<div style="font-size:12px;color:var(--danger);margin:2px 0 10px;">Татгалзсан шалтгаан: ${esc(d.rejectionReason)}</div>` : ''}
+          <div class="admin-flag-actions">${actions}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  async function adminApproveListing(fsId) {
+    try {
+      await db.collection('listings').doc(fsId).update({ status: 'active', listingVerified: true, rejectionReason: '' });
+      const l = listings.find(x => x.firestoreId === fsId);
+      if (l) { l.status = 'active'; l._inactive = false; l._expired = false; l.listingVerified = true; l.rejectionReason = ''; }
+      showToast('Зар батлагдлаа', 'success');
+      renderAdminDashboard(_adminTab);
+      renderListings(getFilteredListings()); renderHomeListings();
+    } catch(e) {
+      console.error('adminApproveListing failed:', e.code, e.message);
+      showToast('Алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : ''));
+    }
+  }
+
+  async function adminRejectListing(fsId) {
+    const reason = prompt('Татгалзах шалтгаан (эзэмшигчид харагдана):');
+    if (reason === null) return; // cancelled
+    try {
+      await db.collection('listings').doc(fsId).update({ status: 'rejected', rejectionReason: reason || '' });
+      const l = listings.find(x => x.firestoreId === fsId);
+      if (l) { l.status = 'rejected'; l._inactive = true; l.rejectionReason = reason || ''; }
+      showToast('Зар татгалзагдлаа', 'success');
+      renderAdminDashboard(_adminTab);
+      renderListings(getFilteredListings()); renderHomeListings();
+    } catch(e) {
+      console.error('adminRejectListing failed:', e.code, e.message);
+      showToast('Алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : ''));
+    }
+  }
+
+  // "Архивлах" files an active (or flagged) listing under Expired — same status a listing
+  // reaches on its own after 30 days, just admin-triggered. Never a hard delete.
+  async function adminArchiveListing(fsId) {
+    if (!confirm('Энэ зарыг архивлах уу? Нийтэд харагдахгүй болно.')) return;
+    try {
+      await db.collection('listings').doc(fsId).update({ status: 'expired' });
+      const l = listings.find(x => x.firestoreId === fsId);
+      if (l) { l.status = 'expired'; l._inactive = true; l._expired = true; }
+      showToast('Зар архивлагдлаа', 'success');
+      renderAdminDashboard(_adminTab);
+      renderListings(getFilteredListings()); renderHomeListings();
+    } catch(e) {
+      console.error('adminArchiveListing failed:', e.code, e.message);
+      showToast('Алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : ''));
+    }
+  }
+
+  async function adminDeleteListing(fsId) {
+    if (!confirm('Энэ зарыг бүрмөсөн устгах уу? Энэ үйлдлийг буцаах боломжгүй.')) return;
+    try {
+      await db.collection('listings').doc(fsId).delete();
+      const idx = listings.findIndex(x => x.firestoreId === fsId);
+      if (idx > -1) listings.splice(idx, 1);
+      showToast('Зар устгагдлаа', 'success');
+      renderAdminDashboard(_adminTab);
+      renderListings(getFilteredListings()); renderHomeListings();
+    } catch(e) {
+      console.error('adminDeleteListing failed:', e.code, e.message);
+      showToast('Алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : ''));
+    }
+  }
+
+  async function adminBlockUser(uid) {
+    if (!uid) return;
+    if (!confirm('Энэ хэрэглэгчийг блоклох уу? Цаашид шинэ зар нэмэх, зараа засах боломжгүй болно.')) return;
+    try {
+      await db.collection('users').doc(uid).set({ blocked: true }, { merge: true });
+      showToast('Хэрэглэгч блоклогдлоо', 'success');
+    } catch(e) {
+      console.error('adminBlockUser failed:', e.code, e.message);
       showToast('Алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : ''));
     }
   }

@@ -835,17 +835,17 @@
           <div class="success-icon">
             <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
-          <div class="success-title">${addListingState._syncFailed ? 'Зар энэ төхөөрөмж дээр хадгалагдлаа' : 'Зар амжилттай нийтлэгдлээ'}</div>
+          <div class="success-title">${addListingState._syncFailed ? 'Зар энэ төхөөрөмж дээр хадгалагдлаа' : 'Зар илгээгдлээ — хянагдаж байна'}</div>
           <div class="success-id">Зарын дугаар: ${listingId}</div>
           <div class="success-info">
             ${addListingState._syncFailed
               ? 'Таны зар одоогоор зөвхөн энэ төхөөрөмж дээр харагдаж байна — сервер лүү илгээхэд алдаа гарлаа (сүлжээ эсвэл зургийн хэмжээнээс шалтгаалж болзошгүй). Дахин оролдоно уу эсвэл интернэт холболтоо шалгаад дараа дахин нийтэлнэ үү.'
-              : `Таны зар одоо BairX дээр идэвхтэй боллоо. Бид AI системээр зөв байгаа эсэхийг шалгах ба ${addListingState.plan === 'basic' ? '5-10 минутын' : 'хэдхэн минутын'} дотор бүх хэрэглэгчдэд харагдаж эхэлнэ. Зар үзэгчид холбогдох үед утсанд тань мэдэгдэл ирнэ.`}
+              : 'Таны зар админы шалгалтад орлоо. Батлагдсны дараа BairX дээр нийтэд харагдана — "Миний зарууд" хэсгийн "Хянагдаж байна" таб-аас явцыг харна уу.'}
           </div>
           <div style="display:flex; gap:10px; justify-content:center;">
             <button class="btn btn-ghost btn-lg" onclick="closeModal()">Хаах</button>
-            <button class="btn btn-blue btn-lg" onclick="closeModal(); scrollToSection('listings');">
-              Заруудыг үзэх
+            <button class="btn btn-blue btn-lg" onclick="closeModal(); showPage('my-listings'); renderMyListings('pending');">
+              Миний зарууд
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
             </button>
           </div>
@@ -1141,12 +1141,33 @@
 
   async function submitListing() {
     if (!validateStep(5)) return;
+    if (!editingListingId && isDuplicateListing()) {
+      showToast('Та яг ижил дүүрэг, талбай, үнэтэй зар оруулсан байна — давхардсан зар мэдээлэгдэж болно');
+      return;
+    }
     try {
       await doSubmitListing();
     } catch(e) {
       console.error('submitListing failed:', e);
       showToast('Зар нийтлэхэд алдаа гарлаа. Дахин оролдоно уу.');
     }
+  }
+
+  // Lightweight spam/duplicate guard: the same signed-in owner submitting another listing
+  // in the same district, at the same price and area, while an earlier one of theirs is
+  // still pending review or already live. Not a content-fingerprint/ML system — just the
+  // simplest signal that's actually available without a backend.
+  function isDuplicateListing() {
+    if (!currentUser?.uid) return false;
+    const s = addListingState;
+    const price = parseFloat(s.price) || 0;
+    const area = parseFloat(s.area) || 0;
+    if (!price || !area) return false;
+    return listings.some(l =>
+      l.userSubmitted && l.ownerId === currentUser.uid &&
+      (l.status === 'active' || l.status === 'pending') &&
+      l.district === s.district && l.price === price && l.area === area
+    );
   }
 
   async function doSubmitListing() {
@@ -1193,6 +1214,10 @@
       // Admin-only, scam-review signal — never true on a fresh listing or after an edit
       // (firestore.rules blocks the owner from setting this themselves either way).
       listingVerified: false,
+      // New listings, and any edit to an existing one, go back to admin review before they're
+      // public again — status (not listingVerified above) is what actually gates public
+      // visibility, since loadPublicListings() only fetches status=='active' docs.
+      status: 'pending', rejectionReason: '', isDemo: false, _inactive: true,
       expiresAt, _bumpedAt: now,
       cat: s.intent === 'rent' ? 'rent' : propertyTypeBucket(s.propertyType || 'apartment'),
       propertyType: s.propertyType || 'apartment',
@@ -1294,7 +1319,7 @@
         // users/{uid} doc (Firestore rules), so verification/company identity has to
         // ride along on the listing itself the same way sellerVerified already does.
         sellerCompany: currentUser.companyName || '',
-        status: 'active',
+        status: 'pending', rejectionReason: '',
         badges: newListing.badges,
         boosted: s.plan === 'vip' || s.plan === 'featured',
         userSubmitted: true,
@@ -1396,15 +1421,23 @@
     document.getElementById('modalContent').innerHTML = renderAddListing();
   }
 
-  // Sweeps every user-submitted listing and auto-marks anything past its plan duration as expired.
+  // Sweeps every user-submitted listing and auto-marks anything past its plan duration as
+  // expired — only ever applies to a currently-active listing (30 days *of being live*, not
+  // 30 days since a pending/rejected one was submitted). Never deletes anything: this writes
+  // status:'expired' to Firestore so the listing survives, drops out of public view (the same
+  // way every other status change does), and the owner can renew it from "Миний зарууд".
   function checkExpiredListings() {
     const now = Date.now();
     let changed = false;
     listings.forEach(l => {
-      if (l.userSubmitted && l.expiresAt && now > l.expiresAt && !l._expired) {
+      if (l.userSubmitted && l.status === 'active' && l.expiresAt && now > l.expiresAt && !l._expired) {
         l._expired = true;
         l._inactive = true;
+        l.status = 'expired';
         changed = true;
+        if (l.firestoreId) {
+          db.collection('listings').doc(l.firestoreId).update({ status: 'expired' }).catch(() => {});
+        }
       }
     });
     return changed;
@@ -1428,6 +1461,9 @@
     renderHomeListings();
   }
 
+  // "Сунгах" — extends expiresAt by 30 days and (re)activates without going back through
+  // admin review, since the listing's content hasn't changed. Works both for reactivating
+  // an expired listing and for proactively extending one that's still active.
   async function renewMyListing(id) {
     const l = listings.find(x => x.id === id);
     if (!l) return;
@@ -1436,6 +1472,7 @@
     l._expired = false;
     l._inactive = false;
     l._bumpedAt = now;
+    l.status = 'active';
     if (l.firestoreId) {
       try {
         await db.collection('listings').doc(l.firestoreId).update({ expiresAt: l.expiresAt, status: 'active', bumpedAt: now });
@@ -1447,47 +1484,120 @@
     renderHomeListings();
   }
 
+  // Marks a listing as sold/rented — pulls it out of public view immediately (status
+  // change alone does that, same mechanism as every other transition) and files it under
+  // the "Зарагдсан/Түрээслэгдсэн" tab instead of deleting it.
+  async function markSoldRented(id) {
+    const l = listings.find(x => x.id === id);
+    if (!l) return;
+    const newStatus = l.cat === 'rent' ? 'rented' : 'sold';
+    const confirmMsg = l.cat === 'rent' ? 'Энэ зарыг түрээслэгдсэн гэж тэмдэглэх үү? Нийтэд харагдахаа болино.' : 'Энэ зарыг зарагдсан гэж тэмдэглэх үү? Нийтэд харагдахаа болино.';
+    if (!confirm(confirmMsg)) return;
+    l.status = newStatus;
+    l._inactive = true;
+    if (l.firestoreId) {
+      try { await db.collection('listings').doc(l.firestoreId).update({ status: newStatus }); } catch(e) {}
+    }
+    showToast(newStatus === 'rented' ? 'Түрээслэгдсэн болгов' : 'Зарагдсан болгов', 'success');
+    renderMyListings('sold');
+    renderListings(getFilteredListings());
+    renderHomeListings();
+    if (typeof renderDashboard === 'function') renderDashboard();
+  }
+
+  const MY_LISTINGS_TABS = ['active', 'pending', 'rejected', 'expired', 'sold'];
+  const MY_LISTINGS_EMPTY_MSG = {
+    active: 'Нийтлэгдсэн зар байхгүй байна.',
+    pending: 'Хянагдаж буй зар байхгүй байна.',
+    rejected: 'Буцаагдсан зар байхгүй байна.',
+    expired: 'Хугацаа дууссан зар байхгүй байна.',
+    sold: 'Зарагдсан/Түрээслэгдсэн зар байхгүй байна.'
+  };
+  const MY_LISTINGS_STATUS_META = {
+    active: { label: 'Нийтлэгдсэн', cls: 'badge new' },
+    pending: { label: 'Хянагдаж байна', cls: 'badge' },
+    rejected: { label: 'Буцаагдсан', cls: 'badge' },
+    expired: { label: 'Хаагдсан', cls: 'badge' },
+    sold: { label: 'Зарагдсан', cls: 'badge' },
+    rented: { label: 'Түрээслэгдсэн', cls: 'badge' }
+  };
+
   let myListingsTab = 'active';
   function renderMyListings(tab) {
     checkExpiredListings();
     myListingsTab = tab || myListingsTab;
-    // Highlight active tab
-    ['active','pending','ended'].forEach(t => {
+    MY_LISTINGS_TABS.forEach(t => {
       const btn = document.getElementById('myTab-' + t);
       if (btn) btn.classList.toggle('active', t === myListingsTab);
     });
     const grid = document.getElementById('myListingsGrid');
     if (!grid) return;
     const userListings = listings.filter(l => l.userSubmitted || l.badges.includes('user'));
-    // active = not auto-expired (may still be manually deactivated, shown with a badge)
-    // ended = auto-expired past its plan duration; pending has no real workflow yet
-    const shown = myListingsTab === 'active' ? userListings.filter(l => !l._expired)
-      : myListingsTab === 'ended' ? userListings.filter(l => l._expired)
-      : [];
+    const shown = userListings.filter(l => {
+      const st = l.status || 'active';
+      return myListingsTab === 'sold' ? (st === 'sold' || st === 'rented') : st === myListingsTab;
+    });
     if (shown.length === 0) {
       grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 24px;color:var(--ink-3);">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.4;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
         <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px;">Зар байхгүй</div>
-        <div style="font-size:13px;margin-bottom:20px;">Одоогоор энэ хэсэгт зар байхгүй байна.</div>
+        <div style="font-size:13px;margin-bottom:20px;">${MY_LISTINGS_EMPTY_MSG[myListingsTab] || 'Одоогоор энэ хэсэгт зар байхгүй байна.'}</div>
         <button class="btn btn-blue" onclick="openAddListing()">Зар нэмэх</button>
       </div>`;
       return;
     }
     grid.innerHTML = shown.map(l => {
       const isVip = l.badges.includes('vip');
-      const isInactive = l._inactive === true;
-      const isExpired = l._expired === true;
-      const statusLabel = isExpired ? 'Дууссан' : (isInactive ? 'Идэвхгүй' : 'Идэвхтэй');
-      const statusClass = isInactive ? 'badge' : 'badge new';
+      const st = l.status || 'active';
+      const meta = MY_LISTINGS_STATUS_META[st] || MY_LISTINGS_STATUS_META.active;
       const daysLeft = l.expiresAt ? Math.ceil((l.expiresAt - Date.now()) / 86400000) : null;
-      const canBump = !isExpired && (!l._bumpedAt || Date.now() - l._bumpedAt >= 86400000);
+      const canBump = st === 'active' && (!l._bumpedAt || Date.now() - l._bumpedAt >= 86400000);
+
+      let actions;
+      if (st === 'pending') {
+        actions = `
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();editMyListing(${l.id})">Засах</button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
+        `;
+      } else if (st === 'rejected') {
+        actions = `
+          <button class="btn btn-blue" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();editMyListing(${l.id})">Засаад дахин илгээх</button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
+        `;
+      } else if (st === 'expired') {
+        actions = `
+          <button class="btn btn-blue" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();renewMyListing(${l.id})">Сунгах</button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();editMyListing(${l.id})">Засах</button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
+        `;
+      } else if (st === 'sold' || st === 'rented') {
+        actions = `
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
+        `;
+      } else {
+        actions = `
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:${canBump ? 'var(--primary)' : 'var(--ink-3)'};" onclick="event.stopPropagation();bumpMyListing(${l.id})" title="24 цагт нэг удаа үнэгүй">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            Дээшлүүлэх
+          </button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();renewMyListing(${l.id})">Сунгах</button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();openBoostModal(${l.id})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Boost
+          </button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();editMyListing(${l.id})">Засах</button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();markSoldRented(${l.id})">${l.cat === 'rent' ? 'Түрээслэгдсэн болгох' : 'Зарагдсан болгох'}</button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
+        `;
+      }
+
       return `
-      <article class="listing-card" onclick="showPage('listings'); setTimeout(()=>openListing(${l.id}),150)" style="${isInactive ? 'opacity:0.65;' : ''}">
+      <article class="listing-card" onclick="showPage('listings'); setTimeout(()=>openListing(${l.id}),150)" style="${st !== 'active' ? 'opacity:0.75;' : ''}">
         <div class="listing-img">
           <img src="${esc(l.img)}" alt="${esc(l.title)}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';"/>
           <div class="listing-badges">
             ${isVip ? '<span class="badge vip">⭐ VIP</span>' : ''}
-            <span class="${statusClass}">${statusLabel}</span>
+            <span class="${meta.cls}">${meta.label}</span>
           </div>
         </div>
         <div class="listing-body">
@@ -1501,53 +1611,14 @@
             <span class="listing-meta-item"><strong>${l.rooms}</strong> өрөө</span>
             <span class="listing-meta-item">👁 <strong>${l.viewCount || 0}</strong></span>
           </div>
-          ${!isExpired && daysLeft !== null ? `<div style="font-size:11px;color:var(--ink-3);margin-top:6px;">${daysLeft > 0 ? daysLeft + ' хоногийн дараа дуусна' : 'Өнөөдөр дуусна'}</div>` : ''}
+          ${st === 'rejected' && l.rejectionReason ? `<div style="font-size:11.5px;color:var(--danger);margin-top:6px;">Шалтгаан: ${esc(l.rejectionReason)}</div>` : ''}
+          ${st === 'active' && daysLeft !== null ? `<div style="font-size:11px;color:var(--ink-3);margin-top:6px;">${daysLeft > 0 ? daysLeft + ' хоногийн дараа дуусна' : 'Өнөөдөр дуусна'}</div>` : ''}
           <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
-            ${isExpired ? `
-            <button class="btn btn-blue" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();renewMyListing(${l.id})">Сунгах</button>
-            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();editMyListing(${l.id})">Засах</button>
-            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
-            ` : `
-            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:${canBump ? 'var(--primary)' : 'var(--ink-3)'};" onclick="event.stopPropagation();bumpMyListing(${l.id})" title="24 цагт нэг удаа үнэгүй">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-              Дээшлүүлэх
-            </button>
-            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();openBoostModal(${l.id})">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-              Boost
-            </button>
-            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;" onclick="event.stopPropagation();editMyListing(${l.id})">Засах</button>
-            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:${isInactive ? 'var(--primary)' : 'var(--ink-3)'};" onclick="event.stopPropagation();toggleListingActive(${l.id})">${isInactive ? 'Идэвхжүүлэх' : 'Идэвхгүй болгох'}</button>
-            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:11px;min-width:0;color:var(--danger);" onclick="event.stopPropagation();deleteMyListing(${l.id})">Устгах</button>
-            `}
+            ${actions}
           </div>
         </div>
       </article>
     `}).join('');
-  }
-
-  async function toggleListingActive(id) {
-    const l = listings.find(x => x.id === id);
-    if (!l) return;
-    l._inactive = !l._inactive;
-    if (l.firestoreId) {
-      try {
-        await db.collection('listings').doc(l.firestoreId).update({
-          status: l._inactive ? 'inactive' : 'active',
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      } catch(e) {}
-    }
-    try {
-      const saved = JSON.parse(localStorage.getItem('bairxUserListings') || '[]');
-      const si = saved.findIndex(x => x.id === id);
-      if (si > -1) { saved[si]._inactive = l._inactive; localStorage.setItem('bairxUserListings', JSON.stringify(saved)); }
-    } catch(e) {}
-    showToast(l._inactive ? 'Зар идэвхгүй болгогдлоо' : 'Зар идэвхжүүлэгдлаа', 'success');
-    renderMyListings();
-    if (typeof renderDashboard === 'function') renderDashboard();
-    renderListings(getFilteredListings());
-    renderHomeListings();
   }
 
   let boostTargetId = null;

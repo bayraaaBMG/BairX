@@ -290,6 +290,11 @@
   // of a scripted fake compose box; a demo seller just never happens to reply.
   listings.forEach(function(l) { if (!l.ownerId) l.ownerId = 'demo-' + l.id; });
 
+  // Explicit demo marker (rather than relying on the absence of userSubmitted) so this
+  // seed set can be found and removed in one filter — listings.filter(l => l.isDemo) —
+  // once real listings are ready for launch. Never set on real/Firestore-loaded listings.
+  listings.forEach(function(l) { l.isDemo = true; });
+
   // Backfill khoroo/complex for demo listings from their loc string (e.g. "Хан-Уул, 15-р
   // хороо · Зайсан Тольт") so khoroo/complex search works against demo data too, not only
   // new listings submitted after these fields were added to the Add Listing form.
@@ -341,9 +346,21 @@
   // ===== PUBLIC LISTINGS FROM FIRESTORE =====
   // Everyone (logged in or not) needs to see every active real listing, not just their own —
   // this is what actually makes user-submitted listings visible across devices/accounts.
-  async function loadPublicListings() {
+  // Paginated via limit()/startAfter() on the query's default (document-ID) ordering — no
+  // .orderBy() on a separate field, since that would need a composite Firestore index that
+  // isn't deployed anywhere in this repo (firestore.indexes.json doesn't exist); adding one
+  // blind would 500 the live query until someone manually created it in the console.
+  const PUBLIC_LISTINGS_PAGE_SIZE = 60;
+  let _publicListingsCursor = null;
+  let _publicListingsExhausted = false;
+  async function loadPublicListings(loadMore) {
+    if (loadMore && _publicListingsExhausted) return;
     try {
-      const snap = await db.collection('listings').where('status', '==', 'active').get();
+      let q = db.collection('listings').where('status', '==', 'active').limit(PUBLIC_LISTINGS_PAGE_SIZE);
+      if (loadMore && _publicListingsCursor) q = q.startAfter(_publicListingsCursor);
+      const snap = await q.get();
+      if (snap.docs.length > 0) _publicListingsCursor = snap.docs[snap.docs.length - 1];
+      if (snap.docs.length < PUBLIC_LISTINGS_PAGE_SIZE) _publicListingsExhausted = true;
       let added = false;
       snap.forEach(doc => {
         if (listings.some(l => l.firestoreId === doc.id)) return;
@@ -371,7 +388,12 @@
           img: (d.images && d.images[0]) || d.img || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
           tag: { type: 'new', text: 'Шинэ зар' }, badges: d.badges || ['new', 'user'],
           loanType: 'Тохиролцоно', monthly: 0,
-          userSubmitted: true, _inactive: d.status === 'inactive',
+          userSubmitted: true, isDemo: false,
+          // This query already only fetches status=='active' docs, so _inactive is false in
+          // practice — kept as a real status check (not a hardcoded false) so this stays
+          // correct if the query is ever loosened.
+          status: d.status || 'active', rejectionReason: d.rejectionReason || '',
+          _inactive: (d.status || 'active') !== 'active',
           viewCount: d.viewCount || 0, favoriteCount: d.favoriteCount || 0, contactCount: d.contactCount || 0,
           expiresAt: d.expiresAt || null, _bumpedAt: d.bumpedAt || numId,
           _createdAtMs: d.createdAt?.toMillis?.() || 0
@@ -387,5 +409,14 @@
         if (typeof renderDashboard === 'function') renderDashboard();
         if (typeof checkNotificationTriggers === 'function') checkNotificationTriggers();
       }
+      const loadMoreWrap = document.getElementById('loadMoreListingsWrap');
+      if (loadMoreWrap) loadMoreWrap.style.display = _publicListingsExhausted ? 'none' : 'block';
     } catch(e) {}
+  }
+
+  async function loadMorePublicListings() {
+    const btn = document.getElementById('loadMoreListingsBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Ачааллаж байна…'; }
+    await loadPublicListings(true);
+    if (btn) { btn.disabled = false; btn.textContent = 'Цааш үзэх'; }
   }

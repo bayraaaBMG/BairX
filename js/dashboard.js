@@ -42,7 +42,7 @@
                 <span class="dash-listing-stat">☎ ${l.contactCount || 0}</span>
               </div>
             </div>
-            <span class="dash-listing-status ${l._inactive ? '' : 'active'}">${l._expired ? 'Дууссан' : (l._inactive ? 'Идэвхгүй' : 'Идэвхтэй')}</span>
+            <span class="dash-listing-status ${l._inactive ? '' : 'active'}">${({ active: 'Нийтлэгдсэн', pending: 'Хянагдаж байна', rejected: 'Буцаагдсан', expired: 'Хаагдсан', sold: 'Зарагдсан', rented: 'Түрээслэгдсэн' })[l.status || 'active'] || 'Нийтлэгдсэн'}</span>
           </div>
         `).join('');
       }

@@ -12,6 +12,13 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    // A blocked user can no longer create or edit listings — set by an admin (see the
+    // users/{uid} rule below), never by the user themselves.
+    function isBlocked() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('blocked', false) == true;
+    }
+
     // ===== USERS =====
     // Profile doc, keyed by uid. Only the account owner can read/write it.
     match /users/{uid} {
@@ -24,31 +31,50 @@ service cloud.firestore {
       // admin dashboard / moderation actions below.
       allow update: if request.auth != null && request.auth.uid == uid
                     && request.resource.data.role == resource.data.role;
+      // Admin-only "block user" action — scoped to exactly the `blocked` field on ANY
+      // user's doc, never role (still Console-only) and never anything else.
+      allow update: if isAdmin()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['blocked']);
       allow delete: if false;
     }
 
     // ===== LISTINGS =====
-    // Public marketplace: every visitor, logged in or not, must be able to read active
-    // listings (loadPublicListings() runs on every page load, including logged-out).
+    // Lifecycle: pending (just submitted/edited, awaiting review) -> active (admin-approved,
+    // public) -> sold/rented (owner marks complete) or expired (30 days, auto) -> closed.
+    // Admin can also reject (pending -> rejected) at any point during review. Only status ==
+    // 'active' is ever returned by the public read query (loadPublicListings in data.js), so
+    // this field is what actually gates visibility — not a separate "published" flag.
     match /listings/{listingId} {
       allow read: if true;
 
-      // A brand-new listing can't already be admin-verified — otherwise a malicious
-      // owner could just set listingVerified:true themselves at creation time.
+      // A brand-new listing can't already be admin-verified or start out publicly visible —
+      // otherwise a malicious owner could just set listingVerified/status themselves. Blocked
+      // users can't create listings at all.
       allow create: if request.auth != null
                     && request.resource.data.ownerId == request.auth.uid
-                    && request.resource.data.get('listingVerified', false) == false;
+                    && request.resource.data.get('listingVerified', false) == false
+                    && request.resource.data.get('status', 'pending') == 'pending'
+                    && !isBlocked();
 
-      // Owner can edit/delete their own listing, with two guardrails: they can never
-      // flip listingVerified from anything into true (only the admin rule below can —
-      // my-listings.js itself resets it to false on every content edit, since a
-      // verified listing that gets edited needs re-review, and this rule still allows
-      // that false/unchanged write; it only blocks the false→true direction), and they
-      // can never reset their own reportCount (would let a scammer erase their reports).
+      // Owner can edit/delete their own listing, with guardrails: they can never flip
+      // listingVerified into true (only the admin rule below can), never reset their own
+      // reportCount (would let a scammer erase their reports), and can't move `status`
+      // anywhere except the transitions that don't require a human review — any edit resets
+      // to 'pending' (my-listings.js does this on every save), an expired listing can be
+      // renewed straight back to 'active' (content didn't change), and an active listing can
+      // be marked sold/rented/expired by its own owner. Only an admin can move something INTO
+      // 'active' from 'pending'/'rejected', or move it INTO 'rejected' at all.
       allow update: if request.auth != null && resource.data.ownerId == request.auth.uid
+                    && !isBlocked()
                     && !(request.resource.data.get('listingVerified', false) == true
                          && resource.data.get('listingVerified', false) != true)
-                    && request.resource.data.get('reportCount', 0) == resource.data.get('reportCount', 0);
+                    && request.resource.data.get('reportCount', 0) == resource.data.get('reportCount', 0)
+                    && (
+                         request.resource.data.get('status', 'pending') == resource.data.get('status', 'pending') ||
+                         request.resource.data.status == 'pending' ||
+                         (resource.data.status == 'expired' && request.resource.data.status == 'active') ||
+                         (resource.data.status == 'active' && request.resource.data.status in ['sold', 'rented', 'expired'])
+                       );
       allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
 
       // Anyone (including logged-out viewers) may bump viewCount by exactly 1, nothing else.
@@ -60,10 +86,14 @@ service cloud.firestore {
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportCount'])
                     && request.resource.data.reportCount == resource.data.reportCount + 1;
 
-      // Admin moderation from the admin dashboard — scoped to only the two fields it
-      // touches (approve as verified, or take down as suspicious), never full content.
+      // Admin moderation — approve/reject/archive from the admin dashboard, scoped to only
+      // the fields it touches, never full content.
       allow update: if isAdmin()
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'listingVerified']);
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'listingVerified', 'rejectionReason']);
+
+      // Admin can hard-delete any listing (spam/abuse) — owners can only delete their own,
+      // via the rule above.
+      allow delete: if isAdmin();
     }
 
     // ===== NEW DEVELOPMENTS (барилгын компанийн шинэ төслүүд) =====

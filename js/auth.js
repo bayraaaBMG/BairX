@@ -104,7 +104,14 @@
             img: (d.images && d.images[0]) || d.img || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
             tag: { type: 'new', text: 'Шинэ зар' }, badges: d.badges || ['user'],
             loanType: 'Тохиролцоно', monthly: 0,
-            userSubmitted: true, _inactive: d.status === 'inactive',
+            userSubmitted: true, isDemo: false,
+            // Unlike the public query (which only ever fetches status=='active' docs), this
+            // one fetches ALL of the signed-in owner's own listings regardless of status —
+            // so _inactive here has to be derived from the real status, not assumed false,
+            // or a pending/rejected/sold listing would leak into the public home/search grid
+            // on the owner's own browser.
+            status: d.status || 'active', rejectionReason: d.rejectionReason || '',
+            _inactive: (d.status || 'active') !== 'active',
             viewCount: d.viewCount || 0, favoriteCount: d.favoriteCount || 0, contactCount: d.contactCount || 0,
             expiresAt: d.expiresAt || null, _bumpedAt: d.bumpedAt || numId,
             _createdAtMs: d.createdAt?.toMillis?.() || 0
