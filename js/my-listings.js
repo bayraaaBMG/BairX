@@ -1568,11 +1568,10 @@
         </div>
         <div style="display:grid;gap:12px;">
           ${[
-            { icon:'🚀', name:'Boost', price:'9,900 ₮', desc:'7 хоногийн турш хайлтад дээр гарна', color:'var(--primary)' },
-            { icon:'⭐', name:'VIP', price:'19,900 ₮', desc:'30 хоног · Онцгой шошго · 5x илүү үзэлт', color:'#FFB020' },
-            { icon:'💎', name:'Онцлох зар', price:'29,900 ₮', desc:'Нүүр хуудас · Email хэвлэл · Агентын санал', color:'#009878' }
+            { icon:'⭐', name:'VIP', price:'15,000 ₮', days: 60, desc:'60 хоног · VIP шошго · Нүүр хуудас, хайлтын үр дүнд эхэнд харагдана', color:'#FFB020' },
+            { icon:'💎', name:'Онцлох', price:'35,000 ₮', days: 90, desc:'90 хоног · VIP шошго · Нүүр хуудас, хайлтын үр дүнд эхэнд харагдана', color:'#009878' }
           ].map(p => `
-            <div style="border:2px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color 0.15s;" onclick="confirmBoost('${p.name}', '${p.price}')">
+            <div style="border:2px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color 0.15s;" onclick="confirmBoost('${p.name}', '${p.price}', ${p.days})">
               <div style="font-size:28px;">${p.icon}</div>
               <div style="flex:1;">
                 <div style="font-weight:700;color:${p.color};">${p.name} — ${p.price}</div>
@@ -1582,6 +1581,7 @@
             </div>
           `).join('')}
         </div>
+        <div style="font-size:11.5px; color:var(--ink-3); margin-top:14px; line-height:1.5;">Энэ бол жишээ/demo төлбөрийн урсгал — бодит төлбөрийн систем холбогдоогүй.</div>
         <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:16px;" onclick="closeModal()">Цуцлах</button>
       </div>
     `;
@@ -1589,11 +1589,20 @@
     document.body.style.overflow = 'hidden';
   }
 
-  function confirmBoost(plan, price) {
-    // Add vip badge to the listing and persist
+  function confirmBoost(plan, price, days) {
+    // Add vip badge and extend expiresAt by the plan's promised duration — matching the same
+    // real mechanism (badge + expiresAt) the listing-creation wizard's VIP/Featured plans use,
+    // so a boost bought from here behaves identically to one bought at creation time.
     if (boostTargetId) {
       const bl = listings.find(x => x.id === boostTargetId);
-      if (bl && !bl.badges.includes('vip')) bl.badges.push('vip');
+      if (bl) {
+        if (!bl.badges.includes('vip')) bl.badges.push('vip');
+        const base = (bl.expiresAt && bl.expiresAt > Date.now()) ? bl.expiresAt : Date.now();
+        bl.expiresAt = base + (days || 30) * 86400000;
+        if (bl.firestoreId) {
+          db.collection('listings').doc(bl.firestoreId).update({ badges: bl.badges, expiresAt: bl.expiresAt }).catch(() => {});
+        }
+      }
       const txn = { listingId: boostTargetId, listingTitle: bl?.title || '', plan, price, date: Date.now() };
       try {
         const boosted = JSON.parse(localStorage.getItem('bairxBoostedListings') || '[]');

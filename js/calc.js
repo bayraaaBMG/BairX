@@ -301,17 +301,18 @@
     const historyMult = history === 'A' ? 1.0 : history === 'B' ? 0.9 : history === 'C' ? 0.75 : 0.6;
     const adjMonthly = maxMonthly * historyMult;
 
-    // Calc max loan with 8%, 20 years
-    const r = 0.08 / 12;
+    // Uses the same loan rate currently selected in the calculator above (currentRate) instead
+    // of a second, unreconciled hardcoded rate — one page, one user-adjustable rate.
+    const r = currentRate / 100 / 12;
     const n = 240;
-    const maxLoan = adjMonthly * (Math.pow(1 + r, n) - 1) / (r * Math.pow(1 + r, n));
+    const maxLoan = r === 0 ? adjMonthly * n : adjMonthly * (Math.pow(1 + r, n) - 1) / (r * Math.pow(1 + r, n));
 
     const maxPriceLow = (maxLoan + down) / 1000000;
     const maxPriceHigh = maxPriceLow * 1.12;
 
     document.getElementById('affResultAmt').textContent = `${Math.round(maxPriceLow)} — ${Math.round(maxPriceHigh)} сая ₮`;
     const affDetailEl = document.getElementById('affResultDetail');
-    if (affDetailEl) affDetailEl.textContent = `8% зээл, 20 жилийн хугацаатай. Орлогын ${SAFE_DTI}% хүртэл сар бүрийн төлбөр гэж тооцов.`;
+    if (affDetailEl) affDetailEl.textContent = `${currentRate}% хүү (${currentLoanName}, дээрх тооцоолуурын сонголт), 20 жилийн хугацаатай. Орлогын ${SAFE_DTI}% хүртэл сар бүрийн төлбөр гэж тооцов.`;
     document.getElementById('affMaxLoan').textContent = `${Math.round(maxLoan / 1000000)} сая ₮`;
     document.getElementById('affMonthly').textContent = `${(adjMonthly / 1000000).toFixed(2)} сая ₮`;
     document.getElementById('affDownDisp').textContent = `${Math.round(down / 1000000)} сая ₮`;
@@ -372,7 +373,7 @@
       c.classList.toggle('active');
       const filter = c.dataset.filter;
       const filterNames = {
-        'loan8': '8% зээлтэй зарууд',
+        'loan8': 'Зээлээр авах боломжтой зарууд',
         'new': 'Шинэ барилгын зарууд',
         'furnished': 'Тавилгатай зарууд',
         'garage': 'Гараажтай зарууд',

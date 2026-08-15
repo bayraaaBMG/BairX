@@ -195,7 +195,7 @@
       <button class="modal-share-btn" id="detailFavBtn" onclick="event.stopPropagation(); toggleFavDetail(${l.id})" title="Хадгалах" style="right:104px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="${favorites.includes(l.id) ? '#FF4757' : 'none'}" stroke="${favorites.includes(l.id) ? '#FF4757' : 'currentColor'}" stroke-width="2.5"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
       </button>
-      <button class="modal-share-btn" onclick="shareListingModal(${l.id}, '${esc(l.title)}')" title="Хуваалцах">
+      <button class="modal-share-btn" onclick="shareListingModal(${l.id})" title="Хуваалцах">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       </button>
 
@@ -314,20 +314,20 @@
         <!-- SELLER CARD -->
         <div class="modal-section">
           <div class="seller-card">
-            <div class="seller-av" ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}', '${esc(sellerName)}')" style="cursor:pointer;"` : ''}>${sellerLetter}</div>
+            <div class="seller-av" ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}')" style="cursor:pointer;"` : ''}>${sellerLetter}</div>
             <div class="seller-info">
-              <div class="seller-name" ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}', '${esc(sellerName)}')" style="cursor:pointer;"` : ''}>
+              <div class="seller-name" ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}')" style="cursor:pointer;"` : ''}>
                 ${esc(sellerName)}
                 ${isVerified ? '<span class="seller-verified">✓ Баталгаажсан</span>' : ''}
               </div>
               <div class="seller-meta">${esc(seller.type)}</div>
               <div class="seller-stats">
-                <span ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}', '${esc(sellerName)}')" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;"` : ''}><b>${totalListings} зар</b></span>
+                <span ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}')" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;"` : ''}><b>${totalListings} зар</b></span>
                 <span>Хариу: <b>${responseTime}</b></span>
                 <span>Гишүүн: <b>${memberSince} оноос</b></span>
               </div>
             </div>
-            <button class="btn btn-ghost" onclick="revealPhone('${l.id}', '${seller.phone}')">
+            <button class="btn btn-ghost" onclick="revealPhone('${l.id}')">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
               Залгах
             </button>
@@ -563,7 +563,7 @@
           <h4>Холбоо барих</h4>
           <div id="contactBox_${l.id}" style="background:var(--paper-2);border-radius:14px;padding:18px;text-align:center;">
             <div style="font-size:13px;color:var(--ink-3);margin-bottom:12px;">Утасны дугаарыг харахдаа дарна уу</div>
-            <button class="btn btn-blue btn-lg" style="width:100%;justify-content:center;" onclick="revealPhone('${l.id}', '${seller.phone}')">
+            <button class="btn btn-blue btn-lg" style="width:100%;justify-content:center;" onclick="revealPhone('${l.id}')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
               Дугаар харах
             </button>
@@ -571,7 +571,7 @@
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn-primary btn-lg" onclick="openListingChat(${l.id}, '${esc(l.title)}')">
+          <button class="btn btn-primary btn-lg" onclick="openListingChat(${l.id})">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             Чат бичих
           </button>
@@ -584,11 +584,11 @@
         <!-- MOBILE STICKY CALL BAR (hidden on desktop via CSS) -->
         <div class="mobile-sticky-call">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;">
-            <button class="btn btn-blue btn-lg" style="justify-content:center;" onclick="revealPhone('${l.id}', '${seller.phone}')">
+            <button class="btn btn-blue btn-lg" style="justify-content:center;" onclick="revealPhone('${l.id}')">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
               Залгах
             </button>
-            <button class="btn btn-primary btn-lg" style="justify-content:center;" onclick="openListingChat(${l.id}, '${esc(l.title)}')">
+            <button class="btn btn-primary btn-lg" style="justify-content:center;" onclick="openListingChat(${l.id})">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               Чат
             </button>
@@ -751,10 +751,11 @@
     else if (!nowFav && wasFav) showToast('Үнийн мэдэгдэл цуцлагдлаа');
   }
 
-  function shareListingModal(id, title) {
+  function shareListingModal(id) {
+    const l = listings.find(x => x.id === id);
     const url = location.origin + location.pathname + '#listing-' + id;
     if (navigator.share) {
-      navigator.share({ title: title, url: url }).catch(() => {});
+      navigator.share({ title: l ? l.title : '', url: url }).catch(() => {});
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(() => showToast('Холбоос хуулагдлаа', 'success'));
     } else {
@@ -829,10 +830,17 @@
     }
   }
 
-  function revealPhone(listingId, phone) {
+  function revealPhone(listingId) {
     const box = document.getElementById('contactBox_' + listingId);
     if (!box) return;
     const l = listings.find(x => String(x.id) === String(listingId));
+    // Look up the seller's phone by ID rather than accepting it as a raw parameter — this
+    // is user-entered free text, and embedding it straight into an inline onclick="...'...'"
+    // string is exploitable even after HTML-escaping (the browser decodes entities in an
+    // attribute value before handing it to the JS parser, so &#39; becomes ' again and can
+    // still break out of the quoted string). Looking it up here and wiring the copy button
+    // via addEventListener below avoids ever building JS source out of user text.
+    const phone = (sellerData[listingId] && sellerData[listingId].phone) || '9911-2233';
     if (l) {
       l.contactCount = (l.contactCount || 0) + 1;
       if (l.firestoreId) {
@@ -841,21 +849,25 @@
       if (typeof renderDashboard === 'function') renderDashboard();
     }
     box.innerHTML = `
-      <div style="font-size:22px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--ink);letter-spacing:2px;margin-bottom:16px;">${phone}</div>
+      <div style="font-size:22px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--ink);letter-spacing:2px;margin-bottom:16px;">${esc(phone)}</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <a href="tel:${phone.replace(/\D/g,'')}" class="btn btn-blue">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
           Залгах
         </a>
-        <button class="btn btn-primary" onclick="navigator.clipboard&&navigator.clipboard.writeText('${phone}').then(()=>showToast('Дугаар хуулагдлаа','success'))">
+        <button class="btn btn-primary" id="copyPhoneBtn_${listingId}">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           Хуулах
         </button>
       </div>
     `;
+    const copyBtn = document.getElementById('copyPhoneBtn_' + listingId);
+    if (copyBtn) copyBtn.addEventListener('click', () => {
+      if (navigator.clipboard) navigator.clipboard.writeText(phone).then(() => showToast('Дугаар хуулагдлаа', 'success'));
+    });
   }
 
-  async function openListingChat(id, title) {
+  async function openListingChat(id) {
     const l = listings.find(x => x.id === id);
     if (!l) return;
     if (!currentUser) { closeModal(); showToast('Чат бичихийн тулд нэвтэрнэ үү'); openAuth(); return; }
@@ -892,7 +904,7 @@
   // Firestore rules only let a user read their own users/{uid} doc, all of this rides
   // on the listing documents themselves (sellerType/sellerVerified/sellerCompany,
   // snapshotted at publish time) rather than a live cross-account lookup.
-  function openSellerProfile(ownerId, name) {
+  function openSellerProfile(ownerId) {
     if (!ownerId) return;
     const allSellerListings = listings.filter(x => x.ownerId === ownerId)
       .sort((a, b) => (b._bumpedAt || b.id) - (a._bumpedAt || a.id));
@@ -903,6 +915,9 @@
     // use the newest one that actually does, rather than assuming it's always `primary`.
     const withSellerData = allSellerListings.find(x => sellerData[x.id]) || primary;
     const sd = sellerData[withSellerData.id] || {};
+    // Look up the name here instead of accepting it as a parameter — see revealPhone's comment
+    // above for why passing user-entered text through an inline onclick(...) call is unsafe.
+    const name = sd.name || 'Хэрэглэгч';
     const roleLabel = sd.type || 'Хувь хүн';
     const isVerified = primary.userSubmitted ? !!primary.sellerVerified : true;
     const memberSince = primary.userSubmitted ? new Date().getFullYear() : 2020 + (primary.id % 5);
@@ -930,11 +945,11 @@
         </div>
         ${sd.phone ? `
         <div style="display:flex; gap:10px; margin-bottom:24px;">
-          <button class="btn btn-blue" style="flex:1; justify-content:center;" onclick="revealPhone(${withSellerData.id}, '${esc(sd.phone)}')">
+          <button class="btn btn-blue" style="flex:1; justify-content:center;" onclick="revealPhone(${withSellerData.id})">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
             Залгах
           </button>
-          <button class="btn btn-ghost" style="flex:1; justify-content:center; border:1.5px solid var(--line-2);" onclick="closeModal(); setTimeout(() => openListingChat(${withSellerData.id}, '${esc(withSellerData.title)}'), 250)">
+          <button class="btn btn-ghost" style="flex:1; justify-content:center; border:1.5px solid var(--line-2);" onclick="closeModal(); setTimeout(() => openListingChat(${withSellerData.id}), 250)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
             Чат бичих
           </button>

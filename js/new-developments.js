@@ -209,7 +209,7 @@
               <div class="seller-name">${esc(p.company)}</div>
               <div class="seller-meta">${esc(p.contactName || 'Борлуулалтын алба')}</div>
             </div>
-            <button class="btn btn-ghost" onclick="revealProjectPhone('${p.id}', '${esc(p.phone || '')}')">
+            <button class="btn btn-ghost" onclick="revealProjectPhone('${p.id}')">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
               Залгах
             </button>
@@ -234,10 +234,14 @@
     db.collection('projects').doc(p.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(() => {});
   }
 
-  function revealProjectPhone(id, phone) {
+  function revealProjectPhone(id) {
     const box = document.getElementById('contactBox_' + id);
-    if (!box || !phone) return;
     const p = projects.find(x => x.id === id);
+    // Looked up here rather than passed in as a raw parameter — see revealPhone() in
+    // listing-detail.js for why embedding user-entered text into an inline onclick(...)
+    // call is unsafe even when HTML-escaped.
+    const phone = p ? (p.phone || '') : '';
+    if (!box || !phone) return;
     if (p) {
       p.contactCount = (p.contactCount || 0) + 1;
       db.collection('projects').doc(id).update({ contactCount: firebase.firestore.FieldValue.increment(1) }).catch(() => {});
@@ -250,13 +254,17 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
             Залгах
           </a>
-          <button class="btn btn-primary" onclick="navigator.clipboard&&navigator.clipboard.writeText('${phone}').then(()=>showToast('Дугаар хуулагдлаа','success'))">
+          <button class="btn btn-primary" id="copyProjectPhoneBtn_${id}">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Хуулах
           </button>
         </div>
       </div>
     `;
+    const copyBtn = document.getElementById('copyProjectPhoneBtn_' + id);
+    if (copyBtn) copyBtn.addEventListener('click', () => {
+      if (navigator.clipboard) navigator.clipboard.writeText(phone).then(() => showToast('Дугаар хуулагдлаа', 'success'));
+    });
   }
 
   function deleteProject(id) {

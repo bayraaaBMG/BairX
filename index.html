@@ -227,7 +227,7 @@
 
       <div class="quick-filters">
         <span class="qf-label">Түргэн:</span>
-        <span class="chip" data-filter="loan8">8% зээлтэй</span>
+        <span class="chip" data-filter="loan8">Зээлээр авах боломжтой</span>
         <span class="chip" data-filter="new">Шинэ барилга</span>
         <span class="chip" data-filter="furnished">Тавилгатай</span>
         <span class="chip" data-filter="garage">Гарааш</span>
@@ -356,7 +356,7 @@
         <span class="section-eyebrow">Анхлан худалдан авагчид</span>
         <h2 class="section-title display">Анх удаа байр авч байна уу? <em>Эндээс эхэл</em></h2>
       </div>
-      <p class="section-sub">30 жилийн туршлагатай мэргэжилтнүүдийн зөвлөгөө. Алдаа гаргахаас сэргийлж, зөв шийдвэр гаргахад туслана.</p>
+      <p class="section-sub">Нийтлэг гардаг алдаанаас сэргийлж, зөв шийдвэр гаргахад туслах практик зөвлөмж.</p>
     </div>
 
     <div class="guide-hero">
@@ -603,6 +603,7 @@
           </div>
         </div>
       </div>
+      <p style="font-size:12px; color:var(--ink-3); line-height:1.55; margin:-8px 0 20px;">Дээрх үнэлгээ нь барилгын ерөнхий төрлүүдийг харьцуулсан ойролцоо, боловсролын зорилготой заавар — тодорхой барилга/зарын бодит чанарыг батлах баримт биш.</p>
 
       <!-- Earthquake zone -->
       <div class="quake-card">
@@ -616,19 +617,19 @@
         <p style="font-size:14px; color:var(--ink-2); line-height:1.6; margin-bottom:4px;">Улаанбаатар бол газар хөдлөлтийн идэвхтэй бүс. 1957 онд Говь-Алтайд 11.5 баллын газар хөдлөлт болж байсан. Хот ойролцоо хагарлууд бий. Тиймээс байр сонгохдоо барилгын газар хөдлөлтийн тэсвэрийг анхаарах нь амь насны асуудал.</p>
         <div class="quake-scale">
           <div class="quake-level" style="background:rgba(0,212,170,0.12);">
-            <div class="quake-level-num" style="color:#009878;">9 балл</div>
-            <div class="quake-level-label" style="color:#009878;">Шинэ цутгамал бетон — аюулгүй</div>
+            <div class="quake-level-num" style="color:#009878;">Шинэ</div>
+            <div class="quake-level-label" style="color:#009878;">Цутгамал бетон — ерөнхийдөө харьцангуй тэсвэртэй</div>
           </div>
           <div class="quake-level" style="background:rgba(255,176,32,0.12);">
-            <div class="quake-level-num" style="color:#C77700;">7-8 балл</div>
-            <div class="quake-level-label" style="color:#C77700;">Хийц өрлөг — дунд зэрэг</div>
+            <div class="quake-level-num" style="color:#C77700;">Дунд</div>
+            <div class="quake-level-label" style="color:#C77700;">Хийц өрлөг — дунд зэргийн тэсвэртэй</div>
           </div>
           <div class="quake-level" style="background:rgba(255,71,87,0.1);">
-            <div class="quake-level-num" style="color:#FF4757;">5-6 балл</div>
-            <div class="quake-level-label" style="color:#FF4757;">Хуучин панель — эрсдэлтэй</div>
+            <div class="quake-level-num" style="color:#FF4757;">Хуучин</div>
+            <div class="quake-level-label" style="color:#FF4757;">Хуучин панель — анхаарал шаардлагатай</div>
           </div>
         </div>
-        <p style="font-size:13px; color:var(--ink-3); line-height:1.55;"><strong>Зөвлөгөө:</strong> Шинэ барилга авч байгаа бол газар хөдлөлтийн зэрэглэлийг (тэсвэрлэх балл) барилгын компаниас асууж, төслийн баримтаас шалгаарай. Хуучин панель байшинд амьдрах бол бат бэхийг инженерээр үнэлүүл.</p>
+        <p style="font-size:13px; color:var(--ink-3); line-height:1.55;"><strong>Зөвлөгөө:</strong> Энэ бол зөвхөн ерөнхий боловсролын мэдээлэл — тодорхой барилгын газар хөдлөлтийн бодит тэсвэрийг батлах баримт биш. Шинэ барилга авч байгаа бол газар хөдлөлтийн зэрэглэлийг (тэсвэрлэх балл) барилгын компаниас асууж, төслийн баримтаас шалгаарай. Хуучин барилгад амьдрах бол мэргэжлийн инженерээр бат бэхийг заавал үнэлүүлнэ үү.</p>
       </div>
 
       <!-- Insulation -->
@@ -1141,18 +1142,18 @@
 
           <div class="compare-input-row">
             <div class="compare-label">
-              <span>Зээлийн хүү</span>
+              <span>Зээлийн хүү <span style="color:var(--ink-3); font-weight:500;">(жишээ, өөрчилж болно)</span></span>
               <span class="compare-label-val" id="cmpRateVal">14.4%</span>
             </div>
-            <input type="range" min="8" max="20" value="14.4" step="0.1" class="compare-slider" id="cmpRate" aria-label="Зээлийн хүү" />
+            <input type="range" min="8" max="20" value="14.4" step="0.1" class="compare-slider" id="cmpRate" aria-label="Зээлийн хүү (жишээ утга, өөрчилж болно)" />
           </div>
 
           <div class="compare-input-row">
             <div class="compare-label">
-              <span>Хадгаламжийн хүү</span>
+              <span>Хадгаламжийн хүү <span style="color:var(--ink-3); font-weight:500;">(жишээ, өөрчилж болно)</span></span>
               <span class="compare-label-val" id="cmpSaveVal">8%</span>
             </div>
-            <input type="range" min="3" max="18" value="8" step="0.5" class="compare-slider" id="cmpSave" aria-label="Хадгаламжийн хүү" />
+            <input type="range" min="3" max="18" value="8" step="0.5" class="compare-slider" id="cmpSave" aria-label="Хадгаламжийн хүү (жишээ утга, өөрчилж болно)" />
           </div>
 
           <div class="compare-input-row">
@@ -1669,7 +1670,7 @@
           <div class="afford-result">
             <div class="afford-result-label">★ Таны худалдан авах боломжтой үнэ</div>
             <div class="afford-result-amount" id="affResultAmt">285 — 320 сая ₮</div>
-            <div class="afford-result-detail" id="affResultDetail">8% зээл, 20 жилийн хугацаатай. Орлогын 40% хүртэл сар бүрийн төлбөр гэж тооцов.</div>
+            <div class="afford-result-detail" id="affResultDetail">17.5% хүү (дээрх тооцоолуурын сонголт), 20 жилийн хугацаатай. Орлогын 40% хүртэл сар бүрийн төлбөр гэж тооцов.</div>
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px;">
@@ -1706,10 +1707,10 @@
   <div class="section-inner">
     <div class="section-head">
       <div>
-        <span class="section-eyebrow">20 жилийн ирээдүйн тооцоо</span>
-        <h2 class="section-title display">Энэ байрыг авбал<br>надад <em>ямар ашигтай</em> вэ?</h2>
+        <span class="section-eyebrow">20 жилийн ирээдүйн тооцоо · Жишээ тооцоолол</span>
+        <h2 class="section-title display">Байр авбал надад<br><em>ямар ашигтай</em> вэ?</h2>
       </div>
-      <p class="section-sub">Байрны үнийн өсөлт, зээлийн төлбөр, түрээсийн орлого — бүгдийг нэгтгэн 20 жилийн дараах хөрөнгийн ашгийг тооцоолно.</p>
+      <p class="section-sub">Байрны үнийн өсөлт, зээлийн төлбөр, түрээсийн орлого — бүгдийг нэгтгэн 20 жилийн дараах хөрөнгийн ашгийг тооцоолно. Доорх тоо бол 412 сая ₮-ийн жишээ байрны тооцоолол — тодорхой зарын дэлгэрэнгүйгээс өөрийн бодит тооцоог үзнэ үү.</p>
     </div>
 
     <div class="forecast-card">
