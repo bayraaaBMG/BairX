@@ -1,13 +1,12 @@
 ﻿  // ===== MODAL: LISTING DETAIL =====
-  // Дүүргийн бодит жилийн дундаж өсөлт (2020-2025 он, мэргэжлийн үнэлгээгээр)
-  const districtGrowth = {
-    'khan-uul': { yearly: 7.2, label: 'Хан-Уул', note: 'Зайсан, Яармаг хамгийн өсөлттэй бүс' },
-    'sukhbaatar': { yearly: 5.8, label: 'Сүхбаатар', note: 'Төв бүс — тогтвортой эрэлттэй' },
-    'chingeltei': { yearly: 4.5, label: 'Чингэлтэй', note: 'Дунд зэргийн өсөлт, эрэлт сайн' },
-    'bayanzurkh': { yearly: 4.2, label: 'Баянзүрх', note: 'Шинэ хороолол хөгжиж буй' },
-    'bayangol': { yearly: 4.0, label: 'Баянгол', note: 'Тогтвортой бүс' },
-    'songinokhairkhan': { yearly: 3.5, label: 'СХД', note: 'Хямд үнэ, дунд өсөлт' },
-    'nalaikh': { yearly: 9.5, label: 'Налайх', note: 'Хотын ойролцоо хөгжиж буй' }
+  // District display names only — no growth-rate/trend data here. An earlier version of
+  // this file hardcoded a per-district "yearly growth %" (and used it to synthesize a fake
+  // 6-year price-history chart plus 5/10/20-year return projections) with no real source
+  // behind any of it. Removed; see the neutral price-change disclaimer below instead.
+  const districtNames = {
+    'khan-uul': 'Хан-Уул', 'sukhbaatar': 'Сүхбаатар', 'chingeltei': 'Чингэлтэй',
+    'bayanzurkh': 'Баянзүрх', 'bayangol': 'Баянгол', 'songinokhairkhan': 'СХД',
+    'nalaikh': 'Налайх'
   };
 
   function openListing(id) {
@@ -34,75 +33,7 @@
     } else {
       monthly = null; // negotiable rate — no honest number to show
     }
-    const growth = districtGrowth[l.district] || { yearly: 5.0, label: 'Дүүрэг', note: '' };
-
-    // Бодит compound growth тооцоолол
-    const g5 = Math.round(l.price * (Math.pow(1 + growth.yearly/100, 5) - 1));
-    const g10 = Math.round(l.price * (Math.pow(1 + growth.yearly/100, 10) - 1));
-    const g20 = Math.round(l.price * (Math.pow(1 + growth.yearly/100, 20) - 1));
-
-    // ===== ҮНИЙН ТҮҮХ (өнгөрсөн 6 жил) =====
-    // Одоогийн үнээс ухарч өнгөрсөн жилүүдийн үнийг тооцоолно (бага зэрэг хэлбэлзэлтэйгээр)
-    const priceHistory = [];
-    const wobble = [0, -0.4, 0.6, -0.3, 0.5, 0]; // бодит зах зээлийн жижиг хэлбэлзэл
-    for (let i = 5; i >= 0; i--) {
-      const yearsAgo = i;
-      let pastPrice = l.price / Math.pow(1 + growth.yearly/100, yearsAgo);
-      pastPrice = pastPrice * (1 + (wobble[5-i] || 0)/100 * yearsAgo);
-      priceHistory.push({ year: 2026 - yearsAgo, price: pastPrice });
-    }
-    priceHistory[priceHistory.length - 1].price = l.price; // одоогийн үнэ яг таарна
-
-    const histMin = Math.min(...priceHistory.map(p => p.price));
-    const histMax = Math.max(...priceHistory.map(p => p.price));
-    const histRange = histMax - histMin || 1;
-    const chartW = 480, chartH = 140, padL = 10, padR = 10, padT = 10, padB = 24;
-    const plotW = chartW - padL - padR;
-    const plotH = chartH - padT - padB;
-    const points = priceHistory.map((p, i) => {
-      const x = padL + (i / (priceHistory.length - 1)) * plotW;
-      const y = padT + (1 - (p.price - histMin) / histRange) * plotH;
-      return { x, y, ...p };
-    });
-    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
-    const areaPath = linePath + ` L ${points[points.length-1].x.toFixed(1)} ${(padT+plotH).toFixed(1)} L ${points[0].x.toFixed(1)} ${(padT+plotH).toFixed(1)} Z`;
-    const totalGrowthPct = ((l.price - priceHistory[0].price) / priceHistory[0].price * 100);
-
-    const priceHistoryHtml = `
-      <div class="modal-section">
-        <h4>Үнийн түүх (сүүлийн 6 жил)</h4>
-        <div style="background:var(--paper-2); border-radius:14px; padding:18px;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:14px;">
-            <div>
-              <div style="font-size:12px; color:var(--ink-3); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">2020 → 2026 өсөлт</div>
-              <div style="font-family:'Fraunces',serif; font-size:24px; font-weight:700; color:${totalGrowthPct >= 0 ? '#009878' : 'var(--danger)'};">
-                ${totalGrowthPct >= 0 ? '+' : ''}${totalGrowthPct.toFixed(0)}%
-              </div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-size:12px; color:var(--ink-3);">Жилийн дундаж</div>
-              <div style="font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:700; color:var(--primary);">${growth.yearly}% / жил</div>
-            </div>
-          </div>
-          <svg viewBox="0 0 ${chartW} ${chartH}" style="width:100%; height:auto;" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#1E5BFF" stop-opacity="0.25"/>
-                <stop offset="100%" stop-color="#1E5BFF" stop-opacity="0"/>
-              </linearGradient>
-            </defs>
-            <path d="${areaPath}" fill="url(#histGrad)"/>
-            <path d="${linePath}" stroke="#1E5BFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            ${points.map((p, i) => `
-              <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${i === points.length-1 ? 5 : 3}" fill="${i === points.length-1 ? '#1E5BFF' : 'white'}" stroke="#1E5BFF" stroke-width="2"/>
-              <text x="${p.x.toFixed(1)}" y="${chartH - 6}" font-size="10" fill="var(--ink-3)" text-anchor="middle" font-family="JetBrains Mono, monospace">${p.year}</text>
-            `).join('')}
-            <text x="${points[points.length-1].x.toFixed(1)}" y="${(points[points.length-1].y - 12).toFixed(1)}" font-size="11" fill="#1E5BFF" text-anchor="end" font-weight="700" font-family="Manrope">${l.price >= 1000 ? (l.price/1000).toFixed(1)+'тэр' : l.price+'сая'}</text>
-          </svg>
-          <div style="font-size:11px; color:var(--ink-3); margin-top:8px; font-style:italic;">* ${growth.label} дүүргийн зах зээлийн дундаж хандлагад суурилсан тооцоолол. Тухайн байрны бодит түүх ялгаатай байж болно.</div>
-        </div>
-      </div>
-    `;
+    const districtLabel = districtNames[l.district] || 'Дүүрэг';
 
     // AI Property Valuation — реал comparable-sales тооцоолол (computeValuation() —
     // utils.js). Демо тоо биш: платформ дээрх бодит зарууд дундаас адилавтар зар хайж,
@@ -463,7 +394,7 @@
             <iframe
               width="100%" height="220" style="border:0;display:block;"
               loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-              src="https://www.google.com/maps?q=${encodeURIComponent(l.loc + ', ' + growth.label + ' дүүрэг, Улаанбаатар, Монгол улс')}&output=embed">
+              src="https://www.google.com/maps?q=${encodeURIComponent(l.loc + ', ' + districtLabel + ' дүүрэг, Улаанбаатар, Монгол улс')}&output=embed">
             </iframe>
             `}
           </div>
@@ -507,32 +438,12 @@
         </div>
         ` : ''}
 
-        ${priceHistoryHtml}
-
-        <!-- ХӨРӨНГӨ ОРУУЛАЛТЫН АНАЛИЗ -->
+        <!-- ҮНИЙН ӨӨРЧЛӨЛТИЙН ТАЛААР -->
         <div class="modal-section">
-          <h4>Хөрөнгийн өсөлтийн тооцоолол</h4>
-          <div style="font-size:13px; color:var(--ink-3); margin-bottom:14px; padding:10px 14px; background:var(--paper-2); border-radius:8px;">
-            <strong>${growth.label}</strong> дүүргийн сүүлийн 5 жилийн жилийн дундаж өсөлт: <strong style="color:var(--primary);">${growth.yearly}%</strong>. ${growth.note}.
+          <h4>Үнийн өөрчлөлтийн талаар</h4>
+          <div style="font-size:13px; color:var(--ink-3); padding:10px 14px; background:var(--paper-2); border-radius:8px;">
+            Үл хөдлөх хөрөнгийн үнийн өөрчлөлт нь байршил, хугацаа, төслийн чанар, эрэлтээс хамаарч ялгаатай байдаг. Тухайн байрны түүхэн үнийн мэдээлэл эсвэл ирээдүйн өсөлтийн тодорхой хувийг бид баталгаатай эх сурвалжгүйгээр танд харуулахгүй — доорх зах зээлийн харьцуулалт нь одоогийн, платформ дээрх бодит зарууд дээр үндэслэсэн болно.
           </div>
-          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
-            <div style="padding:14px; background:rgba(0, 212, 170, 0.1); border-radius:10px;">
-              <div style="font-size:11px; color:#009878; font-weight:700; text-transform:uppercase; margin-bottom:4px;">5 жилд</div>
-              <div style="font-weight:700; color:#009878; font-size:18px;">+${g5} сая ₮</div>
-              <div style="font-size:11px; color:#009878; margin-top:2px; opacity:0.8;">~${(g5/l.price*100).toFixed(0)}% өгөөж</div>
-            </div>
-            <div style="padding:14px; background:rgba(0, 212, 170, 0.15); border-radius:10px;">
-              <div style="font-size:11px; color:#009878; font-weight:700; text-transform:uppercase; margin-bottom:4px;">10 жилд</div>
-              <div style="font-weight:700; color:#009878; font-size:18px;">+${g10} сая ₮</div>
-              <div style="font-size:11px; color:#009878; margin-top:2px; opacity:0.8;">~${(g10/l.price*100).toFixed(0)}% өгөөж</div>
-            </div>
-            <div style="padding:14px; background:rgba(0, 212, 170, 0.2); border-radius:10px;">
-              <div style="font-size:11px; color:#009878; font-weight:700; text-transform:uppercase; margin-bottom:4px;">20 жилд</div>
-              <div style="font-weight:700; color:#009878; font-size:18px;">+${g20} сая ₮</div>
-              <div style="font-size:11px; color:#009878; margin-top:2px; opacity:0.8;">~${(g20/l.price*100).toFixed(0)}% өгөөж</div>
-            </div>
-          </div>
-          <div style="font-size:11px; color:var(--ink-3); margin-top:10px; font-style:italic;">* Дээрх тооцоолол нь өнгөрсөн жилүүдийн дунджид суурилсан, ирээдүйн өсөлтийг баталгаажуулахгүй. Инфляц, эдийн засгийн нөхцөл байдлаас хамаарч өөрчлөгдөж болно.</div>
         </div>
 
         <!-- AI PROPERTY VALUATION -->
