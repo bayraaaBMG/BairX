@@ -89,12 +89,6 @@
           <div class="rent-img">
             <img src="${r.img}" alt="${r.title}" loading="lazy" />
             <span class="rent-type-badge ${r.type}">${r.type === 'monthly' ? 'Сарын' : 'Хоногийн'}</span>
-            ${r.protected ? `
-              <span class="rent-protect-badge">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-                Хамгаалагдсан
-              </span>
-            ` : ''}
           </div>
           <div class="rent-body">
             <div class="rent-price-row">
@@ -123,6 +117,17 @@
   }
 
   function openRentDetail(id) {
+    // Real user-submitted rentals are mirrored into this list with a "u"-prefixed id (see
+    // doSubmitListing in my-listings.js) — route those to the real listing detail modal
+    // (openListing in listing-detail.js), which already has working contact/chat/report
+    // functionality, instead of duplicating a second, thinner detail view here.
+    if (typeof id === 'string' && id.charAt(0) === 'u') {
+      const numId = parseInt(id.slice(1), 10);
+      if (!isNaN(numId) && typeof listings !== 'undefined' && listings.some(l => l.id === numId)) {
+        openListing(numId);
+        return;
+      }
+    }
     const r = rentListings.find(x => x.id === id);
     if (!r) return;
     const priceDisplay = r.type === 'daily' ?
@@ -134,6 +139,7 @@
       </button>
       <img class="modal-img" src="${r.img}" alt="${r.title}" />
       <div class="modal-body">
+        <span class="badge demo" style="margin-bottom:10px;">Жишээ зар</span>
         <h2 class="modal-title">${r.title}</h2>
         <div class="modal-loc">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -141,13 +147,9 @@
         </div>
 
         <div style="background:linear-gradient(135deg, rgba(0,212,170,0.1), rgba(30,91,255,0.05)); border:1px solid rgba(0,212,170,0.25); padding:20px; border-radius:14px; margin-bottom:24px;">
-          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:baseline;">
             <div style="font-family:'Fraunces', serif; font-size:28px; font-weight:700; color:var(--primary-deep);">${priceDisplay}</div>
             <div style="font-size:13px; color:var(--ink-2); font-weight:600;">Барьцаа: ${r.type === 'daily' ? (r.deposit * 1000).toFixed(0) + ' мянга ₮' : r.deposit.toFixed(1) + ' сая ₮'}</div>
-          </div>
-          <div style="display:flex; align-items:center; gap:6px; color:#009878; font-size:13px; font-weight:600;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-            BairX хамгаалалттай түрээс
           </div>
         </div>
 
@@ -164,31 +166,23 @@
             <div class="info-card-label">Төрөл</div>
             <div class="info-card-value">${r.type === 'monthly' ? 'Сарын' : 'Хоногийн'}</div>
           </div>
-          <div class="info-card">
-            <div class="info-card-label">Гэрээ</div>
-            <div class="info-card-value">Стандарт</div>
-          </div>
         </div>
 
         <div class="modal-section">
-          <h4>Хамгаалалт ба эрх</h4>
+          <h4>Түрээслэхэд туслах хэрэгслүүд</h4>
           <div style="background:var(--paper-2); padding:18px; border-radius:12px;">
             <div style="display:grid; gap:10px;">
               <div style="display:flex; gap:10px; align-items:start;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#009878" stroke-width="2.5" style="flex-shrink:0; margin-top:1px;"><polyline points="20 6 9 17 4 12"/></svg>
-                <div style="font-size:13.5px; line-height:1.5;"><strong>Стандарт гэрээ.</strong> BairX хууль зүйн зөвлөгчдийн боловсруулсан 12 хуудас гэрээтэй, талуудын эрхийг тэгш хамгаалсан.</div>
+                <div style="font-size:13.5px; line-height:1.5;">Стандарт түрээсийн гэрээний загварыг үзэж, ашиглаж болно.</div>
               </div>
               <div style="display:flex; gap:10px; align-items:start;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#009878" stroke-width="2.5" style="flex-shrink:0; margin-top:1px;"><polyline points="20 6 9 17 4 12"/></svg>
-                <div style="font-size:13.5px; line-height:1.5;"><strong>Төлбөрийн түүх хадгалагдана.</strong> Сар бүрийн төлбөр платформ дамжуулан хийгдэх ба маргаан гарвал баримт болно.</div>
+                <div style="font-size:13.5px; line-height:1.5;">Зарын мэдээллийг өөрөө нягтлан шалгаарай — үнэ, талбай, байршил бодит эсэхийг.</div>
               </div>
               <div style="display:flex; gap:10px; align-items:start;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#009878" stroke-width="2.5" style="flex-shrink:0; margin-top:1px;"><polyline points="20 6 9 17 4 12"/></svg>
-                <div style="font-size:13.5px; line-height:1.5;"><strong>Зөвхөн хүчинтэй шалтгаанаар хөөгдөнө.</strong> Эзэн санаандгүйгээр гэрчилгээний дунд хөөж чадахгүй.</div>
-              </div>
-              <div style="display:flex; gap:10px; align-items:start;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#009878" stroke-width="2.5" style="flex-shrink:0; margin-top:1px;"><polyline points="20 6 9 17 4 12"/></svg>
-                <div style="font-size:13.5px; line-height:1.5;"><strong>Барьцаа буцаах баталгаа.</strong> Гэрээ дуусахад 30 хоногийн дотор барьцаа буцаах ёстой. Хугацаа хэтэрвэл бид зуучилна.</div>
+                <div style="font-size:13.5px; line-height:1.5;">Сэжигтэй зар бол шууд мэдээлж болно.</div>
               </div>
             </div>
           </div>
@@ -202,12 +196,8 @@
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn-primary btn-lg" onclick="showToast('Гэрээний загвар татаж байна'); closeModal()">
+          <button class="btn btn-primary btn-lg" onclick="openContractTemplate()">
             Гэрээ загвар үзэх
-          </button>
-          <button class="btn btn-blue btn-lg" onclick="showToast('Түрээсийн хүсэлт илгээгдлээ', 'success'); closeModal()">
-            Түрээслэх хүсэлт
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </button>
         </div>
       </div>
