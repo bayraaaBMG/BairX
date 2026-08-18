@@ -938,29 +938,16 @@
     }
 
     if (!box) return;
-    const district = document.getElementById('alDistrict')?.value || addListingState.district;
-    const pricePerSqm = price / area;
-    const avg = DISTRICT_MARKET_AVG[district] || 4.0;
-    const diff = ((pricePerSqm - avg) / avg) * 100;
-
-    let msg, color;
-    if (Math.abs(diff) < 8) {
-      msg = `<strong>Шударга үнэлгээ.</strong> Таны үнэ дүүргийн дунджтай ойролцоо (${pricePerSqm.toFixed(2)} сая ₮/м², дундаж ${avg} сая ₮/м²). Зар хурдан үзэгдэх боломжтой.`;
-      color = 'var(--primary)';
-    } else if (diff < 0) {
-      msg = `<strong style="color:#009878;">Сонирхолтой үнэ.</strong> Дүүргийн дунджаас ${Math.abs(diff).toFixed(0)}% доогуур. Хурдан зарагдах магадлал өндөр.`;
-      color = '#009878';
-    } else {
-      msg = `<strong style="color:#C77700;">Анхаарна уу.</strong> Дүүргийн дунджаас ${diff.toFixed(0)}% дээгүүр (${pricePerSqm.toFixed(2)} vs ${avg} сая ₮/м²). Зар удаан үзэгдэх магадлалтай.`;
-      color = '#C77700';
-    }
-
+    // No verified district-level market-average source exists to compare this price
+    // against, so this box no longer claims a "district average" — it just states that
+    // plainly instead of guessing. The honest ₮/м² figure above (from the user's own
+    // input) is left as-is.
     box.innerHTML = `
       <div class="price-suggest">
-        <div class="price-suggest-icon" style="color:${color};">
+        <div class="price-suggest-icon" style="color:var(--ink-3);">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M9 9l4 4 5-5"/></svg>
         </div>
-        <div>${msg}</div>
+        <div><strong>Үнийн зөвлөмж мэдээлэл хангалтгүй.</strong> Тухайн дүүргийн одоогийн зах зээлийн үнийг өөрөө шалгаж үзэхийг зөвлөж байна.</div>
       </div>
     `;
   }

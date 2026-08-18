@@ -61,13 +61,11 @@
     return p + ' сая ₮';
   }
 
-  // Дүүргийн ойролцоогоор зах зээлийн дундаж м² үнэ (сая ₮/м²) — нэг эх сурвалж,
-  // Add-listing-ий үнийн зөвлөмж болон Property Score хоёулаа үүнийг ашиглана.
-  const DISTRICT_MARKET_AVG = {
-    'khan-uul': 5.2, 'sukhbaatar': 5.8, 'chingeltei': 4.0, 'bayanzurkh': 3.8,
-    'bayangol': 3.5, 'songinokhairkhan': 3.2, 'nalaikh': 1.8,
-    'bagakhangai': 2.0, 'baganuur': 2.0
-  };
+  // A DISTRICT_MARKET_AVG (сая ₮/м² by district) lookup used to live here — invented
+  // numbers with no real source, used by both Property Score and the add-listing price
+  // suggestion. Removed. Both features now rely solely on computeValuation()'s real
+  // comparable-sales analysis below, and openly report "insufficient data" instead of
+  // falling back to a guessed average when there aren't enough real comparables yet.
 
   // ===== PROPERTY VALUATION (real comparable-sales analysis, not a hardcoded lookup) =====
   // This used to just read l.tag.type — which every user-submitted listing sets to 'new'
@@ -157,15 +155,12 @@
   // verification/trust signals, feature completeness, and photo coverage.
   function propertyScore(l) {
     let score = 50;
-    // Prefer the real comparable-based diff; only fall back to the coarse district
-    // average if there truly aren't enough comparable listings to analyze yet.
+    // Price-fairness component only applies when there are enough real comparable
+    // listings to judge against (computeValuation). No comparables yet → this component
+    // is simply skipped rather than guessed from an invented district average; the score
+    // still reflects the other real, verifiable criteria below.
     const val = computeValuation(l);
-    const diffPct = val.available ? val.diffPct : (() => {
-      const perSqm = (l.cat !== 'rent' && l.area && typeof l.price === 'number') ? (l.price * 1000000) / l.area : null;
-      if (!perSqm) return null;
-      const avg = (DISTRICT_MARKET_AVG[l.district] || 4.0) * 1000000;
-      return (perSqm - avg) / avg;
-    })();
+    const diffPct = val.available ? val.diffPct : null;
     if (diffPct != null) {
       if (diffPct <= -0.05) score += 20;
       else if (diffPct <= 0.05) score += 10;
