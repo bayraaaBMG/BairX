@@ -160,25 +160,28 @@
       .slice(0, 3);
 
     // Seller data from lookup table (deterministic, no Math.random)
-    const seller = sellerData[l.id] || { phone: '9911-2233', name: 'Баталгаажсан Агент', type: 'Агент' };
+    const seller = sellerData[l.id] || { phone: '9911-2233', name: 'Хэрэглэгч', type: 'Агент' };
     const sellerName = seller.name;
     const sellerLetter = sellerName[0] || 'А';
     const ownerOtherListings = l.userSubmitted && l.ownerId ? listings.filter(x => x.ownerId === l.ownerId && !x._inactive) : null;
     const totalListings = ownerOtherListings ? ownerOtherListings.length : 3 + (l.id % 12);
     const responseTime = l.id % 2 === 0 ? '10 минут' : '30 минут';
     const memberSince = l.userSubmitted ? new Date().getFullYear() : 2020 + (l.id % 5);
-    // Only real accounts with an email-verified owner earn the verified badge — demo listings are pre-vetted
-    const isVerified = l.userSubmitted ? !!l.sellerVerified : true;
+    // Verified badge requires a real, checkable fact behind it — an email-verified owner.
+    // No automatic true for demo listings: "Баталгаажсан" must never be shown without an
+    // actual verification having happened, example data included.
+    const isVerified = !!l.sellerVerified;
     const sellerClickable = !!ownerOtherListings;
 
     // ===== SCAM-PROTECTION STATUS (shown on every listing, positive or not) =====
     // Owner: Firebase email-verified. Phone: this listing's contact number was proven via
     // real SMS OTP (dashboard.js). Listing: a human admin reviewed it (admin.js) — none of
     // these are fabricated "AI trust scores"; each maps to one concrete, checkable fact.
-    // Demo listings are pre-vetted example content, so all three read as true for them.
-    const ownerVerified = l.userSubmitted ? !!l.sellerVerified : true;
-    const phoneStatusVerified = l.userSubmitted ? !!l.phoneVerified : true;
-    const listingStatusVerified = l.userSubmitted ? !!l.listingVerified : true;
+    // Demo listings have no real verification behind them, so these correctly read as
+    // unverified (○) rather than defaulting to true.
+    const ownerVerified = !!l.sellerVerified;
+    const phoneStatusVerified = !!l.phoneVerified;
+    const listingStatusVerified = !!l.listingVerified;
     const verifyPill = (on, label) => `
       <span class="verify-pill ${on ? 'on' : 'off'}" title="${on ? 'Баталгаажсан' : 'Баталгаажаагүй'}">
         ${on
@@ -534,7 +537,7 @@
 
         <!-- AI PROPERTY VALUATION -->
         <div class="modal-section">
-          <h4>AI үнэлгээ — зах зээлтэй харьцуулалт</h4>
+          <h4>Үнийн дүн шинжилгээ — зах зээлтэй харьцуулалт</h4>
           <div style="padding:18px; background:var(--paper-2); border-radius:14px;">
             <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
               <div style="padding:6px 12px; background:${aiColor}; color:white; border-radius:100px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">${aiVerdict}</div>
@@ -962,7 +965,7 @@
     // above for why passing user-entered text through an inline onclick(...) call is unsafe.
     const name = sd.name || 'Хэрэглэгч';
     const roleLabel = sd.type || 'Хувь хүн';
-    const isVerified = primary.userSubmitted ? !!primary.sellerVerified : true;
+    const isVerified = !!primary.sellerVerified;
     const memberSince = primary.userSubmitted ? new Date().getFullYear() : 2020 + (primary.id % 5);
 
     document.getElementById('modalContent').innerHTML = `

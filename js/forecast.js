@@ -105,7 +105,7 @@
       { label: 'Тавилга', get: p => boolCell(!!p.furniture), best: p => !!p.furniture },
       { label: 'Ипотек', get: p => boolCell(loanEligible(p)), best: p => loanEligible(p) },
       { label: 'СӨХ', get: p => typeof p.hoaFee === 'number' && p.hoaFee > 0 ? fmt(p.hoaFee) + ' ₮/сар' : '—', best: p => minHoa != null && p.hoaFee === minHoa },
-      { label: 'AI үнэлгээ', get: p => {
+      { label: 'Үнийн дүн шинжилгээ', get: p => {
           const v = aiVerdictFor(p);
           return `<span style="color:${v.color}; font-weight:700;">${v.verdict}</span>`;
         }, best: p => aiVerdictFor(p).verdict === 'Сонирхолтой санал' },
@@ -153,7 +153,7 @@
         </div>
         <div style="margin-top:16px; font-size:12px; color:var(--ink-3); line-height:1.5;">
           ✓ тэмдэг нь тухайн үзүүлэлтээр хамгийн сайн сонголтыг харуулна.<br>
-          <strong>AI үнэлгээ</strong> — үнийг дүүргийн зах зээлийн дунджтай харьцуулсан дүрэм-суурьтай тооцоолол (жинхэнэ AI/машин сургалт биш).<br>
+          <strong>Үнийн дүн шинжилгээ</strong> — үнийг дүүргийн зах зээлийн дунджтай харьцуулсан дүрэм-суурьтай тооцоолол (жинхэнэ AI/машин сургалт биш).<br>
           <strong>Property Score</strong> — үнийн шударга байдал, баталгаажилт, тоноглол, зурган баримтжуулалт зэргээс тооцсон 0-100 онооны нэгдсэн үзүүлэлт.
         </div>
       </div>
