@@ -468,11 +468,26 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
             ${esc(l.loc)}
           </div>
-          <div id="nearbyAmenities" style="margin-top:14px;">
-            ${(l.geoLat && l.geoLng)
-              ? `<div style="font-size:12px;color:var(--ink-3);">Ойролцоох сургууль, цэцэрлэг, эмнэлэг зэргийг ачаалж байна...</div>`
-              : `<div style="font-size:12px;color:var(--ink-3);">Энэ зар яг байршлаа газрын зураг дээр тэмдэглээгүй тул ойролцоох цэгүүдийг харуулах боломжгүй.</div>`}
-          </div>
+        </div>
+
+        <!-- ОЙР ОРЧИМ — real OpenStreetMap data (Overpass API), fetched only once a category
+             is actually clicked, never all 8 at once, to keep the free public API's load down. -->
+        <div class="modal-section">
+          <h4>Ойр орчим</h4>
+          ${(l.geoLat && l.geoLng) ? `
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+              ${NEARBY_CATEGORIES.map(c => `
+                <button class="btn btn-ghost" data-nearby-cat="${c.key}" style="font-size:12.5px;padding:8px 12px;" onclick="loadNearbyCategory(${l.id}, ${l.geoLat}, ${l.geoLng}, '${c.key}')">${c.icon} ${esc(c.label)}</button>
+              `).join('')}
+            </div>
+            <div id="nearbyMapWrap" style="display:none;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-bottom:10px;">
+              <div id="nearbyMap" style="width:100%;height:200px;"></div>
+            </div>
+            <div id="nearbyResults" style="font-size:13px;color:var(--ink-3);">Дээрх ангиллаас сонгож ойролцоох газруудыг харна уу.</div>
+            <div style="font-size:10.5px;color:var(--ink-3);margin-top:8px;font-style:italic;">Эх сурвалж: OpenStreetMap — нийтийн бодит газрын зургийн өгөгдөл, зарын эзний оруулсан мэдээлэл биш.</div>
+          ` : `
+            <div style="font-size:13px;color:var(--ink-3);">Ойр орчмын мэдээлэл авахын тулд байршил шаардлагатай. Энэ зар байршлаа газрын зураг дээр тэмдэглээгүй байна.</div>
+          `}
         </div>
 
         <!-- ЗЭЭЛИЙН САНАЛ -->
@@ -638,82 +653,110 @@
         }).addTo(m);
         L.marker([l.geoLat, l.geoLng]).addTo(m);
       }, 50);
-      loadNearbyAmenities(l.id, l.geoLat, l.geoLng);
     }
   }
 
-  // ===== NEARBY AMENITIES — real OpenStreetMap data (Overpass API), not invented POIs =====
-  // The old browse-map used to show fixed, made-up "Сургууль/Эмнэлэг/Худалдаа" pins at
-  // arbitrary positions. This queries real school/kindergarten/hospital/mall/bus-stop
-  // points around the listing's actual saved pin and reports genuine distances — or a
-  // clear "couldn't load" message on failure, never a guess.
-  const nearbyAmenitiesCache = {};
-  const AMENITY_CATS = [
-    { key: 'school', label: 'Хамгийн ойрхон сургууль' },
-    { key: 'kindergarten', label: 'Хамгийн ойрхон цэцэрлэг' },
-    { key: 'hospital', label: 'Хамгийн ойрхон эмнэлэг' },
-    { key: 'mall', label: 'Хамгийн ойрхон худалдааны төв' },
-    { key: 'bus', label: 'Хамгийн ойрхон автобусны буудал' }
+  // ===== ОЙР ОРЧИМ — real OpenStreetMap data via the free, keyless Overpass API. Never
+  // invented POIs: a category with no real results nearby says so; a listing with no saved
+  // pin shows a location-required message instead of guessing coordinates. Nothing is
+  // fetched until the visitor actually clicks a specific category chip — not on modal open,
+  // not for all 8 categories at once — to keep load on the shared public Overpass instance
+  // (and any future paid provider) proportional to actual interest.
+  const NEARBY_CATEGORIES = [
+    { key: 'school', icon: '🏫', label: 'Сургууль', filter: '["amenity"="school"]', radius: 1500 },
+    { key: 'kindergarten', icon: '🧒', label: 'Цэцэрлэг', filter: '["amenity"="kindergarten"]', radius: 1200 },
+    { key: 'store', icon: '🛒', label: 'Дэлгүүр/супермаркет', filter: '["shop"~"^(supermarket|convenience|department_store)$"]', radius: 1200 },
+    { key: 'hospital', icon: '🏥', label: 'Эмнэлэг', filter: '["amenity"~"^(hospital|clinic)$"]', radius: 2500 },
+    { key: 'pharmacy', icon: '💊', label: 'Эмийн сан', filter: '["amenity"="pharmacy"]', radius: 1200 },
+    { key: 'cafe', icon: '☕', label: 'Кафе/ресторан', filter: '["amenity"~"^(cafe|restaurant|fast_food)$"]', radius: 1000 },
+    { key: 'bank', icon: '🏦', label: 'Банк/ATM', filter: '["amenity"~"^(bank|atm)$"]', radius: 1200 },
+    { key: 'transit', icon: '🚌', label: 'Нийтийн тээвэр', filter: '["highway"="bus_stop"]', radius: 800 }
   ];
-  function categorizeAmenity(tags) {
-    if (!tags) return null;
-    if (tags.amenity === 'school') return 'school';
-    if (tags.amenity === 'kindergarten') return 'kindergarten';
-    if (tags.amenity === 'hospital' || tags.amenity === 'clinic') return 'hospital';
-    if (tags.shop === 'mall') return 'mall';
-    if (tags.highway === 'bus_stop') return 'bus';
-    return null;
+  const nearbyCache = {}; // key: `${listingId}_${categoryKey}` -> sorted results array
+  let nearbyMap = null;
+  let nearbyMapMarkers = [];
+
+  function ensureNearbyMap(lat, lng) {
+    const el = document.getElementById('nearbyMap');
+    if (!el || typeof L === 'undefined') return;
+    if (nearbyMap) { nearbyMap.remove(); nearbyMap = null; nearbyMapMarkers = []; }
+    nearbyMap = L.map('nearbyMap', { zoomControl: false, scrollWheelZoom: false }).setView([lat, lng], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+    }).addTo(nearbyMap);
+    L.circleMarker([lat, lng], { radius: 7, color: '#1E5BFF', fillColor: '#1E5BFF', fillOpacity: 1, weight: 2 })
+      .addTo(nearbyMap).bindTooltip('Энэ байр');
+    setTimeout(() => nearbyMap && nearbyMap.invalidateSize(), 60);
   }
-  function renderNearbyAmenities(grouped) {
-    const rows = AMENITY_CATS.map(({ key, label }) => {
-      const items = grouped[key];
-      if (!items || !items.length) {
-        return `<div class="prof-info-row"><div class="prof-info-label">${label}</div><div class="prof-info-value">Ойролцоо (2-3км дотор) олдсонгүй</div></div>`;
-      }
-      const nearest = items[0];
-      const distText = nearest.dist < 1000 ? Math.round(nearest.dist) + ' м' : (nearest.dist / 1000).toFixed(1) + ' км';
-      return `<div class="prof-info-row"><div class="prof-info-label">${label}</div><div class="prof-info-value">${esc(nearest.name)} · ${distText}</div></div>`;
-    }).join('');
-    return `<div class="prof-info-list">${rows}</div><div style="font-size:10.5px;color:var(--ink-3);margin-top:8px;font-style:italic;">Эх сурвалж: OpenStreetMap — нийтийн бодит газрын зургийн өгөгдөл, зарын эзний оруулсан мэдээлэл биш.</div>`;
-  }
-  async function loadNearbyAmenities(listingId, lat, lng) {
-    const box = document.getElementById('nearbyAmenities');
-    if (!box) return;
-    if (nearbyAmenitiesCache[listingId]) {
-      box.innerHTML = renderNearbyAmenities(nearbyAmenitiesCache[listingId]);
+
+  function renderNearbyResults(cat, items) {
+    const resultsEl = document.getElementById('nearbyResults');
+    if (!resultsEl) return;
+    if (nearbyMap) {
+      nearbyMapMarkers.forEach(m => nearbyMap.removeLayer(m));
+      nearbyMapMarkers = [];
+      items.forEach(it => {
+        const marker = L.marker([it.lat, it.lon]).addTo(nearbyMap).bindPopup(esc(it.name || cat.label));
+        nearbyMapMarkers.push(marker);
+      });
+    }
+    if (items.length === 0) {
+      const radiusText = cat.radius >= 1000 ? (cat.radius / 1000).toFixed(1) + ' км' : cat.radius + ' м';
+      resultsEl.innerHTML = `<div style="padding:8px 0;color:var(--ink-3);">Ойролцоо (${radiusText} дотор) ${esc(cat.label.toLowerCase())} олдсонгүй.</div>`;
       return;
     }
-    const query = `[out:json][timeout:12];(
-      node["amenity"="school"](around:1500,${lat},${lng});
-      node["amenity"="kindergarten"](around:1500,${lat},${lng});
-      node["amenity"="hospital"](around:2500,${lat},${lng});
-      node["amenity"="clinic"](around:2000,${lat},${lng});
-      node["shop"="mall"](around:3000,${lat},${lng});
-      node["highway"="bus_stop"](around:800,${lat},${lng});
-    );out body;`;
+    resultsEl.innerHTML = items.slice(0, 10).map(it => {
+      const distText = it.dist < 1000 ? Math.round(it.dist) + ' м' : (it.dist / 1000).toFixed(1) + ' км';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;">
+        <span style="color:var(--ink-2);">${esc(it.name || cat.label)}</span>
+        <span style="color:var(--primary);font-weight:700;white-space:nowrap;font-family:'JetBrains Mono',monospace;">${distText}</span>
+      </div>`;
+    }).join('');
+  }
+
+  async function loadNearbyCategory(listingId, lat, lng, catKey) {
+    const cat = NEARBY_CATEGORIES.find(c => c.key === catKey);
+    if (!cat) return;
+    document.querySelectorAll('[data-nearby-cat]').forEach(b => {
+      const active = b.dataset.nearbyCat === catKey;
+      b.style.background = active ? 'var(--primary)' : '';
+      b.style.color = active ? '#fff' : '';
+      b.style.borderColor = active ? 'var(--primary)' : '';
+    });
+    const resultsEl = document.getElementById('nearbyResults');
+    const mapWrap = document.getElementById('nearbyMapWrap');
+    if (!resultsEl) return;
+    if (mapWrap) mapWrap.style.display = 'block';
+    ensureNearbyMap(lat, lng);
+
+    const cacheKey = listingId + '_' + catKey;
+    if (nearbyCache[cacheKey]) {
+      renderNearbyResults(cat, nearbyCache[cacheKey]);
+      return;
+    }
+    resultsEl.innerHTML = `<div style="padding:8px 0;">Ачааллаж байна…</div>`;
+    const query = `[out:json][timeout:15];(node${cat.filter}(around:${cat.radius},${lat},${lng});way${cat.filter}(around:${cat.radius},${lat},${lng}););out center 25;`;
     try {
       const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query });
       if (!res.ok) throw new Error('overpass http ' + res.status);
       const data = await res.json();
-      const grouped = {};
-      (data.elements || []).forEach(el => {
-        const cat = categorizeAmenity(el.tags);
-        if (!cat || el.lat == null || el.lon == null) return;
-        const dist = haversineKm(lat, lng, el.lat, el.lon) * 1000;
-        const name = (el.tags && el.tags.name) || AMENITY_CATS.find(c => c.key === cat).label.replace('Хамгийн ойрхон ', '');
-        (grouped[cat] = grouped[cat] || []).push({ name, dist });
-      });
-      Object.values(grouped).forEach(list => list.sort((a, b) => a.dist - b.dist));
-      nearbyAmenitiesCache[listingId] = grouped;
-      const stillOpen = document.getElementById('nearbyAmenities');
-      if (stillOpen) stillOpen.innerHTML = renderNearbyAmenities(grouped);
+      const items = (data.elements || []).map(el => {
+        const plat = el.lat != null ? el.lat : (el.center && el.center.lat);
+        const plon = el.lon != null ? el.lon : (el.center && el.center.lon);
+        if (plat == null || plon == null) return null;
+        const dist = haversineKm(lat, lng, plat, plon) * 1000;
+        const name = (el.tags && (el.tags.name || el.tags['name:mn'])) || null;
+        return { name, dist, lat: plat, lon: plon };
+      }).filter(Boolean).sort((a, b) => a.dist - b.dist).slice(0, 15);
+      nearbyCache[cacheKey] = items;
+      const stillOpen = document.getElementById('nearbyResults');
+      if (stillOpen) renderNearbyResults(cat, items);
     } catch (e) {
-      console.error('Nearby amenities fetch failed:', e);
-      const stillOpen = document.getElementById('nearbyAmenities');
-      if (stillOpen) stillOpen.innerHTML = `<div style="font-size:12px;color:var(--ink-3);">Ойролцоох цэгүүдийг татаж чадсангүй (сүлжээний алдаа). Дараа дахин оролдоно уу.</div>`;
+      console.error('Nearby fetch failed:', e);
+      const stillOpen = document.getElementById('nearbyResults');
+      if (stillOpen) stillOpen.innerHTML = `<div style="color:var(--ink-3);">Ойролцоох газруудыг татаж чадсангүй (сүлжээний алдаа). Дараа дахин оролдоно уу.</div>`;
     }
   }
-
   // toggleFav() (favorites.js) toggles the .faved class, which the card layout styles
   // via CSS — this header button instead renders its filled/outline state inline, so
   // update that directly after the underlying favorite state has flipped.
