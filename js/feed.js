@@ -65,7 +65,7 @@
         // (img/price/title/meta) is baked into feedPosts itself, not looked up from a real
         // listings entry, so it's always demo regardless of what id it happens to carry.
         mediaHtml = `
-          <div class="post-property" onclick="openListing(${p.property.id})">
+          <div class="post-property" onclick="openFeedPropertyPreview(${p.property.id})">
             <div class="post-property-img">
               <img src="${p.property.img}" alt="" />
               <div class="post-property-price">${p.property.price}</div>
@@ -123,6 +123,15 @@
         </div>
       `;
     }).join('');
+  }
+
+  // Feed post property previews carry an id that's baked into the scripted post content,
+  // not looked up from the listings array — most don't correspond to any real listing
+  // (data.js's demo set uses different ids entirely). Only open the real detail modal if
+  // that id genuinely exists; otherwise say so instead of trying to open a broken listing.
+  function openFeedPropertyPreview(id) {
+    if (listings.some(l => l.id === id)) { openListing(id); return; }
+    showToast('Энэ бол жишээ пост');
   }
 
   function toggleLike(id, btn) {
