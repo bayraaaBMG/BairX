@@ -1320,22 +1320,37 @@
       refreshImageGrid();
       return;
     }
+    // Everything from here down — including constructing the ref/task themselves — is
+    // inside one try/catch. A synchronous throw at any point used to leave `item` stuck
+    // on 'uploading' forever (no catch, no timer, no way out except a page reload); now
+    // every path reaches 'uploaded' or 'failed'.
+    let timedOut = false;
+    let timeoutId = null;
     try {
       const path = 'listing-images/' + currentUser.uid + '/' + Date.now() + '-' + item.id + '.jpg';
-      const ref = storage.ref(path);
-      await ref.put(compressed.blob, { contentType: 'image/jpeg' });
-      item.url = await ref.getDownloadURL();
+      const uploadTask = storage.ref(path).put(compressed.blob, { contentType: 'image/jpeg' });
+      // The Storage SDK's own retry logic can otherwise keep an unreachable/misconfigured
+      // request alive far longer than a user will wait — .cancel() is a real abort (not
+      // just abandoning the promise), so the network request actually stops instead of
+      // continuing in the background after we've already given up on it.
+      timeoutId = setTimeout(() => { timedOut = true; uploadTask.cancel(); }, 18000);
+      await uploadTask;
+      item.url = await uploadTask.snapshot.ref.getDownloadURL();
       item.storagePath = path;
       item.status = 'uploaded';
       item.localOnly = false;
     } catch (e) {
-      console.error('Listing image upload failed:', item.id, e.code || e.message);
-      // Compression already succeeded — fall back to the compressed local copy instead
-      // of losing the photo outright. doSubmitListing only attempts the Firestore write
-      // when every image has a real Storage URL, so a localOnly image correctly routes
-      // the whole listing into the "saved on this device only" path (see _syncFailed).
-      item.status = 'uploaded';
-      item.localOnly = true;
+      console.error('Listing image upload failed:', item.id, timedOut ? 'timeout' : (e?.code || e?.message));
+      // A real per-image failure now — not a silent downgrade to a local-only copy.
+      // The user sees exactly which photo didn't make it and can Retry or remove it;
+      // submitListing() refuses to publish while any photo is stuck failed, so this can
+      // never turn into a listing that looks successful with a photo silently missing.
+      item.status = 'failed';
+      item.error = timedOut
+        ? 'Хугацаа дууслаа — сүлжээгээ шалгаад дахин оролдоно уу'
+        : 'Зураг байршуулахад алдаа гарлаа — дахин оролдоно уу';
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
     refreshImageGrid();
   }
