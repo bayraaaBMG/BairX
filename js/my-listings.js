@@ -807,6 +807,10 @@
           </button>
         </div>
 
+        <div style="padding:12px 14px; background:rgba(255,176,32,0.1); border:1px solid rgba(255,176,32,0.3); border-radius:10px; font-size:12px; color:var(--ink-2); line-height:1.5; margin-bottom:14px;">
+          <strong>Демо — бодит төлбөрийн систем одоогоор холбогдоогүй.</strong> VIP/Онцлох сонголтууд зөвхөн урьдчилан харуулж байгаа болно; төлбөрийн систем холбогдох хүртэл таны зар үргэлж Энгийн (үнэгүй) нөхцөлөөр нийтлэгдэнэ.
+        </div>
+
         <div style="padding:14px; background:var(--paper-2); border-radius:10px; font-size:12px; color:var(--ink-3); line-height:1.5;">
           Зар нийтлэхээр <a href="javascript:void(0)" style="color:var(--primary); font-weight:600;" onclick="saveStepData(5); openInfoPage('terms', 'addListing')">Үйлчилгээний нөхцөл</a> болон <a href="javascript:void(0)" style="color:var(--primary); font-weight:600;" onclick="saveStepData(5); openInfoPage('privacy', 'addListing')">Нууцлалын бодлого</a>-той зөвшөөрсөнд тооцогдоно. Хуурамч мэдээлэл оруулсан тохиолдолд зар нь устгагдаж, бүртгэл блоклогдох эрсдэлтэй.
         </div>
@@ -1186,9 +1190,14 @@
     const p = parseFloat(s.price) || 0;
     const a = parseFloat(s.area) || 0;
     const allImages = s.images.filter(Boolean);
-    const planDays = { basic: 30, vip: 60, featured: 90 };
+    // VIP/Онцлох cards in the plan picker above are a preview only — no real payment
+    // system is connected, so selecting one must never actually grant the paid duration
+    // or badge here. Every new listing gets the same free (basic) terms regardless of
+    // s.plan; a real payment integration would need to gate this properly before it could
+    // vary. (openBoostModal's separate, already-disclosed demo boost flow for an existing
+    // published listing is untouched — this only concerns entitlement granted at creation.)
     const now = Date.now();
-    const expiresAt = now + (planDays[s.plan] || 30) * 86400000;
+    const expiresAt = now + 30 * 86400000;
     const newListing = {
       id: newId,
       ownerId: currentUser?.uid || null,
@@ -1225,9 +1234,8 @@
       buildingName: isLand ? '' : (s.buildingName || ''),
       complex: isLand ? '' : (s.complex || ''),
       tag: { type: 'new', text: 'Шинэ зар' },
-      // VIP/Featured plans promise a "VIP" badge on the card — that only actually happens
-      // if the chosen plan is reflected here, not just in expiresAt's longer duration.
-      badges: (s.plan === 'vip' || s.plan === 'featured') ? ['new', 'user', 'vip'] : ['new', 'user'],
+      // No "vip" badge here regardless of s.plan — see the expiresAt comment above.
+      badges: ['new', 'user'],
       loanType: 'Тохиролцоно',
       monthly: 0,
       img: allImages[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
@@ -1308,7 +1316,7 @@
         sellerCompany: currentUser.companyName || '',
         status: 'pending', rejectionReason: '',
         badges: newListing.badges,
-        boosted: s.plan === 'vip' || s.plan === 'featured',
+        boosted: false,
         userSubmitted: true,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
