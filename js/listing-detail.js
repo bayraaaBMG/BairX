@@ -97,7 +97,14 @@
     const ownerOtherListings = l.userSubmitted && l.ownerId ? listings.filter(x => x.ownerId === l.ownerId && !x._inactive) : null;
     const totalListings = ownerOtherListings ? ownerOtherListings.length : 3 + (l.id % 12);
     const responseTime = l.id % 2 === 0 ? '10 минут' : '30 минут';
-    const memberSince = l.userSubmitted ? new Date().getFullYear() : 2020 + (l.id % 5);
+    // Same fake-year problem as openSellerProfile below (2020 + id%5 for demo, "today's
+    // year" for real) — same fix: demo has no real membership date to show at all; real
+    // sellers show the earliest real Firestore createdAt among their own listings, or
+    // nothing if none of their listings happen to carry that field.
+    const ownerAllListings = l.userSubmitted && l.ownerId ? listings.filter(x => x.ownerId === l.ownerId) : [l];
+    const memberCreatedMsValues = ownerAllListings.map(x => x._createdAtMs || 0).filter(ms => ms > 0);
+    const memberSinceYear = (!l.isDemo && memberCreatedMsValues.length)
+      ? new Date(Math.min(...memberCreatedMsValues)).getFullYear() : null;
     // Verified badge requires a real, checkable fact behind it — an email-verified owner.
     // No automatic true for demo listings: "Баталгаажсан" must never be shown without an
     // actual verification having happened, example data included.
@@ -258,7 +265,7 @@
               <div class="seller-stats">
                 <span ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}')" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;"` : ''}><b>${totalListings} зар</b></span>
                 <span>Хариу: <b>${responseTime}</b></span>
-                <span>Гишүүн: <b>${memberSince} оноос</b></span>
+                ${memberSinceYear ? `<span>Гишүүн: <b>${memberSinceYear} оноос</b></span>` : ''}
               </div>
             </div>
             <button class="btn btn-ghost" onclick="revealPhone('${l.id}')">
@@ -887,7 +894,16 @@
     const name = sd.name || 'Хэрэглэгч';
     const roleLabel = sd.type || 'Хувь хүн';
     const isVerified = !!primary.sellerVerified;
-    const memberSince = primary.userSubmitted ? new Date().getFullYear() : 2020 + (primary.id % 5);
+    // "Member since" used to be invented outright for demo sellers (2020 + id%5) and, for
+    // real sellers, just showed today's year regardless of when they actually joined —
+    // neither was real data. Demo sellers have no real account behind them at all, so the
+    // row is omitted entirely for them. Real sellers show the earliest real Firestore
+    // createdAt among their own listings (the closest real signal available — Firestore
+    // rules block reading another user's own account-creation date directly), and if none
+    // of their listings happen to carry that field, the row is omitted rather than guessed.
+    const createdMsValues = allSellerListings.map(x => x._createdAtMs || 0).filter(ms => ms > 0);
+    const memberSinceYear = (!primary.isDemo && createdMsValues.length)
+      ? new Date(Math.min(...createdMsValues)).getFullYear() : null;
 
     document.getElementById('modalContent').innerHTML = `
       <button class="modal-close" onclick="closeModal()">
@@ -908,7 +924,7 @@
         <div style="display:flex; gap:18px; font-size:12.5px; color:var(--ink-3); margin:14px 0 22px; padding-bottom:18px; border-bottom:1px solid var(--line);">
           <span><b style="color:var(--ink);">${activeListings.length}</b> идэвхтэй зар</span>
           <span><b style="color:var(--ink);">${allSellerListings.length}</b> нийт нийтэлсэн</span>
-          <span>Гишүүн: <b style="color:var(--ink);">${memberSince}</b> оноос</span>
+          ${memberSinceYear ? `<span>Гишүүн: <b style="color:var(--ink);">${memberSinceYear}</b> оноос</span>` : ''}
         </div>
         ${sd.phone ? `
         <div style="display:flex; gap:10px; margin-bottom:24px;">
