@@ -61,6 +61,27 @@
     return p + ' сая ₮';
   }
 
+  // Real "posted X ago" for a listing card. _createdAtMs is a genuine Firestore
+  // createdAt timestamp when present (0 otherwise). _bumpedAt is only trusted as a real
+  // timestamp above REAL_MS_THRESHOLD — below that it's just the listing's own small
+  // numeric id (the loaders' `d.bumpedAt || numId` fallback), not a real date. Demo
+  // listings never carry either field, so this returns '' for them rather than a
+  // guessed date — the caller omits the line entirely when it gets ''.
+  function listingTimeAgo(l) {
+    const REAL_MS_THRESHOLD = 1000000000000; // ~Sept 2001; rules out id-sized fallback values
+    const ms = (l._bumpedAt > REAL_MS_THRESHOLD) ? l._bumpedAt : (l._createdAtMs || 0);
+    if (!ms) return '';
+    const diffMin = Math.floor((Date.now() - ms) / 60000);
+    if (diffMin < 1) return 'Дөнгөж сая';
+    if (diffMin < 60) return diffMin + ' минутын өмнө';
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return diffHr + ' цагийн өмнө';
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffDay === 1) return 'Өчигдөр';
+    if (diffDay < 30) return diffDay + ' хоногийн өмнө';
+    return new Date(ms).toLocaleDateString('mn-MN');
+  }
+
   // A DISTRICT_MARKET_AVG (сая ₮/м² by district) lookup used to live here — invented
   // numbers with no real source, used by both Property Score and the add-listing price
   // suggestion. Removed. Both features now rely solely on computeValuation()'s real
