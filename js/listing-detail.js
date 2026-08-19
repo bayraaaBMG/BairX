@@ -504,8 +504,8 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             Чат бичих
           </button>
-          <button class="btn btn-blue btn-lg" onclick="showToast('Зээлийн хүсэлт илгээгдлээ', 'success'); closeModal()">
-            Зээл авах
+          <button class="btn btn-blue btn-lg" onclick="closeModal(); showPage('calc')">
+            Зээл тооцоолох
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </button>
         </div>
