@@ -27,46 +27,10 @@
       title: 'Карьер',
       eyebrow: 'Бидэнтэй ажиллах',
       body: `
-        <p>BairX нь Монголын үл хөдлөх салбарыг өөрчилж буй залуу, амбицтай баг юм. Хэрэв та технологиор хүмүүсийн амьдралыг сайжруулах хүсэлтэй бол бидэнтэй нэгдээрэй.</p>
+        <p>BairX нь Монголын үл хөдлөх салбарыг өөрчилж буй залуу, амбицтай баг юм.</p>
 
         <h4>Нээлттэй ажлын байр</h4>
-        <div class="job-list">
-          <div class="job-card">
-            <div class="job-tag">Engineering</div>
-            <div class="job-title">Senior Frontend Developer</div>
-            <div class="job-meta">React, TypeScript · Бүтэн цаг · Улаанбаатар</div>
-            <div class="job-salary">3,500,000 - 6,000,000 ₮</div>
-          </div>
-          <div class="job-card">
-            <div class="job-tag">Engineering</div>
-            <div class="job-title">Backend Engineer (Node.js)</div>
-            <div class="job-meta">Node.js, PostgreSQL · Бүтэн цаг · Улаанбаатар</div>
-            <div class="job-salary">3,200,000 - 5,500,000 ₮</div>
-          </div>
-          <div class="job-card">
-            <div class="job-tag">Data</div>
-            <div class="job-title">AI/ML Engineer</div>
-            <div class="job-meta">Python, ML · Бүтэн цаг · Хагас зайнаас</div>
-            <div class="job-salary">4,000,000 - 7,000,000 ₮</div>
-          </div>
-          <div class="job-card">
-            <div class="job-tag">Бизнес</div>
-            <div class="job-title">Үл хөдлөхийн мэргэжилтэн</div>
-            <div class="job-meta">Үл хөдлөх салбарт 3+ жил · Улаанбаатар</div>
-            <div class="job-salary">2,500,000 - 4,500,000 ₮</div>
-          </div>
-          <div class="job-card">
-            <div class="job-tag">Маркетинг</div>
-            <div class="job-title">Контент менежер</div>
-            <div class="job-meta">Сошиал медиа, контент бичих · Бүтэн цаг</div>
-            <div class="job-salary">2,000,000 - 3,500,000 ₮</div>
-          </div>
-        </div>
-
-        <h4>Бидний санал болгох зүйл</h4>
-        <p>Уян хатан цагийн хуваарь, эрүүл мэндийн даатгал, тоног төхөөрөмжийн дэмжлэг, мэргэжил хөгжүүлэх төсөв (жилд 1.5 сая ₮ хүртэл), жилийн 28 хоногийн амралт.</p>
-
-        <p><strong>Хүсэлт илгээх:</strong> career@bairx.mn</p>
+        <p>Одоогоор нээлттэй ажлын байр байхгүй. Баг өсөхийн хэрээр цаашид ажилтан авах боломжтой бөгөөд шинэ зар гарвал энэ хуудсанд нэмэгдэнэ.</p>
       `
     },
     press: {
