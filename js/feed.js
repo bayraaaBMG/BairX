@@ -111,7 +111,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               Сэтгэгдэл
             </button>
-            <button class="post-action" onclick="showToast('Хуваалцах холбоос хуулагдлаа', 'success')">
+            <button class="post-action" onclick="shareFeedPost()">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
               Хуваалцах
             </button>
@@ -132,6 +132,23 @@
     // Update stats text
     const statsEl = btn.closest('.feed-post').querySelector('.post-stats span');
     statsEl.textContent = post.likes + ' таалагдсан';
+  }
+
+  // Feed posts have no per-post permalink route (only #listing-ID and #add are handled
+  // in init.js), so this points at the real, working Feed page itself rather than a hash
+  // that would silently go nowhere. Success is only ever shown once the copy actually
+  // succeeds — same real-vs-fake distinction as shareListingModal() in listing-detail.js.
+  function shareFeedPost() {
+    const url = location.origin + location.pathname + '#feed';
+    if (navigator.share) {
+      navigator.share({ title: 'BairX', url: url }).catch(() => {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(url)
+        .then(() => showToast('Холбоос хуулагдлаа', 'success'))
+        .catch(() => showToast('Холбоос хуулж чадсангүй. Дахин оролдоно уу.'));
+    } else {
+      showToast('Холбоос: ' + url);
+    }
   }
 
   // ===== COMPOSE POST =====
