@@ -5,6 +5,8 @@
   const PROPERTY_TYPES = [
     { id: 'apartment', name: 'Орон сууц', desc: 'Байр, апартмент', bucket: 'apartment',
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4M8 6h.01M8 10h.01M8 14h.01M12 6h.01M12 10h.01M12 14h.01M16 6h.01M16 10h.01M16 14h.01"/></svg>' },
+    { id: 'new-apartment', name: 'Шинэ байр', desc: 'Шинэ төсөл, ашиглалтад ороогүй', bucket: 'apartment',
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 9h6M9 13h6M9 17h6"/><circle cx="18" cy="6" r="3" fill="currentColor" stroke="none"/></svg>' },
     { id: 'house', name: 'Хувийн сууц', desc: 'Хаус, тагт орон сууц', bucket: 'house',
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l9-9 9 9M5 10v11h14V10"/></svg>' },
     { id: 'ger', name: 'Монгол гэр', desc: 'Гэр, хашаатай', bucket: 'house',
@@ -62,6 +64,11 @@
       'Баянзүрх': 'bayanzurkh', 'Баянгол': 'bayangol', 'Сонгинохайрхан': 'songinokhairkhan',
       'Налайх': 'nalaikh', 'Багахангай': 'bagakhangai', 'Багануур': 'baganuur'
     };
+    // Land's "Барилгын насжилт" field is repurposed to hold the ownership type instead
+    // (see doSubmitListing) — reverse-map its saved label back to the select's key,
+    // the same way districtKeys reverses the saved district label above.
+    const ownershipKeys = { 'Өмчлөлийн гэрчилгээтэй': 'owned', 'Эзэмших эрхтэй': 'possession', 'Ашиглах эрхтэй': 'usage' };
+    const isLandEdit = (l.propertyType || (l.cat === 'rent' ? 'apartment' : l.cat)) === 'land';
     Object.assign(addListingState, {
       step: 2,
       intent: l.cat === 'rent' ? 'rent' : 'sell',
@@ -78,9 +85,10 @@
       bathrooms: l.bathrooms ? String(l.bathrooms) : '',
       floor: (l.floor || '').split('/')[0] || '',
       totalFloors: (l.floor || '').split('/')[1] || '',
-      year: String(l.year),
+      year: isLandEdit ? (ownershipKeys[l.ownership] || '') : String(l.year),
       buildingName: l.buildingName || '',
       complex: l.complex || '',
+      landArea: l.landArea ? String(l.landArea) : '',
       price: String(l.price),
       buildingType: l.buildingType || '',
       heating: l.heating || '',
@@ -88,6 +96,7 @@
       windowDirection: l.windowDirection || '',
       hoaFee: l.hoaFee ? String(l.hoaFee) : '',
       condition: l.condition || '',
+      usageType: l.usageType || '',
       deposit: l.deposit ? String(l.deposit) : '',
       minTerm: l.minTerm || '',
       description: '',
@@ -126,6 +135,7 @@
     year: '',
     buildingName: '',
     complex: '',
+    landArea: '', // house only — yard/lot size, distinct from the dwelling's own area
     // Step 3 - details
     price: '',
     buildingType: '',
@@ -134,6 +144,7 @@
     windowDirection: '',
     hoaFee: '',
     condition: '',
+    usageType: '', // office only — occupancy/readiness status
     deposit: '',
     minTerm: '',
     description: '',
@@ -246,20 +257,26 @@
     `;
   }
 
-  // Which extra field set a property type shows: 'land' keeps its existing zoning
-  // fields; 'commercial' (office/warehouse/commercial-space) skips residential-only
-  // fields like bedrooms or balcony; everything else gets the full residential set.
+  // Which field set a property type shows, per category: apartment / new-apartment
+  // (a pre-completion project, so no condition/heating/building-type — those don't
+  // apply to a unit that hasn't been finished or lived in yet) / house / land / office.
   function listingFieldGroup() {
-    const isLand = addListingState.propertyType === 'land';
-    if (isLand) return 'land';
-    return propertyTypeBucket(addListingState.propertyType) === 'office' ? 'commercial' : 'residential';
+    if (addListingState.propertyType === 'land') return 'land';
+    if (addListingState.propertyType === 'new-apartment') return 'new-apartment';
+    const bucket = propertyTypeBucket(addListingState.propertyType);
+    if (bucket === 'office') return 'office';
+    if (bucket === 'house') return 'house';
+    return 'apartment';
   }
 
   function renderStep2() {
     const active = addListingState.step === 2;
-    const isLand = addListingState.propertyType === 'land';
     const fieldGroup = listingFieldGroup();
-    const isResidential = fieldGroup === 'residential';
+    const isLand = fieldGroup === 'land';
+    const isOffice = fieldGroup === 'office';
+    const isHouse = fieldGroup === 'house';
+    const isNewApt = fieldGroup === 'new-apartment';
+    const isApt = fieldGroup === 'apartment' || isNewApt;
     return `
       <div class="step-panel ${active ? 'active' : ''}" data-step="2">
         <div class="step-section-title">Үндсэн мэдээлэл</div>
@@ -270,6 +287,9 @@
           <input type="text" class="form-input" id="alTitle" placeholder="Жнь: Зайсан, шинэ барилга 2 өрөө, засвартай" value="${addListingState.title}" maxlength="80" />
           <div class="form-err-msg">Гарчгийг бөглөнө үү (10-аас доошгүй тэмдэгт)</div>
         </div>
+
+        <div class="step-section-title" style="margin-top:28px;">Байршил</div>
+        <div class="step-section-sub">Хаана байрлаж байгааг тодорхойлно уу</div>
 
         <div class="form-grid-2">
           <div>
@@ -294,15 +314,15 @@
           </div>
         </div>
 
-        ${fieldGroup !== 'land' ? `
+        ${!isLand ? `
         <div class="form-grid-2">
           <div>
             <label class="form-label">Барилгын нэр <span class="hint">— заавал биш</span></label>
             <input type="text" class="form-input" id="alBuildingName" placeholder="Жнь: Хүннү 2222" value="${addListingState.buildingName}" />
           </div>
           <div>
-            <label class="form-label">Хотхон</label>
-            <input type="text" class="form-input" id="alComplex" placeholder="Жнь: Зайсан Тольт" value="${addListingState.complex}" />
+            <label class="form-label">${isNewApt ? 'Төслийн нэр' : 'Хотхон'}</label>
+            <input type="text" class="form-input" id="alComplex" placeholder="${isNewApt ? 'Жнь: Зайсан Тольт төсөл' : 'Жнь: Зайсан Тольт'}" value="${addListingState.complex}" />
           </div>
         </div>
         ` : ''}
@@ -325,13 +345,16 @@
           `}
         </div>
 
+        <div class="step-section-title" style="margin-top:28px;">Үл хөдлөхийн мэдээлэл</div>
+        <div class="step-section-sub">${isLand ? 'Газрын хэмжээ, зориулалт' : 'Талбай, өрөөний тоо болон бусад үндсэн үзүүлэлт'}</div>
+
+        ${isApt ? `
         <div class="form-grid-3">
           <div>
             <label class="form-label">Талбай (м²)<span class="req">*</span></label>
             <input type="number" class="form-input" id="alArea" placeholder="78" value="${addListingState.area}" min="1" />
             <div class="form-err-msg">Талбайн хэмжээ оруулна уу</div>
           </div>
-          ${!isLand ? `
           <div>
             <label class="form-label">Өрөөний тоо<span class="req">*</span></label>
             <select class="form-select" id="alRooms">
@@ -346,46 +369,10 @@
             <div class="form-err-msg">Өрөөний тоо сонгоно уу</div>
           </div>
           <div>
-            <label class="form-label">Барилгын насжилт</label>
+            <label class="form-label">${isNewApt ? 'Ашиглалтад орох/орсон он' : 'Барилгын он'}</label>
             <input type="number" class="form-input" id="alYear" placeholder="2022" min="1950" max="2030" value="${addListingState.year}" />
           </div>
-          ` : `
-          <div>
-            <label class="form-label">Зориулалт</label>
-            <select class="form-select" id="alRooms">
-              <option value="">Сонгох...</option>
-              <option value="residential">Орон сууцны</option>
-              <option value="commercial">Худалдаа үйлчилгээний</option>
-              <option value="industrial">Үйлдвэрлэлийн</option>
-              <option value="agricultural">Хөдөө аж ахуйн</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Дэд бүтэц</label>
-            <select class="form-select" id="alYear">
-              <option value="">Сонгох...</option>
-              <option value="full">Цахилгаан, ус, дулаан</option>
-              <option value="electric">Зөвхөн цахилгаан</option>
-              <option value="none">Дэд бүтэцгүй</option>
-            </select>
-          </div>
-          `}
         </div>
-
-        ${isResidential ? `
-        <div class="form-grid-2">
-          <div>
-            <label class="form-label">Унтлагын өрөө</label>
-            <input type="number" class="form-input" id="alBedrooms" placeholder="2" min="0" max="20" value="${addListingState.bedrooms}" />
-          </div>
-          <div>
-            <label class="form-label">Ариун цэврийн өрөө</label>
-            <input type="number" class="form-input" id="alBathrooms" placeholder="1" min="0" max="10" value="${addListingState.bathrooms}" />
-          </div>
-        </div>
-        ` : ''}
-
-        ${!isLand ? `
         <div class="form-grid-2">
           <div>
             <label class="form-label">Хэддүгээр давхар</label>
@@ -395,6 +382,77 @@
             <label class="form-label">Нийт давхар</label>
             <input type="number" class="form-input" id="alTotalFloors" placeholder="12" min="1" max="50" value="${addListingState.totalFloors}" />
           </div>
+        </div>
+        ` : ''}
+
+        ${isHouse ? `
+        <div class="form-grid-3">
+          <div>
+            <label class="form-label">Байшингийн талбай (м²)<span class="req">*</span></label>
+            <input type="number" class="form-input" id="alArea" placeholder="120" value="${addListingState.area}" min="1" />
+            <div class="form-err-msg">Талбайн хэмжээ оруулна уу</div>
+          </div>
+          <div>
+            <label class="form-label">Өрөөний тоо<span class="req">*</span></label>
+            <select class="form-select" id="alRooms">
+              <option value="">Сонгох...</option>
+              <option value="1" ${addListingState.rooms === '1' ? 'selected' : ''}>1 өрөө</option>
+              <option value="2" ${addListingState.rooms === '2' ? 'selected' : ''}>2 өрөө</option>
+              <option value="3" ${addListingState.rooms === '3' ? 'selected' : ''}>3 өрөө</option>
+              <option value="4" ${addListingState.rooms === '4' ? 'selected' : ''}>4 өрөө</option>
+              <option value="5" ${addListingState.rooms === '5' ? 'selected' : ''}>5 өрөө</option>
+              <option value="6+" ${addListingState.rooms === '6+' ? 'selected' : ''}>6+ өрөө</option>
+            </select>
+            <div class="form-err-msg">Өрөөний тоо сонгоно уу</div>
+          </div>
+          <div>
+            <label class="form-label">Газрын хэмжээ (м²) <span class="hint">— заавал биш</span></label>
+            <input type="number" class="form-input" id="alLandArea" placeholder="Жнь: 400" min="0" value="${addListingState.landArea}" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Давхарын тоо</label>
+          <input type="number" class="form-input" id="alFloor" placeholder="2" min="1" max="10" value="${addListingState.floor}" />
+        </div>
+        ` : ''}
+
+        ${isLand ? `
+        <div class="form-row">
+          <label class="form-label">Газрын хэмжээ (м²)<span class="req">*</span></label>
+          <input type="number" class="form-input" id="alArea" placeholder="600" value="${addListingState.area}" min="1" />
+          <div class="form-err-msg">Талбайн хэмжээ оруулна уу</div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Зориулалт<span class="req">*</span></label>
+          <select class="form-select" id="alRooms">
+            <option value="">Сонгох...</option>
+            <option value="residential" ${addListingState.rooms === 'residential' ? 'selected' : ''}>Орон сууцны</option>
+            <option value="commercial" ${addListingState.rooms === 'commercial' ? 'selected' : ''}>Худалдаа үйлчилгээний</option>
+            <option value="industrial" ${addListingState.rooms === 'industrial' ? 'selected' : ''}>Үйлдвэрлэлийн</option>
+            <option value="agricultural" ${addListingState.rooms === 'agricultural' ? 'selected' : ''}>Хөдөө аж ахуйн</option>
+          </select>
+          <div class="form-err-msg">Зориулалт сонгоно уу</div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Өмчлөх/эзэмших</label>
+          <select class="form-select" id="alYear">
+            <option value="">Сонгох...</option>
+            <option value="owned" ${addListingState.year === 'owned' ? 'selected' : ''}>Өмчлөлийн гэрчилгээтэй</option>
+            <option value="possession" ${addListingState.year === 'possession' ? 'selected' : ''}>Эзэмших эрхтэй</option>
+            <option value="usage" ${addListingState.year === 'usage' ? 'selected' : ''}>Ашиглах эрхтэй</option>
+          </select>
+        </div>
+        ` : ''}
+
+        ${isOffice ? `
+        <div class="form-row">
+          <label class="form-label">Талбай (м²)<span class="req">*</span></label>
+          <input type="number" class="form-input" id="alArea" placeholder="150" value="${addListingState.area}" min="1" />
+          <div class="form-err-msg">Талбайн хэмжээ оруулна уу</div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Давхар</label>
+          <input type="number" class="form-input" id="alFloor" placeholder="3" min="1" max="50" value="${addListingState.floor}" />
         </div>
         ` : ''}
 
@@ -478,13 +536,46 @@
 
   function renderStep3() {
     const active = addListingState.step === 3;
-    const isLand = addListingState.propertyType === 'land';
     const fieldGroup = listingFieldGroup();
-    const isResidential = fieldGroup === 'residential';
+    const isLand = fieldGroup === 'land';
+    const isOffice = fieldGroup === 'office';
+    const isHouse = fieldGroup === 'house';
+    const isNewApt = fieldGroup === 'new-apartment';
+    const isApt = fieldGroup === 'apartment';
+
+    // Which chip-buttons render for a given single-choice select, backed by a hidden
+    // input (id === forId) so saveStepData/validateStep keep reading it exactly like
+    // a native <select> — see the .chip-select handler in attachAddListingHandlers.
+    function chipSelect(forId, value, options) {
+      return `
+        <div class="chip-select" data-for="${forId}">
+          <input type="hidden" id="${forId}" value="${value}" />
+          ${options.map(([v, label]) => `
+            <button type="button" class="chip-option ${value === v ? 'active' : ''}" data-value="${v}">${label}</button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    const featureDefs = {
+      apartment: [['parking', 'Паркинг бий'], ['elevator', 'Лифттэй'], ['balcony', 'Тагттай'], ['basement', 'Зоорьтой'], ['furnished', 'Тавилгатай']],
+      'new-apartment': [['parking', 'Паркинг'], ['elevator', 'Лифт'], ['balcony', 'Тагт']],
+      house: [['garage', 'Гараж'], ['yard', 'Хашаа'], ['water', 'Ус'], ['sewage', 'Цэвэр/бохир ус']],
+      land: [['electricity', 'Тог'], ['water', 'Ус'], ['road', 'Зам']],
+      office: [['parking', 'Паркинг'], ['elevator', 'Лифт']]
+    };
+    const chipFeatures = [
+      ...(featureDefs[fieldGroup] || []),
+      ...(isLand ? [] : [['loan', 'Банкны зээлд хамрагдана']]),
+      ['negotiable', 'Үнэ хэлэлцэх боломжтой']
+    ];
+
+    const hasMore = isApt || isNewApt || isHouse;
+
     return `
       <div class="step-panel ${active ? 'active' : ''}" data-step="3">
-        <div class="step-section-title">Үнэ ба дэлгэрэнгүй</div>
-        <div class="step-section-sub">Үнэ, барилгын чанарын мэдээлэл</div>
+        <div class="step-section-title">Үнэ</div>
+        <div class="step-section-sub">Зарын үнийн дүн</div>
 
         <div class="form-row">
           <label class="form-label">Үнэ (сая ₮)<span class="req">*</span></label>
@@ -494,116 +585,121 @@
           <div id="priceSuggestBox"></div>
         </div>
 
-        ${!isLand ? `
-        <div class="form-grid-2">
-          <div>
-            <label class="form-label">Барилгын төрөл</label>
-            <select class="form-select" id="alBuildingType">
-              <option value="">Сонгох...</option>
-              <option value="reinforced-concrete">Цутгамал төмөр бетон</option>
-              <option value="brick">Хийц өрлөгийн (керамзитбетон)</option>
-              <option value="panel">Угсармал панель</option>
-              <option value="frame">Каркасан хийц</option>
-              <option value="wooden">Модон</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Халаалт</label>
-            <select class="form-select" id="alHeating">
-              <option value="">Сонгох...</option>
-              <option value="central">Төвлөрсөн халаалт</option>
-              <option value="gas">Хийн зуух (бие даасан)</option>
-              <option value="electric">Цахилгаан халаагуур</option>
-              <option value="solid">Хатуу түлшний</option>
-              <option value="floor">Шалны халаалт</option>
-            </select>
-          </div>
-        </div>
-
-        ${isResidential ? `
-        <div class="form-grid-2">
-          <div>
-            <label class="form-label">Цонхны чиглэл</label>
-            <select class="form-select" id="alWindowDirection">
-              <option value="">Сонгох...</option>
-              <option value="north">Хойд</option>
-              <option value="south">Урд</option>
-              <option value="east">Дорнод</option>
-              <option value="west">Өрнөд</option>
-              <option value="southeast">Урд-Дорнод</option>
-              <option value="southwest">Урд-Өрнөд</option>
-              <option value="northeast">Хойд-Дорнод</option>
-              <option value="northwest">Хойд-Өрнөд</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Дулаалга</label>
-            <select class="form-select" id="alInsulation">
-              <option value="">Сонгох...</option>
-              <option value="eps">Гадна EPS дулаалга</option>
-              <option value="mw">Эрдэс ноос (MW)</option>
-              <option value="pir">PIR (шинэ стандарт)</option>
-              <option value="inside">Дотроос хийсэн</option>
-              <option value="none">Дулаалгагүй</option>
-            </select>
-          </div>
+        ${isApt ? `
+        <div class="step-section-title" style="margin-top:28px;">Барилгын чанар</div>
+        <div class="step-section-sub">Хийц, халаалт, засварын байдал</div>
+        <div class="form-row">
+          <label class="form-label">Барилгын төрөл</label>
+          <select class="form-select" id="alBuildingType">
+            <option value="">Сонгох...</option>
+            <option value="reinforced-concrete">Цутгамал төмөр бетон</option>
+            <option value="brick">Хийц өрлөгийн (керамзитбетон)</option>
+            <option value="panel">Угсармал панель</option>
+            <option value="frame">Каркасан хийц</option>
+            <option value="wooden">Модон</option>
+          </select>
         </div>
         <div class="form-row">
-          <label class="form-label">СӨХ-ийн төлбөр (₮/сар) <span class="hint">— заавал биш</span></label>
-          <input type="number" class="form-input" id="alHoaFee" placeholder="Жнь: 80000" min="0" step="1000" value="${addListingState.hoaFee}" />
+          <label class="form-label">Халаалт</label>
+          ${chipSelect('alHeating', addListingState.heating, [
+            ['central', 'Төвлөрсөн халаалт'], ['gas', 'Хийн зуух'], ['electric', 'Цахилгаан халаагуур'],
+            ['solid', 'Хатуу түлшний'], ['floor', 'Шалны халаалт']
+          ])}
+        </div>
+        <div class="form-row">
+          <label class="form-label">Засварын байдал</label>
+          ${chipSelect('alCondition', addListingState.condition, [
+            ['white-box', 'Засваргүй'], ['basic', 'Энгийн засвартай'], ['renovated', 'Үндсэн засвартай'],
+            ['premium', 'Premium засвартай'], ['furnished', 'Тавилгатай, бүрэн засвартай']
+          ])}
         </div>
         ` : ''}
 
+        ${isHouse ? `
+        <div class="step-section-title" style="margin-top:28px;">Барилгын чанар</div>
+        <div class="step-section-sub">Халаалтын төрөл</div>
         <div class="form-row">
-          <label class="form-label">Засварын байдал</label>
-          <select class="form-select" id="alCondition">
-            <option value="">Сонгох...</option>
-            <option value="white-box">Засваргүй (white box)</option>
-            <option value="basic">Энгийн засвартай</option>
-            <option value="renovated">Үндсэн засвартай</option>
-            <option value="premium">Premium засвартай</option>
-            <option value="furnished">Тавилгатай, бүрэн засвартай</option>
-          </select>
+          <label class="form-label">Халаалт</label>
+          ${chipSelect('alHeating', addListingState.heating, [
+            ['central', 'Төвлөрсөн халаалт'], ['gas', 'Хийн зуух'], ['electric', 'Цахилгаан халаагуур'], ['solid', 'Хатуу түлшний']
+          ])}
+        </div>
+        ` : ''}
+
+        ${isOffice ? `
+        <div class="step-section-title" style="margin-top:28px;">Барилгын чанар</div>
+        <div class="step-section-sub">Ашиглалтын төлөв</div>
+        <div class="form-row">
+          <label class="form-label">Ашиглалтын төлөв</label>
+          ${chipSelect('alUsageType', addListingState.usageType, [
+            ['ready', 'Ашиглалтад бэлэн'], ['leased', 'Түрээслэгдсэн'], ['renovation', 'Засвар шаардлагатай']
+          ])}
+        </div>
+        ` : ''}
+
+        <div class="step-section-title" style="margin-top:28px;">Нэмэлт онцлог</div>
+        <div class="step-section-sub">Тохирох бүгдийг сонгоно уу</div>
+        <div class="feature-chip-grid">
+          ${chipFeatures.map(([id, label]) => `
+            <div class="toggle-row chip ${addListingState.features.includes(id) ? 'on' : ''}" data-feature="${id}">
+              <span>${label}</span>
+            </div>
+          `).join('')}
         </div>
 
-        <div class="form-row">
-          <label class="form-label">Нэмэлт онцлогууд</label>
-          <div class="toggle-grid">
-            <div class="toggle-row" data-feature="parking">
-              <span>Паркинг бий</span>
-              <div class="toggle-switch"></div>
+        ${hasMore ? `
+        <details class="al-more" style="margin-top:22px;">
+          <summary class="al-more-toggle">Нэмэлт мэдээлэл <span class="hint">— заавал биш</span></summary>
+          <div class="al-more-body">
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">Унтлагын өрөө</label>
+                <input type="number" class="form-input" id="alBedrooms" placeholder="2" min="0" max="20" value="${addListingState.bedrooms}" />
+              </div>
+              <div>
+                <label class="form-label">Ариун цэврийн өрөө</label>
+                <input type="number" class="form-input" id="alBathrooms" placeholder="1" min="0" max="10" value="${addListingState.bathrooms}" />
+              </div>
             </div>
-            <div class="toggle-row" data-feature="elevator">
-              <span>Лифттэй</span>
-              <div class="toggle-switch"></div>
+            ${(isApt || isNewApt) ? `
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label">Цонхны чиглэл</label>
+                <select class="form-select" id="alWindowDirection">
+                  <option value="">Сонгох...</option>
+                  <option value="north" ${addListingState.windowDirection === 'north' ? 'selected' : ''}>Хойд</option>
+                  <option value="south" ${addListingState.windowDirection === 'south' ? 'selected' : ''}>Урд</option>
+                  <option value="east" ${addListingState.windowDirection === 'east' ? 'selected' : ''}>Дорнод</option>
+                  <option value="west" ${addListingState.windowDirection === 'west' ? 'selected' : ''}>Өрнөд</option>
+                  <option value="southeast" ${addListingState.windowDirection === 'southeast' ? 'selected' : ''}>Урд-Дорнод</option>
+                  <option value="southwest" ${addListingState.windowDirection === 'southwest' ? 'selected' : ''}>Урд-Өрнөд</option>
+                  <option value="northeast" ${addListingState.windowDirection === 'northeast' ? 'selected' : ''}>Хойд-Дорнод</option>
+                  <option value="northwest" ${addListingState.windowDirection === 'northwest' ? 'selected' : ''}>Хойд-Өрнөд</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Дулаалга</label>
+                <select class="form-select" id="alInsulation">
+                  <option value="">Сонгох...</option>
+                  <option value="eps" ${addListingState.insulationType === 'eps' ? 'selected' : ''}>Гадна EPS дулаалга</option>
+                  <option value="mw" ${addListingState.insulationType === 'mw' ? 'selected' : ''}>Эрдэс ноос (MW)</option>
+                  <option value="pir" ${addListingState.insulationType === 'pir' ? 'selected' : ''}>PIR (шинэ стандарт)</option>
+                  <option value="inside" ${addListingState.insulationType === 'inside' ? 'selected' : ''}>Дотроос хийсэн</option>
+                  <option value="none" ${addListingState.insulationType === 'none' ? 'selected' : ''}>Дулаалгагүй</option>
+                </select>
+              </div>
             </div>
-            ${isResidential ? `
-            <div class="toggle-row" data-feature="balcony">
-              <span>Тагттай</span>
-              <div class="toggle-switch"></div>
-            </div>
-            <div class="toggle-row" data-feature="basement">
-              <span>Зоорьтой</span>
-              <div class="toggle-switch"></div>
-            </div>
-            <div class="toggle-row" data-feature="furnished">
-              <span>Тавилгатай</span>
-              <div class="toggle-switch"></div>
+            <div class="form-row">
+              <label class="form-label">СӨХ-ийн төлбөр (₮/сар)</label>
+              <input type="number" class="form-input" id="alHoaFee" placeholder="Жнь: 80000" min="0" step="1000" value="${addListingState.hoaFee}" />
             </div>
             ` : ''}
-            <div class="toggle-row" data-feature="loan">
-              <span>Банкны зээлд хамрагдана</span>
-              <div class="toggle-switch"></div>
-            </div>
-            <div class="toggle-row" data-feature="negotiable">
-              <span>Үнэ хэлэлцэх боломжтой</span>
-              <div class="toggle-switch"></div>
-            </div>
           </div>
-        </div>
+        </details>
+        ` : ''}
 
-        ${addListingState.intent === 'rent' ? `
-        <div class="form-grid-2">
+        ${addListingState.intent === 'rent' && !isLand ? `
+        <div class="form-grid-2" style="margin-top:18px;">
           <div>
             <label class="form-label">Барьцаа/Урьдчилгаа (сая ₮)</label>
             <input type="number" class="form-input" id="alDeposit" placeholder="Жнь: 2" min="0" step="0.5" value="${addListingState.deposit}" />
@@ -612,17 +708,16 @@
             <label class="form-label">Хамгийн бага хугацаа</label>
             <select class="form-select" id="alMinTerm">
               <option value="">Сонгох...</option>
-              <option value="1m">1 сар</option>
-              <option value="3m">3 сар</option>
-              <option value="6m">6 сар</option>
-              <option value="1y">1 жил+</option>
+              <option value="1m" ${addListingState.minTerm === '1m' ? 'selected' : ''}>1 сар</option>
+              <option value="3m" ${addListingState.minTerm === '3m' ? 'selected' : ''}>3 сар</option>
+              <option value="6m" ${addListingState.minTerm === '6m' ? 'selected' : ''}>6 сар</option>
+              <option value="1y" ${addListingState.minTerm === '1y' ? 'selected' : ''}>1 жил+</option>
             </select>
           </div>
         </div>
         ` : ''}
-        ` : ''}
 
-        <div class="form-row">
+        <div class="form-row" style="margin-top:18px;">
           <label class="form-label">Дэлгэрэнгүй тайлбар<span class="req">*</span></label>
           <textarea class="form-textarea" id="alDescription" rows="5" placeholder="Үл хөдлөх хөрөнгийнхөө онцлог, давуу талыг тайлбарлана уу. Жнь: Зайсаны бизнес төвөөс 5 минутын зайтай, өмнөд талдаа задгай, наран гэрэлтэй..." maxlength="2000">${addListingState.description}</textarea>
           <div class="form-err-msg">Тайлбараа оруулна уу</div>
@@ -894,6 +989,21 @@
       });
     });
 
+    // Chip-selects (heating, condition, land ownership-esque single-choice fields) —
+    // each group mirrors its choice into a hidden input so saveStepData/validateStep
+    // keep reading it exactly like the native <select> it replaces.
+    document.querySelectorAll('.chip-select').forEach(group => {
+      const hidden = document.getElementById(group.dataset.for);
+      if (!hidden) return;
+      group.querySelectorAll('.chip-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          group.querySelectorAll('.chip-option').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          hidden.value = btn.dataset.value;
+        });
+      });
+    });
+
     // Plan cards
     document.querySelectorAll('.plan-card').forEach(c => {
       c.addEventListener('click', () => {
@@ -988,6 +1098,7 @@
       addListingState.totalFloors = document.getElementById('alTotalFloors')?.value || '';
       addListingState.buildingName = document.getElementById('alBuildingName')?.value || '';
       addListingState.complex = document.getElementById('alComplex')?.value || '';
+      addListingState.landArea = document.getElementById('alLandArea')?.value || '';
     }
     if (step === 3) {
       addListingState.price = document.getElementById('alPrice')?.value || '';
@@ -997,6 +1108,7 @@
       addListingState.insulationType = document.getElementById('alInsulation')?.value || '';
       addListingState.hoaFee = document.getElementById('alHoaFee')?.value || '';
       addListingState.condition = document.getElementById('alCondition')?.value || '';
+      addListingState.usageType = document.getElementById('alUsageType')?.value || '';
       addListingState.deposit = document.getElementById('alDeposit')?.value || '';
       addListingState.minTerm = document.getElementById('alMinTerm')?.value || '';
       addListingState.description = document.getElementById('alDescription')?.value || '';
@@ -1171,7 +1283,8 @@
       'nalaikh': 'Налайх', 'bagakhangai': 'Багахангай', 'baganuur': 'Багануур'
     };
     const zoningLabels = { residential: 'Орон сууцны', commercial: 'Худалдаа үйлчилгээний', industrial: 'Үйлдвэрлэлийн', agricultural: 'Хөдөө аж ахуйн' };
-    const infraLabels = { full: 'Цахилгаан, ус, дулаан', electric: 'Зөвхөн цахилгаан', none: 'Дэд бүтэцгүй' };
+    const ownershipLabels = { owned: 'Өмчлөлийн гэрчилгээтэй', possession: 'Эзэмших эрхтэй', usage: 'Ашиглах эрхтэй' };
+    const usageTypeLabels = { ready: 'Ашиглалтад бэлэн', leased: 'Түрээслэгдсэн', renovation: 'Засвар шаардлагатай' };
     const conditionLabels = {
       'white-box': 'Засваргүй (white box)', basic: 'Энгийн засвартай', renovated: 'Үндсэн засвартай',
       premium: 'Premium засвартай', furnished: 'Тавилгатай, бүрэн засвартай'
@@ -1230,9 +1343,11 @@
       bedrooms: isLand ? null : (parseInt(s.bedrooms) || null),
       bathrooms: isLand ? null : (parseInt(s.bathrooms) || null),
       floor: isLand ? 'Эзэмшил' : (s.floor ? s.floor + '/' + (s.totalFloors || '?') : '?'),
-      year: isLand ? (infraLabels[s.year] || 'Тодорхойгүй') : (parseInt(s.year) || new Date().getFullYear()),
+      year: isLand ? null : (parseInt(s.year) || new Date().getFullYear()),
       buildingName: isLand ? '' : (s.buildingName || ''),
       complex: isLand ? '' : (s.complex || ''),
+      landArea: parseFloat(s.landArea) || null,
+      usageType: usageTypeLabels[s.usageType] || '',
       tag: { type: 'new', text: 'Шинэ зар' },
       // No "vip" badge here regardless of s.plan — see the expiresAt comment above.
       badges: ['new', 'user'],
@@ -1254,7 +1369,7 @@
       videoUrl: (s.videoUrl && videoEmbedUrl(s.videoUrl)) ? s.videoUrl.trim() : '',
       tourUrl: (s.tourUrl && safeEmbedUrl(s.tourUrl)) ? s.tourUrl.trim() : '',
       floorPlan: s.floorPlan || null,
-      utilityCost: '', ownership: 'Хувийн өмчлөл',
+      utilityCost: '', ownership: isLand ? (ownershipLabels[s.year] || 'Тодорхойгүй') : 'Хувийн өмчлөл',
       cadastre: '', collateral: '', taxDebt: '',
       condition: conditionLabels[s.condition] || s.condition || '',
       features: s.features.slice(),
@@ -1293,6 +1408,8 @@
         year: newListing.year,
         buildingName: newListing.buildingName,
         complex: newListing.complex,
+        landArea: newListing.landArea,
+        usageType: newListing.usageType,
         buildingType: newListing.buildingType,
         insulation: newListing.insulation,
         windowDirection: newListing.windowDirection,
@@ -1732,9 +1849,9 @@
       addListingState = {
         step: 1, intent: 'sell', propertyType: '',
         title: '', district: '', khoroo: '', address: '', geoLat: null, geoLng: null, area: '', rooms: '',
-        bedrooms: '', bathrooms: '', floor: '', totalFloors: '', year: '', buildingName: '', complex: '',
+        bedrooms: '', bathrooms: '', floor: '', totalFloors: '', year: '', buildingName: '', complex: '', landArea: '',
         price: '', buildingType: '', heating: '', insulationType: '', windowDirection: '', hoaFee: '',
-        condition: '', deposit: '', minTerm: '', description: '', features: [], images: [],
+        condition: '', usageType: '', deposit: '', minTerm: '', description: '', features: [], images: [],
         videoUrl: '', tourUrl: '', floorPlan: null,
         phone: '', name: '', role: 'owner', plan: 'basic'
       };
@@ -1745,9 +1862,9 @@
       addListingState = {
         step: 1, intent: 'sell', propertyType: '',
         title: '', district: '', khoroo: '', address: '', geoLat: null, geoLng: null, area: '', rooms: '',
-        bedrooms: '', bathrooms: '', floor: '', totalFloors: '', year: '', buildingName: '', complex: '',
+        bedrooms: '', bathrooms: '', floor: '', totalFloors: '', year: '', buildingName: '', complex: '', landArea: '',
         price: '', buildingType: '', heating: '', insulationType: '', windowDirection: '', hoaFee: '',
-        condition: '', deposit: '', minTerm: '', description: '', features: [], images: [],
+        condition: '', usageType: '', deposit: '', minTerm: '', description: '', features: [], images: [],
         videoUrl: '', tourUrl: '', floorPlan: null,
         phone: '', name: '', role: 'owner', plan: 'basic'
       };
