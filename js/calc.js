@@ -325,9 +325,9 @@
     document.getElementById('affRisk').textContent = risk;
     document.getElementById('affRisk').style.color = riskColor;
 
-    if (maxPriceLow >= 400) advice = `Таны нөхцөл хангалттай сайн! ${Math.round(maxPriceLow)}-${Math.round(maxPriceHigh)} сая ₮ үнийн хязгаарт Зайсан, Сүхбаатар дүүргийн сонголтууд тохиромжтой.`;
-    else if (maxPriceLow >= 200) advice = `Сайн сонголтууд бий. Чингэлтэй, Хан-Уул дүүргүүдээс ${Math.round(maxPriceLow)} сая ₮-н орчмын байр сонгоно уу.`;
-    else if (maxPriceLow >= 100) advice = `Эхэлж буй хүний хувьд сайн боломж. Шинэ барилгууд эсвэл алслагдсан дүүргээс хайхад илүү сонголт байна.`;
+    if (maxPriceLow >= 400) advice = `Таны нөхцөл хангалттай сайн! ${Math.round(maxPriceLow)}-${Math.round(maxPriceHigh)} сая ₮ үнийн хязгаарт тохирох заруудыг Listings хэсгээс үнэ, талбай, байршлаар шүүж үзээрэй.`;
+    else if (maxPriceLow >= 200) advice = `Сайн сонголтууд бий. ${Math.round(maxPriceLow)} сая ₮-н орчмын байрыг Listings хэсгээс хайж үзээрэй.`;
+    else if (maxPriceLow >= 100) advice = `Эхэлж буй хүний хувьд сайн боломж. Байршлын сонголтыг тухайн үеийн бодит зарын үнэ, дэд бүтэц, замын нөхцөлтэй харьцуулж сонгоорой.`;
     else advice = `Илүү их урьдчилгаа төлбөр, эсвэл хадгаламжтай болсны дараа хайх нь зүйтэй.`;
     document.getElementById('affAdvice').textContent = advice;
 
