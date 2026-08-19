@@ -101,7 +101,12 @@
       minTerm: l.minTerm || '',
       description: '',
       features: Array.isArray(l.features) ? l.features.slice() : [],
-      images: listingExtras[l.id]?.gallery || (l.img ? [l.img] : []),
+      // Every existing photo already has a real URL (Storage, or a legacy base64 string
+      // from before this fix) — mark it 'uploaded' with nothing to (re)upload, so the
+      // grid renders it immediately and retryImageUpload correctly no-ops on it.
+      images: (listingExtras[l.id]?.gallery || (l.img ? [l.img] : [])).map(url => ({
+        id: ++imgSeq, url, previewUrl: url, status: 'uploaded', localDataUrl: '', localOnly: false, error: ''
+      })),
       videoUrl: l.videoUrl || '',
       tourUrl: l.tourUrl || '',
       floorPlan: l.floorPlan || null,
@@ -803,32 +808,74 @@
     `;
   }
 
+  // Up to MAX_LISTING_IMAGES photos, selected one-or-many-at-a-time (input has
+  // `multiple`), each uploaded to Firebase Storage in the background as soon as it's
+  // added — see uploadListingImage(). imgSeq gives every item a stable id for the
+  // duration of this form session (retry/reorder/remove all key off it, not array index,
+  // since the array gets reordered).
+  const MAX_LISTING_IMAGES = 15;
+  let imgSeq = 0;
+
   function renderImageBoxes() {
-    const boxes = [];
-    for (let i = 0; i < 8; i++) {
-      const img = addListingState.images[i];
-      if (img) {
-        boxes.push(`
-          <div class="image-upload-box has-image">
-            ${i === 0 ? '<div class="main-badge">Үндсэн</div>' : ''}
-            <button class="remove-img" onclick="removeImage(${i})">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    const boxes = addListingState.images.map((img, i) => {
+      const busy = img.status === 'uploading' || img.status === 'waiting';
+      const failed = img.status === 'failed';
+      return `
+        <div class="image-upload-box has-image ${busy ? 'busy' : ''} ${failed ? 'failed' : ''}">
+          ${i === 0 ? '<div class="main-badge">Үндсэн</div>' : `
+            <button type="button" class="cover-btn" onclick="makeImageCover(${i})" title="Үндсэн зураг болгох">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8-6.2 3.8 1.6-7-5.4-4.7 7.1-.6z"/></svg>
             </button>
-            <img src="${img}" alt="">
-          </div>
-        `);
-      } else {
-        boxes.push(`
-          <label class="image-upload-box" for="imgInput${i}">
-            <input type="file" id="imgInput${i}" accept="image/*" style="display:none" onchange="handleImageUpload(event, ${i})" />
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
-            <div class="image-upload-text">${i === 0 ? 'Үндсэн зураг' : 'Зураг ' + (i + 1)}</div>
-            <div class="image-upload-hint">JPG, PNG (5MB)</div>
-          </label>
-        `);
-      }
+          `}
+          <button type="button" class="remove-img" onclick="removeImage(${i})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+          <img src="${img.previewUrl}" alt="">
+          ${busy ? '<div class="img-status-overlay"><div class="img-spinner"></div></div>' : ''}
+          ${failed ? `
+            <div class="img-status-overlay img-status-failed">
+              <span>${img.error || 'Алдаа гарлаа'}</span>
+              <button type="button" onclick="retryImageUpload(${i})">Дахин оролдох</button>
+            </div>
+          ` : ''}
+          ${img.status === 'uploaded' && img.localOnly ? '<div class="local-badge">Зөвхөн энэ төхөөрөмжид</div>' : ''}
+          ${addListingState.images.length > 1 ? `
+            <div class="img-reorder">
+              <button type="button" ${i === 0 ? 'disabled' : ''} onclick="moveImage(${i}, -1)" title="Зүүн тийш зөөх">‹</button>
+              <button type="button" ${i === addListingState.images.length - 1 ? 'disabled' : ''} onclick="moveImage(${i}, 1)" title="Баруун тийш зөөх">›</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    });
+    if (addListingState.images.length < MAX_LISTING_IMAGES) {
+      boxes.push(`
+        <label class="image-upload-box" for="imgInputMulti">
+          <input type="file" id="imgInputMulti" accept="image/*" multiple style="display:none" onchange="handleImageUpload(event)" />
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+          <div class="image-upload-text">${addListingState.images.length === 0 ? 'Үндсэн зураг' : 'Зураг нэмэх'}</div>
+          <div class="image-upload-hint">JPG, PNG — олноор сонгож болно</div>
+        </label>
+      `);
     }
     return boxes.join('');
+  }
+
+  function refreshImageGrid() {
+    const grid = document.getElementById('imageGrid');
+    if (grid) grid.innerHTML = renderImageBoxes();
+    updateSubmitButtonState();
+  }
+
+  // Mirrors upload progress onto the step-5 "Зар нийтлэх" button so a still-uploading
+  // photo can never be submitted twice or published half-attached — see submitListing().
+  function updateSubmitButtonState() {
+    const btn = document.getElementById('alSubmitBtn');
+    if (!btn) return;
+    const label = document.getElementById('alSubmitBtnLabel');
+    const busy = addListingState.images.some(im => im.status === 'uploading' || im.status === 'waiting');
+    btn.disabled = busy;
+    if (label) label.textContent = busy ? 'Зураг байршуулж байна...' : 'Зар нийтлэх';
   }
 
   function renderStep5() {
@@ -873,7 +920,7 @@
             <div class="plan-price-period">30 хоног идэвхтэй</div>
             <ul class="plan-features">
               <li>30 хоног идэвхтэй</li>
-              <li>8 хүртэл зураг</li>
+              <li>${MAX_LISTING_IMAGES} хүртэл зураг</li>
               <li>Энгийн хайлтад харагдана</li>
             </ul>
           </button>
@@ -883,7 +930,7 @@
             <div class="plan-price-period">60 хоног идэвхтэй</div>
             <ul class="plan-features">
               <li>60 хоног идэвхтэй</li>
-              <li>8 хүртэл зураг</li>
+              <li>${MAX_LISTING_IMAGES} хүртэл зураг</li>
               <li>"VIP" тэмдэглэгээтэй</li>
               <li>Хайлт болон нүүр хуудсанд эхэнд гарна</li>
             </ul>
@@ -894,7 +941,7 @@
             <div class="plan-price-period">90 хоног идэвхтэй</div>
             <ul class="plan-features">
               <li>90 хоног идэвхтэй</li>
-              <li>8 хүртэл зураг</li>
+              <li>${MAX_LISTING_IMAGES} хүртэл зураг</li>
               <li>"VIP" тэмдэглэгээтэй</li>
               <li>Хайлт болон нүүр хуудсанд эхэнд гарна</li>
               <li>Хамгийн урт хугацаагаар идэвхтэй</li>
@@ -915,8 +962,8 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Буцах
           </button>
-          <button class="btn btn-blue btn-lg" onclick="submitListing()">
-            Зар нийтлэх
+          <button class="btn btn-blue btn-lg" id="alSubmitBtn" onclick="submitListing()">
+            <span id="alSubmitBtnLabel">Зар нийтлэх</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           </button>
         </div>
@@ -934,11 +981,13 @@
           <div class="success-icon">
             <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
-          <div class="success-title">${addListingState._syncFailed ? 'Зар энэ төхөөрөмж дээр хадгалагдлаа' : 'Зар илгээгдлээ — хянагдаж байна'}</div>
+          <div class="success-title">${addListingState._syncFailed ? 'Энэ төхөөрөмж дээр түр хадгаллаа. Нийтлэгдээгүй.' : 'Зар илгээгдлээ — хянагдаж байна'}</div>
           <div class="success-id">Зарын дугаар: ${listingId}</div>
           <div class="success-info">
             ${addListingState._syncFailed
-              ? 'Таны зар одоогоор зөвхөн энэ төхөөрөмж дээр харагдаж байна — сервер лүү илгээхэд алдаа гарлаа (сүлжээ эсвэл зургийн хэмжээнээс шалтгаалж болзошгүй). Дахин оролдоно уу эсвэл интернэт холболтоо шалгаад дараа дахин нийтэлнэ үү.'
+              ? (!currentUser
+                  ? 'Та нэвтрээгүй тул зар зөвхөн энэ төхөөрөмж дээр л харагдаж байна — серверт хадгалагдаагүй, өөр хэн ч харахгүй. Нэвтэрч орсны дараа дахин нийтэлнэ үү.'
+                  : 'Таны зар одоогоор зөвхөн энэ төхөөрөмж дээр харагдаж байна — серверт хадгалагдаагүй тул өөр хэн ч харахгүй (сүлжээ эсвэл зурган файлтай холбоотой алдаа гарсан байж болзошгүй). Дахин оролдоно уу эсвэл интернэт холболтоо шалгаад дараа дахин нийтэлнэ үү.')
               : 'Таны зар админы шалгалтад орлоо. Батлагдсны дараа BairX дээр нийтэд харагдана — "Миний зарууд" хэсгийн "Хянагдаж байна" таб-аас явцыг харна уу.'}
           </div>
           <div style="display:flex; gap:10px; justify-content:center;">
@@ -1026,6 +1075,7 @@
     }
 
     updatePriceSuggestion();
+    updateSubmitButtonState(); // covers landing on step 5 while step 4's background uploads are still in flight
   }
 
   function updatePriceSuggestion() {
@@ -1184,24 +1234,137 @@
     return true;
   }
 
-  function handleImageUpload(event, idx) {
-    const file = event.target.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('Зураг 5MB-аас бага байх ёстой');
+  // Resizes+re-encodes a photo client-side before it ever leaves the device — a
+  // straight-from-camera phone photo (5-15MB) both uploads slowly and, if Storage is
+  // ever unreachable, is far too big to fall back into a Firestore document (1MiB cap).
+  // Returns both a Blob (for the Storage upload) and a dataURL (for the local-only
+  // fallback / instant preview) off the same decoded canvas, so a file that can't be
+  // decoded at all — HEIC on a browser with no native decoder is the common case —
+  // rejects clearly instead of silently producing a broken image.
+  function compressListingImageFile(file, maxDim, quality) {
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
+          else { width = Math.round(width * maxDim / height); height = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(objectUrl);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        canvas.toBlob(blob => {
+          if (!blob) { reject(new Error('unsupported-format')); return; }
+          resolve({ blob, dataUrl });
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('unsupported-format')); };
+      img.src = objectUrl;
+    });
+  }
+
+  function handleImageUpload(event) {
+    const files = Array.from(event.target.files || []);
+    event.target.value = ''; // lets the user pick the same file again later (e.g. after removing it)
+    if (!files.length) return;
+    const room = MAX_LISTING_IMAGES - addListingState.images.length;
+    if (room <= 0) {
+      showToast('Хамгийн ихдээ ' + MAX_LISTING_IMAGES + ' зураг оруулж болно');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      addListingState.images[idx] = e.target.result;
-      document.getElementById('imageGrid').innerHTML = renderImageBoxes();
-    };
-    reader.readAsDataURL(file);
+    const toAdd = files.slice(0, room);
+    if (files.length > toAdd.length) {
+      showToast(toAdd.length + ' зураг нэмэгдлээ — хамгийн ихдээ ' + MAX_LISTING_IMAGES + ' зураг байна');
+    }
+    toAdd.forEach(file => {
+      if (file.size > 15 * 1024 * 1024) {
+        showToast('"' + file.name + '" — зураг 15MB-аас бага байх ёстой');
+        return;
+      }
+      const item = {
+        id: ++imgSeq, file, previewUrl: URL.createObjectURL(file),
+        status: 'waiting', url: '', localDataUrl: '', localOnly: false, error: ''
+      };
+      addListingState.images.push(item);
+      uploadListingImage(item);
+    });
+    refreshImageGrid();
+  }
+
+  // Starts (or retries) one photo's compress-then-upload pipeline. Runs independently
+  // per image and in the background — the user can move on to later steps while several
+  // of these are still in flight; submitListing() is what actually waits for all of them.
+  async function uploadListingImage(item) {
+    item.status = 'uploading';
+    item.error = '';
+    refreshImageGrid();
+    let compressed;
+    try {
+      compressed = await compressListingImageFile(item.file, 1600, 0.82);
+    } catch (e) {
+      item.status = 'failed';
+      item.error = 'Дэмжигдэхгүй зургийн формат (HEIC байж болзошгүй) — JPG эсвэл PNG болгож дахин оруулна уу';
+      refreshImageGrid();
+      return;
+    }
+    item.localDataUrl = compressed.dataUrl;
+    if (!currentUser) {
+      // Guest submissions never reach Firestore at all today (see doSubmitListing) —
+      // Storage rules require auth too, so there's nothing to upload to yet. The
+      // compressed local copy is what this listing will keep.
+      item.status = 'uploaded';
+      item.localOnly = true;
+      refreshImageGrid();
+      return;
+    }
+    try {
+      const path = 'listing-images/' + currentUser.uid + '/' + Date.now() + '-' + item.id + '.jpg';
+      const ref = storage.ref(path);
+      await ref.put(compressed.blob, { contentType: 'image/jpeg' });
+      item.url = await ref.getDownloadURL();
+      item.storagePath = path;
+      item.status = 'uploaded';
+      item.localOnly = false;
+    } catch (e) {
+      console.error('Listing image upload failed:', item.id, e.code || e.message);
+      // Compression already succeeded — fall back to the compressed local copy instead
+      // of losing the photo outright. doSubmitListing only attempts the Firestore write
+      // when every image has a real Storage URL, so a localOnly image correctly routes
+      // the whole listing into the "saved on this device only" path (see _syncFailed).
+      item.status = 'uploaded';
+      item.localOnly = true;
+    }
+    refreshImageGrid();
+  }
+
+  function retryImageUpload(idx) {
+    const item = addListingState.images[idx];
+    if (!item || !item.file) return; // nothing to retry for an already-existing (edit-mode) image
+    uploadListingImage(item);
+  }
+
+  function makeImageCover(idx) {
+    if (idx <= 0 || idx >= addListingState.images.length) return;
+    const [item] = addListingState.images.splice(idx, 1);
+    addListingState.images.unshift(item);
+    refreshImageGrid();
+  }
+
+  function moveImage(idx, dir) {
+    const target = idx + dir;
+    if (target < 0 || target >= addListingState.images.length) return;
+    const arr = addListingState.images;
+    [arr[idx], arr[target]] = [arr[target], arr[idx]];
+    refreshImageGrid();
   }
 
   function removeImage(idx) {
-    addListingState.images.splice(idx, 1);
-    document.getElementById('imageGrid').innerHTML = renderImageBoxes();
+    const [item] = addListingState.images.splice(idx, 1);
+    if (item && item.file) URL.revokeObjectURL(item.previewUrl); // only ours to revoke — existing (edit-mode) previews are real URLs, not blob: ones
+    refreshImageGrid();
   }
 
   // Floor plan — same resize-then-base64 approach as the profile photo (dashboard.js),
@@ -1244,6 +1407,21 @@
 
   async function submitListing() {
     if (!validateStep(5)) return;
+    // Never publish while a photo is mid-upload or stuck on a failure — otherwise a
+    // double-click (or a slow retry) could either submit before the image exists
+    // server-side, or claim success on a listing with a photo silently missing.
+    if (addListingState.images.some(im => im.status === 'uploading' || im.status === 'waiting')) {
+      showToast('Зураг байршуулж дуустал хүлээнэ үү');
+      return;
+    }
+    const failedIdx = addListingState.images.findIndex(im => im.status === 'failed');
+    if (failedIdx !== -1) {
+      showToast('Амжилтгүй зураг байна — Дахин оролдох дарна уу эсвэл устгана уу');
+      addListingState.step = 4;
+      document.getElementById('modalContent').innerHTML = renderAddListing();
+      setTimeout(attachAddListingHandlers, 50);
+      return;
+    }
     if (!editingListingId && isDuplicateListing()) {
       showToast('Та яг ижил дүүрэг, талбай, үнэтэй зар оруулсан байна — давхардсан зар мэдээлэгдэж болно');
       return;
@@ -1302,7 +1480,13 @@
     const newId = listings.reduce(function(m, l) { return l.id > m ? l.id : m; }, 0) + 1;
     const p = parseFloat(s.price) || 0;
     const a = parseFloat(s.area) || 0;
-    const allImages = s.images.filter(Boolean);
+    // A real Storage download URL when the upload made it to the server, otherwise the
+    // compressed local copy — either way this listing always has something to display
+    // locally. Whether it's *safe* to also write to Firestore is a separate question,
+    // decided by allImagesSynced below (a mix of tiny URLs and multi-hundred-KB local
+    // fallback strings is exactly how the old base64-in-Firestore bug happened).
+    const allImages = s.images.map(im => im.url || im.localDataUrl).filter(Boolean);
+    const allImagesSynced = s.images.length > 0 && s.images.every(im => !!im.url);
     // VIP/Онцлох cards in the plan picker above are a preview only — no real payment
     // system is connected, so selecting one must never actually grant the paid duration
     // or badge here. Every new listing gets the same free (basic) terms regardless of
@@ -1381,8 +1565,13 @@
     const targetId = editingListingId || newId;
 
     // ===== FIRESTORE SAVE =====
+    // Only attempted once every photo has a real Storage URL — a listing with any
+    // localOnly/still-compressed-only image is treated the same as a signed-out
+    // submission: kept device-local (see the _syncFailed messaging below) rather than
+    // writing a document with a giant base64 string in it, which is what used to blow
+    // past Firestore's ~1MiB document cap and surface as a silent "server error".
     let firestoreSaveFailed = false;
-    if (currentUser) {
+    if (currentUser && allImagesSynced) {
       const fsDoc = {
         ownerId: currentUser.uid,
         ownerEmail: currentUser.email,
@@ -1437,14 +1626,11 @@
         userSubmitted: true,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
-      // Firestore documents cap out around 1MiB and base64 photos blow past that fast —
-      // keep only the cover photo server-side so the write doesn't silently fail;
-      // the full gallery still renders locally via listingExtras/localStorage.
+      // Belt-and-suspenders: images are always short Storage URLs by this point, but the
+      // floor plan is still a raw base64 image (out of scope for this fix — see
+      // handleFloorPlanUpload) and could theoretically still push the document too large.
       if (JSON.stringify(fsDoc).length > 900000) {
-        fsDoc.images = allImages.slice(0, 1);
-      }
-      if (JSON.stringify(fsDoc).length > 900000) {
-        fsDoc.floorPlan = null; // still too large even with just the cover photo — drop the plan too
+        fsDoc.floorPlan = null;
       }
       try {
         if (editingListingId) {
@@ -1528,7 +1714,13 @@
     renderMyListings();
     if (typeof renderDashboard === 'function') renderDashboard();
 
-    addListingState._syncFailed = firestoreSaveFailed;
+    // True whenever this listing did NOT make it to the server — either the Firestore
+    // write itself failed, or it was never attempted at all because the user is signed
+    // out or at least one photo never got a real Storage URL (see allImagesSynced above).
+    // Guests submitting device-local listings used to see the "under admin review"
+    // message here even though nothing had actually left the device — this now matches
+    // reality in every case, not just an actual Firestore error.
+    addListingState._syncFailed = !(currentUser && allImagesSynced) || firestoreSaveFailed;
     addListingState.step = 6;
     document.getElementById('modalContent').innerHTML = renderAddListing();
   }

@@ -2,8 +2,11 @@
   "firestore": {
     "rules": "firestore.rules"
   },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "hosting": {
     "public": ".",
-    "ignore": ["firebase.json", "firestore.rules", ".git/**", "node_modules/**"]
+    "ignore": ["firebase.json", "firestore.rules", "storage.rules", ".git/**", "node_modules/**"]
   }
 }
