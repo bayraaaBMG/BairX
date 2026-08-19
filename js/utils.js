@@ -168,7 +168,10 @@
       else score -= 10;
     }
     if (l.sellerVerified) score += 8;
-    if (Array.isArray(l.badges) && l.badges.includes('verified')) score += 7;
+    // Was badges.includes('verified') — legacy metadata some demo listings still carry
+    // with no real verification behind it. listingVerified (real admin approval, set in
+    // admin.js) is the other real verification signal, independent of sellerVerified.
+    if (l.listingVerified) score += 7;
     const feats = ['parking', 'elevator', 'balcony', 'furnished', 'loan'];
     const haveFeats = feats.filter(f => Array.isArray(l.features) && l.features.includes(f)).length;
     score += haveFeats * 4;

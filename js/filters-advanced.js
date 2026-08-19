@@ -158,7 +158,11 @@
     }
     // Toggles
     if (activeFilterToggles.includes('new')) results = results.filter(l => l.badges.includes('new'));
-    if (activeFilterToggles.includes('verified')) results = results.filter(l => l.badges.includes('verified'));
+    // Verification has one source of truth: sellerVerified (real Firebase email
+    // verification) or listingVerified (real admin approval) — never the legacy
+    // badges:['verified'] metadata some demo listings still carry, which isn't backed by
+    // any real verification and would otherwise let demo listings match this filter.
+    if (activeFilterToggles.includes('verified')) results = results.filter(l => l.sellerVerified === true || l.listingVerified === true);
     if (activeFilterToggles.includes('below')) results = results.filter(l => l.tag && l.tag.type === 'below');
     if (activeFilterToggles.includes('loan')) results = results.filter(l => l.loanType && !l.loanType.includes('Бэлэн'));
     if (activeFilterToggles.includes('parking')) results = results.filter(l =>
