@@ -95,7 +95,11 @@
     const sellerName = seller.name;
     const sellerLetter = sellerName[0] || 'А';
     const ownerOtherListings = l.userSubmitted && l.ownerId ? listings.filter(x => x.ownerId === l.ownerId && !x._inactive) : null;
-    const totalListings = ownerOtherListings ? ownerOtherListings.length : 3 + (l.id % 12);
+    // "Нийт X зар" used to fall back to an invented 3 + id % 12 whenever a real count
+    // wasn't available (always the case for demo listings, since ownerOtherListings is
+    // only ever computed for userSubmitted ones above). No real count → no number shown,
+    // rather than guessing one.
+    const totalListings = ownerOtherListings ? ownerOtherListings.length : null;
     // A "Хариу: 10/30 минут" response-time claim used to live here, computed as
     // l.id % 2 — not a real message-latency metric for any seller, demo or real; nothing
     // in the codebase tracks how long a seller actually takes to reply. Removed rather
@@ -266,7 +270,7 @@
               </div>
               <div class="seller-meta">${esc(seller.type)}</div>
               <div class="seller-stats">
-                <span ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}')" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;"` : ''}><b>${totalListings} зар</b></span>
+                ${totalListings != null ? `<span ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}')" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;"` : ''}><b>${totalListings} зар</b></span>` : ''}
                 ${memberSinceYear ? `<span>Гишүүн: <b>${memberSinceYear} оноос</b></span>` : ''}
               </div>
             </div>
