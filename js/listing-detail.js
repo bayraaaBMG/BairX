@@ -791,6 +791,13 @@
     const box = document.getElementById('contactBox_' + listingId);
     if (!box) return;
     const l = listings.find(x => String(x.id) === String(listingId));
+    // Demo listings have no real seller behind them — the phone number in sellerData is
+    // synthetic. Showing a working "Залгах"/"Хуулах" flow for it would look like a real
+    // contact number when there's no one on the other end.
+    if (l && l.isDemo) {
+      box.innerHTML = `<div style="font-size:13px; color:var(--ink-3); padding:8px 0;">Энэ бол жишээ зар — холбогдох дугаар байхгүй.</div>`;
+      return;
+    }
     // Look up the seller's phone by ID rather than accepting it as a raw parameter — this
     // is user-entered free text, and embedding it straight into an inline onclick="...'...'"
     // string is exploitable even after HTML-escaping (the browser decodes entities in an
@@ -827,6 +834,9 @@
   async function openListingChat(id) {
     const l = listings.find(x => x.id === id);
     if (!l) return;
+    // Demo listings' ownerId is a synthetic placeholder (see data.js) with no real account
+    // behind it — a chat thread would send real messages that nobody will ever read.
+    if (l.isDemo) { showToast('Энэ бол жишээ зар — чат бичих боломжгүй.'); return; }
     if (!currentUser) { closeModal(); showToast('Чат бичихийн тулд нэвтэрнэ үү'); openAuth(); return; }
     if (l.ownerId === currentUser.uid) { showToast('Энэ бол таны өөрийн зар'); return; }
     closeModal();

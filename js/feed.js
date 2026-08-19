@@ -61,11 +61,15 @@
     container.innerHTML = posts.map(p => {
       let mediaHtml = '';
       if (p.property) {
+        // Feed posts are entirely scripted demo content — their embedded property preview
+        // (img/price/title/meta) is baked into feedPosts itself, not looked up from a real
+        // listings entry, so it's always demo regardless of what id it happens to carry.
         mediaHtml = `
           <div class="post-property" onclick="openListing(${p.property.id})">
             <div class="post-property-img">
               <img src="${p.property.img}" alt="" />
               <div class="post-property-price">${p.property.price}</div>
+              <span class="badge demo" style="position:static;display:inline-block;margin-left:6px;">Жишээ</span>
             </div>
             <div class="post-property-body">
               <div class="post-property-title">${p.property.title}</div>
