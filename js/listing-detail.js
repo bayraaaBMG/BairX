@@ -96,7 +96,10 @@
     const sellerLetter = sellerName[0] || 'А';
     const ownerOtherListings = l.userSubmitted && l.ownerId ? listings.filter(x => x.ownerId === l.ownerId && !x._inactive) : null;
     const totalListings = ownerOtherListings ? ownerOtherListings.length : 3 + (l.id % 12);
-    const responseTime = l.id % 2 === 0 ? '10 минут' : '30 минут';
+    // A "Хариу: 10/30 минут" response-time claim used to live here, computed as
+    // l.id % 2 — not a real message-latency metric for any seller, demo or real; nothing
+    // in the codebase tracks how long a seller actually takes to reply. Removed rather
+    // than replaced with an unmeasured "хурдан хариулдаг"-style claim.
     // Same fake-year problem as openSellerProfile below (2020 + id%5 for demo, "today's
     // year" for real) — same fix: demo has no real membership date to show at all; real
     // sellers show the earliest real Firestore createdAt among their own listings, or
@@ -264,7 +267,6 @@
               <div class="seller-meta">${esc(seller.type)}</div>
               <div class="seller-stats">
                 <span ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}')" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;"` : ''}><b>${totalListings} зар</b></span>
-                <span>Хариу: <b>${responseTime}</b></span>
                 ${memberSinceYear ? `<span>Гишүүн: <b>${memberSinceYear} оноос</b></span>` : ''}
               </div>
             </div>
