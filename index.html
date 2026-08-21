@@ -133,10 +133,6 @@
 <!-- ============ HERO ============ -->
 <section class="hero hero-compact" id="home">
   <div class="hero-compact-inner">
-    <span class="hero-tag"><span class="hero-tag-dot"></span>Монголын шинэ үеийн ухаалаг үл хөдлөхийн платформ</span>
-    <h1 class="hero-compact-title display">Зөв байр, зөв боломжийг <em>BairX</em>-ээс хай</h1>
-    <p class="hero-compact-sub">Орон сууц, түрээс, оффис, газар, худалдах/булах бүх төрлийн зарыг нэг дороос хурдан бөгөөд хялбараар.</p>
-
     <div class="home-search-bar">
       <div class="home-cat-tabs" id="homeCatTabs">
         <button type="button" class="home-cat-tab active" data-cat="all" onclick="setHomeCatTab('all')">Бүх категори</button>
@@ -215,21 +211,38 @@
       </div>
     </div>
 
-    <div class="hero-mini-stats" id="heroMiniStats">
-      <div><div class="hero-mini-stat-num" id="heroStat-all">0</div><div class="hero-mini-stat-label">Нийт зар</div></div>
-      <div><div class="hero-mini-stat-num" id="heroStat-apartment">0</div><div class="hero-mini-stat-label">Орон сууц</div></div>
-      <div><div class="hero-mini-stat-num" id="heroStat-rent">0</div><div class="hero-mini-stat-label">Түрээс</div></div>
-      <div><div class="hero-mini-stat-num" id="heroStat-landhouse">0</div><div class="hero-mini-stat-label">Газар, хашаа байшин</div></div>
+    <div class="home-info-strip">
+      <div class="home-info-strip-text">
+        <h1 class="hero-compact-title display">Зөв байр, зөв боломжийг <em>BairX</em>-ээс хай</h1>
+        <p class="hero-compact-sub">Орон сууц, түрээс, оффис, газар, худалдах/булах бүх төрлийн зарыг нэг дороос хурдан бөгөөд хялбараар.</p>
+      </div>
+      <div class="home-info-stats" id="heroMiniStats">
+        <div class="home-info-stat">
+          <div class="home-info-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M13 21V11l6 3v7"/></svg></div>
+          <div><div class="home-info-stat-num" id="heroStat-all">0</div><div class="home-info-stat-label">Нийт зар</div></div>
+        </div>
+        <div class="home-info-stat">
+          <div class="home-info-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4M8 6h.01M8 10h.01M8 14h.01M16 6h.01M16 10h.01M16 14h.01"/></svg></div>
+          <div><div class="home-info-stat-num" id="heroStat-apartment">0</div><div class="home-info-stat-label">Орон сууц</div></div>
+        </div>
+        <div class="home-info-stat">
+          <div class="home-info-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
+          <div><div class="home-info-stat-num" id="heroStat-rent">0</div><div class="home-info-stat-label">Түрээс</div></div>
+        </div>
+        <div class="home-info-stat">
+          <div class="home-info-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <div><div class="home-info-stat-num" id="heroStat-landhouse">0</div><div class="home-info-stat-label">Газар, хашаа байшин</div></div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- ============ HOME PORTAL ============ -->
 <section class="home-portal-section" id="home-portal">
-  <div class="section-inner">
+  <div class="home-content-inner">
     <div class="portal-section-head">
       <div>
-        <span class="section-eyebrow">Сүүлийн зарууд</span>
         <h2 class="portal-section-title display">Шинээр нэмэгдсэн <em>зарууд</em></h2>
       </div>
       <button class="btn btn-ghost" onclick="showPage('listings')">
@@ -237,11 +250,10 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </button>
     </div>
-    <div id="homeListingsGrid" class="listings-grid"></div>
+    <div id="homeListingsGrid" class="home-listings-grid"></div>
 
-    <div class="portal-section-head" style="margin-top:64px;">
+    <div class="portal-section-head" style="margin-top:40px;">
       <div>
-        <span class="section-eyebrow">Property Score-оор эрэмбэлсэн</span>
         <h2 class="portal-section-title display">Онцлох <em>зарууд</em></h2>
       </div>
       <button class="btn btn-ghost" onclick="showPage('listings')">
@@ -249,11 +261,10 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </button>
     </div>
-    <div id="homeFeaturedGrid" class="listings-grid"></div>
+    <div id="homeFeaturedGrid" class="home-listings-grid"></div>
 
-    <div class="portal-section-head" style="margin-top:64px;">
+    <div class="portal-section-head" style="margin-top:40px;">
       <div>
-        <span class="section-eyebrow">Хайлтаа хялбарчил</span>
         <h2 class="portal-section-title display">Категориуд</h2>
       </div>
     </div>

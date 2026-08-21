@@ -179,20 +179,36 @@
   .chip.active { background: var(--primary); color: white; }
 
   /* ============ HOME HERO (search-first, unegui.mn-style) ============ */
-  .hero-compact { padding: 56px 32px 64px; text-align: center; }
-  .hero-compact-inner { max-width: 1180px; margin: 0 auto; position: relative; z-index: 2; }
-  .hero-compact .hero-tag { margin-bottom: 18px; }
+  .hero-compact { padding: 20px 32px 32px; }
+  .hero-compact-inner { max-width: 1400px; margin: 0 auto; position: relative; z-index: 2; }
   h1.hero-compact-title {
-    font-size: clamp(28px, 3.4vw, 42px); margin-bottom: 10px; font-weight: 700;
+    font-size: 22px; margin-bottom: 6px; font-weight: 700;
   }
   .hero-compact-title em { font-style: italic; color: var(--primary); }
   .hero-compact-sub {
-    font-size: 15.5px; color: var(--ink-3); max-width: 620px; margin: 0 auto 32px; line-height: 1.6;
+    font-size: 13.5px; color: var(--ink-3); line-height: 1.55;
   }
 
+  /* Compact info strip below the search bar: headline+sub on the left, real counts on
+     the right — replaces the old large centered hero (title/stats now secondary to search). */
+  .home-info-strip {
+    display: flex; align-items: center; justify-content: space-between; gap: 32px;
+    flex-wrap: wrap; background: white; border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 20px 28px; margin-top: 16px; box-shadow: var(--shadow-sm);
+  }
+  .home-info-strip-text { flex: 1; min-width: 240px; }
+  .home-info-stats { display: flex; gap: 28px; flex-wrap: wrap; }
+  .home-info-stat { display: flex; align-items: center; gap: 10px; }
+  .home-info-stat-icon {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    display: grid; place-items: center; background: var(--primary-soft); color: var(--primary);
+  }
+  .home-info-stat-num { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+  .home-info-stat-label { font-size: 11.5px; color: var(--ink-3); }
+
   .home-search-bar {
-    background: white; border-radius: var(--radius-xl); padding: 22px 26px 18px;
-    box-shadow: var(--shadow-lg); border: 1px solid var(--line); text-align: left;
+    background: white; border-radius: var(--radius-lg); padding: 18px 24px 14px;
+    box-shadow: var(--shadow-sm); border: 1px solid var(--line); text-align: left;
   }
   .home-cat-tabs {
     display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;
@@ -237,48 +253,63 @@
   }
   .hs-advanced-link:hover { text-decoration: underline; }
 
-  .hero-mini-stats {
-    display: flex; justify-content: center; gap: 40px; margin-top: 28px; flex-wrap: wrap;
-  }
-  .hero-mini-stat-num { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 700; color: var(--ink); }
-  .hero-mini-stat-label { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
-
   @media (max-width: 1024px) {
     .home-search-fields { grid-template-columns: 1fr 1fr; }
     .hs-field-wide { grid-column: 1 / -1; }
     .hs-search-btn { grid-column: 1 / -1; }
+    .home-info-strip { flex-direction: column; align-items: flex-start; }
   }
   @media (max-width: 640px) {
-    .hero-compact { padding: 40px 18px 48px; }
-    .home-search-bar { padding: 18px; border-radius: var(--radius-lg); }
-    .home-cat-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -18px 16px; padding: 0 18px; }
+    .hero-compact { padding: 14px 18px 24px; }
+    .home-search-bar { padding: 16px; border-radius: var(--radius-lg); }
+    .home-cat-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 16px; padding: 0 16px; }
     .home-cat-tabs::-webkit-scrollbar { display: none; }
     .home-cat-tab { flex-shrink: 0; }
     .home-search-fields { grid-template-columns: 1fr; }
-    .hero-mini-stats { gap: 22px; }
+    .home-info-strip { padding: 16px 18px; gap: 16px; }
+    .home-info-stats { gap: 16px 22px; }
   }
 
-  /* Категориуд tile grid */
-  .home-cat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  /* Категориуд — one compact horizontal row on desktop (wraps only when it must) */
+  .home-cat-grid { display: flex; gap: 10px; }
   .home-cat-tile {
-    display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center;
-    padding: 20px 12px; background: white; border: 1.5px solid var(--line);
+    display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+    flex: 1; min-width: 0; padding: 14px 8px; background: white; border: 1.5px solid var(--line);
     border-radius: var(--radius-md); cursor: pointer; transition: all 0.18s ease; font-family: inherit;
   }
   .home-cat-tile:hover { border-color: var(--primary); background: var(--primary-soft); transform: translateY(-2px); box-shadow: var(--shadow-md); }
   .home-cat-tile-icon {
-    width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+    width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
     background: var(--cat-color-soft, var(--primary-soft)); color: var(--cat-color, var(--primary));
   }
-  .home-cat-tile-name { font-size: 13px; font-weight: 700; color: var(--ink-2); }
-  .home-cat-tile-count { font-size: 12px; color: var(--ink-3); font-family: 'JetBrains Mono', monospace; }
-  @media (max-width: 900px) { .home-cat-grid { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 480px) { .home-cat-grid { grid-template-columns: repeat(2, 1fr); } }
+  .home-cat-tile-icon svg { width: 16px; height: 16px; }
+  .home-cat-tile-name { font-size: 11.5px; font-weight: 700; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .home-cat-tile-count { font-size: 11px; color: var(--ink-3); font-family: 'JetBrains Mono', monospace; }
+  @media (max-width: 900px) { .home-cat-grid { flex-wrap: wrap; } .home-cat-tile { flex: 1 1 calc(33.333% - 8px); } }
+  @media (max-width: 480px) { .home-cat-tile { flex: 1 1 calc(50% - 6px); } }
+
+  /* Compact 5-across card grid for the home page's own listing sections — the Listings
+     search-results page keeps its own .listings-grid (3-col, taller cards) unchanged;
+     this only restyles .listing-card when it's inside a home grid. */
+  .home-listings-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .home-listings-grid .listing-img { aspect-ratio: 4/3; }
+  .home-listings-grid .listing-body { padding: 12px; }
+  .home-listings-grid .listing-price { font-size: 16px; }
+  .home-listings-grid .listing-price-sub { font-size: 10.5px; }
+  .home-listings-grid .listing-title { font-size: 12.5px; margin-bottom: 4px; -webkit-line-clamp: 1; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+  .home-listings-grid .listing-loc { font-size: 11px; margin-bottom: 8px; }
+  .home-listings-grid .listing-meta { padding-top: 8px; gap: 8px; font-size: 10.5px; flex-wrap: wrap; }
+  .home-listings-grid .badge { padding: 3px 7px; font-size: 9px; }
+  .home-listings-grid .listing-fav { width: 28px; height: 28px; }
+  .home-listings-grid .price-tag { font-size: 9.5px; padding: 3px 7px; }
+  @media (max-width: 1024px) { .home-listings-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 640px) { .home-listings-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
 
   /* ============ SECTION ============ */
   section { padding: 100px 32px; display: none; }
   section.page-active { display: block; }
   .section-inner { max-width: 1320px; margin: 0 auto; }
+  .home-content-inner { max-width: 1400px; margin: 0 auto; }
   .section-head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 48px; gap: 32px; flex-wrap: wrap; }
   .section-eyebrow {
     display: inline-block; font-size: 12px; font-weight: 700; color: var(--primary);
@@ -290,7 +321,7 @@
 
   /* ============ LISTINGS ============ */
   /* ============ HOME PORTAL ============ */
-  .home-portal-section { background: var(--paper); padding: 60px 32px 80px; }
+  .home-portal-section { background: var(--paper); padding: 32px 32px 64px; }
   .portal-cats {
     display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 56px;
   }
