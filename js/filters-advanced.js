@@ -174,6 +174,10 @@
       (Array.isArray(l.features) && l.features.some(f => f === 'furnished' || (typeof f === 'string' && f.toLowerCase().includes('тавилга'))))
     );
     if (activeFilterToggles.includes('vip')) results = results.filter(l => l.badges && l.badges.includes('vip'));
+    if (activeFilterToggles.includes('renovated')) results = results.filter(l => l.condition && (l.condition.includes('засвартай') || l.condition.includes('Premium')));
+    // Real intent flag set at submission (my-listings.js) — never true for older
+    // listings that predate this field, correctly excluding them rather than guessing.
+    if (activeFilterToggles.includes('barter')) results = results.filter(l => l.barterOk === true);
     if (activeFilterToggles.includes('withphoto')) results = results.filter(l =>
       (Array.isArray(l.images) && l.images.length > 0) ||
       (Array.isArray(l._gallery) && l._gallery.length > 0) ||

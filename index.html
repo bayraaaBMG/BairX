@@ -131,108 +131,95 @@
 </nav>
 
 <!-- ============ HERO ============ -->
-<section class="hero" id="home">
-  <div class="hero-grid">
-    <div>
-      <span class="hero-tag"><span class="hero-tag-dot"></span>Монголын шинэ үеийн ухаалаг үл хөдлөхийн платформ</span>
-      <h1 class="display">Гэр оронтой<br>болохын <em>хамгийн ухаалаг</em> зам</h1>
-      <p class="hero-sub">Орон сууц, хаус, газар, оффис, түрээс — бүх зарыг нэг дороос хайж, үнэлж, шийд. Зар нийтлэхэд 5 минут.</p>
-      <div class="hero-cta">
-        <a class="btn btn-blue btn-lg" onclick="showPage('listings')">
-          Зар хайх
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-        </a>
-        <a class="btn btn-primary btn-lg" onclick="openAddListing()">Зар нэмэх</a>
+<section class="hero hero-compact" id="home">
+  <div class="hero-compact-inner">
+    <span class="hero-tag"><span class="hero-tag-dot"></span>Монголын шинэ үеийн ухаалаг үл хөдлөхийн платформ</span>
+    <h1 class="hero-compact-title display">Зөв байр, зөв боломжийг <em>BairX</em>-ээс хай</h1>
+    <p class="hero-compact-sub">Орон сууц, түрээс, оффис, газар, худалдах/булах бүх төрлийн зарыг нэг дороос хурдан бөгөөд хялбараар.</p>
+
+    <div class="home-search-bar">
+      <div class="home-cat-tabs" id="homeCatTabs">
+        <button type="button" class="home-cat-tab active" data-cat="all" onclick="setHomeCatTab('all')">Бүх категори</button>
+        <button type="button" class="home-cat-tab" data-cat="apartment" onclick="setHomeCatTab('apartment')">Орон сууц</button>
+        <button type="button" class="home-cat-tab" data-cat="rent" onclick="setHomeCatTab('rent')">Түрээс</button>
+        <button type="button" class="home-cat-tab" data-cat="office" onclick="setHomeCatTab('office')">Оффис</button>
+        <button type="button" class="home-cat-tab" data-cat="house" onclick="setHomeCatTab('house')">Хашаа байшин</button>
+        <button type="button" class="home-cat-tab" data-cat="land" onclick="setHomeCatTab('land')">Газар</button>
       </div>
-      <div class="hero-stats">
-        <div>
-          <div class="hero-stat-num">20<em>+</em></div>
-          <div class="hero-stat-label">Demo зар</div>
+
+      <div class="home-search-fields">
+        <div class="hs-field">
+          <label for="hSearchDistrict">Байршил</label>
+          <select id="hSearchDistrict">
+            <option value="all">Бүх байршил</option>
+            <option value="khan-uul">Хан-Уул</option>
+            <option value="sukhbaatar">Сүхбаатар</option>
+            <option value="chingeltei">Чингэлтэй</option>
+            <option value="bayanzurkh">Баянзүрх</option>
+            <option value="bayangol">Баянгол</option>
+            <option value="songinokhairkhan">Сонгинохайрхан</option>
+            <option value="nalaikh">Налайх</option>
+            <option value="bagakhangai">Багахангай</option>
+            <option value="baganuur">Багануур</option>
+          </select>
         </div>
-        <div>
-          <div class="hero-stat-num">8</div>
-          <div class="hero-stat-label">Банкны тооцоолуур</div>
+        <div class="hs-field">
+          <label for="hSearchType">Төрөл</label>
+          <select id="hSearchType" onchange="setHomeCatTab(this.value)">
+            <option value="all">Бүх төрөл</option>
+            <option value="apartment">Орон сууц</option>
+            <option value="rent">Түрээс</option>
+            <option value="office">Оффис</option>
+            <option value="house">Хашаа байшин</option>
+            <option value="land">Газар</option>
+          </select>
         </div>
-        <div>
-          <div class="hero-stat-num" style="font-size:20px;">Beta</div>
-          <div class="hero-stat-label">Туршилтын горим</div>
+        <div class="hs-field hs-field-wide">
+          <label for="hSearchKeyword">Түлхүүр үг</label>
+          <div class="hs-input-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="hSearchKeyword" placeholder="Хотхон, хороолол, үг…" onkeydown="if(event.key==='Enter') performSearch()" />
+          </div>
         </div>
+        <div class="hs-field">
+          <label>Үнэ (сая ₮)</label>
+          <div class="hs-range">
+            <input type="number" id="hSearchPriceMin" aria-label="Үнэ, доод" placeholder="Мин үнэ" />
+            <input type="number" id="hSearchPriceMax" aria-label="Үнэ, дээд" placeholder="Макс үнэ" />
+          </div>
+        </div>
+        <div class="hs-field">
+          <label>Талбай (м²)</label>
+          <div class="hs-range">
+            <input type="number" id="hSearchAreaMin" aria-label="Талбай, доод" placeholder="Мин" />
+            <input type="number" id="hSearchAreaMax" aria-label="Талбай, дээд" placeholder="Макс" />
+          </div>
+        </div>
+        <button type="button" class="btn btn-blue hs-search-btn" onclick="performSearch()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+          Хайх
+        </button>
+      </div>
+
+      <div class="quick-filters home-chip-row">
+        <span class="chip" data-filter="new">Шинэ барилга</span>
+        <span class="chip" data-filter="renovated">Засвар хийсэн</span>
+        <span class="chip" data-filter="furnished">Тавилгатай</span>
+        <span class="chip" data-filter="barter">Бартер сонсоно</span>
+        <span class="chip" data-filter="loan">Зээлд хамрагдана</span>
+        <span class="chip" data-filter="below">Үнэ буурсан</span>
+        <a class="hs-advanced-link" onclick="showPage('listings')">
+          Дэлгэрэнгүй шүүлтүүр
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        </a>
       </div>
     </div>
 
-    <div class="hero-search">
-      <div class="search-tabs">
-        <button class="search-tab active" data-tab="buy">Худалдан авах</button>
-        <button class="search-tab" data-tab="rent">Түрээслэх</button>
-        <button class="search-tab" data-tab="sell">Зарах</button>
-      </div>
-
-      <div class="search-fields">
-        <div class="field-group">
-          <label for="searchType">Хөрөнгийн төрөл</label>
-          <select id="searchType">
-            <option value="all">Бүгд</option>
-            <option value="apartment">Орон сууц (байр)</option>
-            <option value="house">Хувийн сууц (хаус)</option>
-            <option value="land">Газар</option>
-            <option value="office">Оффис / Худалдааны</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label for="searchLocation">Байршил</label>
-          <select id="searchLocation">
-            <option value="all">Бүх дүүрэг</option>
-            <option value="khan-uul">Хан-Уул дүүрэг</option>
-            <option value="sukhbaatar">Сүхбаатар дүүрэг</option>
-            <option value="chingeltei">Чингэлтэй дүүрэг</option>
-            <option value="bayanzurkh">Баянзүрх дүүрэг</option>
-            <option value="songinokhairkhan">Сонгинохайрхан дүүрэг</option>
-            <option value="bayangol">Баянгол дүүрэг</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="field-group" style="margin-bottom:0;">
-        <label for="heroSearch">Хайлтын үг</label>
-        <div style="position:relative;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
-          <input type="text" id="heroSearch" placeholder="Жнь: Зайсан 2 өрөө…" onkeydown="if(event.key==='Enter') performSearch()" style="width:100%;padding:10px 12px 10px 38px;border:1.5px solid var(--line-2);border-radius:10px;font-size:14px;font-family:'Manrope',sans-serif;outline:none;background:var(--paper);" />
-        </div>
-      </div>
-
-      <div class="search-fields">
-        <div class="field-group">
-          <label for="searchRooms">Өрөөний тоо</label>
-          <select id="searchRooms">
-            <option value="all">Бүгд</option>
-            <option value="1">1 өрөө</option>
-            <option value="2">2 өрөө</option>
-            <option value="3">3 өрөө</option>
-            <option value="4">4+ өрөө</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label>Үнэ (сая ₮)</label>
-          <div class="price-range-inputs">
-            <input type="number" id="priceMin" aria-label="Үнэ, доод (сая ₮)" placeholder="Доод" />
-            <input type="number" id="priceMax" aria-label="Үнэ, дээд (сая ₮)" placeholder="Дээд" />
-          </div>
-        </div>
-      </div>
-
-      <button class="btn btn-blue btn-lg" style="width:100%; justify-content:center;" onclick="performSearch()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
-        <span id="searchBtnText">Хайх</span>
-      </button>
-
-      <div class="quick-filters">
-        <span class="qf-label">Түргэн:</span>
-        <span class="chip" data-filter="loan8">Зээлээр авах боломжтой</span>
-        <span class="chip" data-filter="new">Шинэ барилга</span>
-        <span class="chip" data-filter="furnished">Тавилгатай</span>
-        <span class="chip" data-filter="garage">Гарааш</span>
-        <span class="chip" data-filter="below">Ашигтай үнэ</span>
-      </div>
+    <div class="hero-mini-stats" id="heroMiniStats">
+      <div><div class="hero-mini-stat-num" id="heroStat-all">0</div><div class="hero-mini-stat-label">Нийт зар</div></div>
+      <div><div class="hero-mini-stat-num" id="heroStat-apartment">0</div><div class="hero-mini-stat-label">Орон сууц</div></div>
+      <div><div class="hero-mini-stat-num" id="heroStat-rent">0</div><div class="hero-mini-stat-label">Түрээс</div></div>
+      <div><div class="hero-mini-stat-num" id="heroStat-landhouse">0</div><div class="hero-mini-stat-label">Газар, хашаа байшин</div></div>
     </div>
   </div>
 </section>
@@ -240,75 +227,6 @@
 <!-- ============ HOME PORTAL ============ -->
 <section class="home-portal-section" id="home-portal">
   <div class="section-inner">
-    <div class="portal-cats">
-      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentCat='apartment'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='apartment')); applyListingFilter();}, 100)">
-        <div class="portal-cat-icon" style="--cat-color:#1E5BFF; --cat-color-soft:#E8EFFF;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M13 21V11l6 3v7"/></svg>
-        </div>
-        <div class="portal-cat-name">Орон сууц</div>
-      </button>
-      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentCat='house'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='house')); applyListingFilter();}, 100)">
-        <div class="portal-cat-icon" style="--cat-color:#00A886; --cat-color-soft:rgba(0,212,170,0.14);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        </div>
-        <div class="portal-cat-name">Хаус</div>
-      </button>
-      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentCat='land'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='land')); applyListingFilter();}, 100)">
-        <div class="portal-cat-icon" style="--cat-color:#009878; --cat-color-soft:rgba(0,152,120,0.12);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
-        </div>
-        <div class="portal-cat-name">Газар</div>
-      </button>
-      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentCat='office'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='office')); applyListingFilter();}, 100)">
-        <div class="portal-cat-icon" style="--cat-color:#7B2CBF; --cat-color-soft:rgba(123,44,191,0.12);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-        </div>
-        <div class="portal-cat-name">Оффис</div>
-      </button>
-      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentCat='rent'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='rent')); applyListingFilter();}, 100)">
-        <div class="portal-cat-icon" style="--cat-color:#C77700; --cat-color-soft:rgba(255,176,32,0.16);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.5 12.5 20 3M17 6l3 3M14 9l2 2"/></svg>
-        </div>
-        <div class="portal-cat-name">Түрээс</div>
-      </button>
-      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{activeFilterToggles=['new']; document.querySelectorAll('.filter-toggle').forEach(t=>t.classList.toggle('active',t.dataset.ftoggle==='new')); currentCat='all'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='all')); applyListingFilter();}, 100)">
-        <div class="portal-cat-icon" style="--cat-color:#1E5BFF; --cat-color-soft:#E8EFFF;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c0 4.5-4.5 9-9 9 4.5 0 9 4.5 9 9 0-4.5 4.5-9 9-9-4.5 0-9-4.5-9-9Z"/></svg>
-        </div>
-        <div class="portal-cat-name">Шинэ барилга</div>
-      </button>
-      <button class="portal-cat-btn" onclick="showPage('newdev')">
-        <div class="portal-cat-icon" style="--cat-color:#00A886; --cat-color-soft:rgba(0,212,170,0.14);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="4" height="11"/><rect x="10" y="6" width="4" height="15"/><rect x="17" y="13" width="4" height="8"/></svg>
-        </div>
-        <div class="portal-cat-name">Шинэ орон сууц</div>
-      </button>
-      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{activeFilterToggles=['loan']; document.querySelectorAll('.filter-toggle').forEach(t=>t.classList.toggle('active',t.dataset.ftoggle==='loan')); currentCat='all'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='all')); applyListingFilter();}, 100)">
-        <div class="portal-cat-icon" style="--cat-color:#7B2CBF; --cat-color-soft:rgba(123,44,191,0.12);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 6l7-4 7 4M4 10v11M20 10v11M9 14v3M15 14v3"/></svg>
-        </div>
-        <div class="portal-cat-name">Зээлтэй байр</div>
-      </button>
-      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{activeFilterToggles=['below']; document.querySelectorAll('.filter-toggle').forEach(t=>t.classList.toggle('active',t.dataset.ftoggle==='below')); currentCat='all'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='all')); applyListingFilter();}, 100)">
-        <div class="portal-cat-icon" style="--cat-color:#009878; --cat-color-soft:rgba(0,152,120,0.12);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.29 9.29a2 2 0 0 0 2.82 0l7.19-7.19a2 2 0 0 0 0-2.82L12 2Z"/><circle cx="7" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg>
-        </div>
-        <div class="portal-cat-name">Хямд байр</div>
-      </button>
-      <button class="portal-cat-btn" onclick="showPage('listings'); setTimeout(()=>{currentSort='default'; const s=document.getElementById('sortSelect'); if(s)s.value='default'; currentCat='all'; document.querySelectorAll('.filter-pill[data-cat]').forEach(x=>x.classList.toggle('active',x.dataset.cat==='all')); applyListingFilter();}, 100)">
-        <div class="portal-cat-icon" style="--cat-color:#C77700; --cat-color-soft:rgba(255,176,32,0.16);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7v8l10-12h-7z"/></svg>
-        </div>
-        <div class="portal-cat-name">Шинэ зар</div>
-      </button>
-      <button class="portal-cat-btn" onclick="showPage('calc')">
-        <div class="portal-cat-icon" style="--cat-color:#1E5BFF; --cat-color-soft:#E8EFFF;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><circle cx="8" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1" fill="currentColor" stroke="none"/></svg>
-        </div>
-        <div class="portal-cat-name">Тооцоолуур</div>
-      </button>
-    </div>
-
     <div class="portal-section-head">
       <div>
         <span class="section-eyebrow">Сүүлийн зарууд</span>
@@ -319,15 +237,91 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </button>
     </div>
-    <!-- Latest listings header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;margin-top:8px;">
-      <h3 style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:var(--ink);">Сүүлийн зарууд</h3>
-      <button class="btn btn-ghost" onclick="showPage('listings')" style="font-size:12px;gap:5px;">
-        Бүгдийг харах
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+    <div id="homeListingsGrid" class="listings-grid"></div>
+
+    <div class="portal-section-head" style="margin-top:64px;">
+      <div>
+        <span class="section-eyebrow">Property Score-оор эрэмбэлсэн</span>
+        <h2 class="portal-section-title display">Онцлох <em>зарууд</em></h2>
+      </div>
+      <button class="btn btn-ghost" onclick="showPage('listings')">
+        Бүгдийг үзэх
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </button>
     </div>
-    <div id="homeListingsGrid" class="listings-grid"></div>
+    <div id="homeFeaturedGrid" class="listings-grid"></div>
+
+    <div class="portal-section-head" style="margin-top:64px;">
+      <div>
+        <span class="section-eyebrow">Хайлтаа хялбарчил</span>
+        <h2 class="portal-section-title display">Категориуд</h2>
+      </div>
+    </div>
+    <div class="home-cat-grid">
+      <button class="home-cat-tile" onclick="goHomeCategory('apartment')">
+        <div class="home-cat-tile-icon" style="--cat-color:#1E5BFF; --cat-color-soft:#E8EFFF;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M13 21V11l6 3v7"/></svg>
+        </div>
+        <div class="home-cat-tile-name">Орон сууц</div>
+        <div class="home-cat-tile-count" id="homeCatCount-apartment">0</div>
+      </button>
+      <button class="home-cat-tile" onclick="goHomeCategory('rent')">
+        <div class="home-cat-tile-icon" style="--cat-color:#C77700; --cat-color-soft:rgba(255,176,32,0.16);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.5 12.5 20 3M17 6l3 3M14 9l2 2"/></svg>
+        </div>
+        <div class="home-cat-tile-name">Түрээс</div>
+        <div class="home-cat-tile-count" id="homeCatCount-rent">0</div>
+      </button>
+      <button class="home-cat-tile" onclick="goHomeCategory('office')">
+        <div class="home-cat-tile-icon" style="--cat-color:#7B2CBF; --cat-color-soft:rgba(123,44,191,0.12);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        </div>
+        <div class="home-cat-tile-name">Оффис</div>
+        <div class="home-cat-tile-count" id="homeCatCount-office">0</div>
+      </button>
+      <button class="home-cat-tile" onclick="goHomeCategory('house')">
+        <div class="home-cat-tile-icon" style="--cat-color:#00A886; --cat-color-soft:rgba(0,212,170,0.14);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div class="home-cat-tile-name">Хашаа байшин</div>
+        <div class="home-cat-tile-count" id="homeCatCount-house">0</div>
+      </button>
+      <button class="home-cat-tile" onclick="goHomeCategory('land')">
+        <div class="home-cat-tile-icon" style="--cat-color:#009878; --cat-color-soft:rgba(0,152,120,0.12);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+        </div>
+        <div class="home-cat-tile-name">Газар</div>
+        <div class="home-cat-tile-count" id="homeCatCount-land">0</div>
+      </button>
+      <button class="home-cat-tile" onclick="goHomeCategory('house')" title="Хаус бүсэд хайна">
+        <div class="home-cat-tile-icon" style="--cat-color:#00A886; --cat-color-soft:rgba(0,212,170,0.14);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V11L12 4l8 7v10"/><path d="M9 21v-6h6v6"/></svg>
+        </div>
+        <div class="home-cat-tile-name">Зуслан</div>
+        <div class="home-cat-tile-count" id="homeCatCount-cottage">0</div>
+      </button>
+      <button class="home-cat-tile" onclick="goHomeCategory('house')" title="Хаус бүсэд хайна">
+        <div class="home-cat-tile-icon" style="--cat-color:#00A886; --cat-color-soft:rgba(0,212,170,0.14);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V9l9-6 9 6v12"/><path d="M5 21v-8h14v8"/></svg>
+        </div>
+        <div class="home-cat-tile-name">Гараж</div>
+        <div class="home-cat-tile-count" id="homeCatCount-garage">0</div>
+      </button>
+      <button class="home-cat-tile" onclick="goHomeCategory('office')" title="Оффис бүсэд хайна">
+        <div class="home-cat-tile-icon" style="--cat-color:#7B2CBF; --cat-color-soft:rgba(123,44,191,0.12);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5M4 9h16v11H4z"/><path d="M9 20v-6h6v6"/></svg>
+        </div>
+        <div class="home-cat-tile-name">Худалдаа, үйлчилгээ</div>
+        <div class="home-cat-tile-count" id="homeCatCount-commercial">0</div>
+      </button>
+      <button class="home-cat-tile" onclick="showPage('listings')" title="Бүх зарыг харна">
+        <div class="home-cat-tile-icon" style="--cat-color:var(--ink-3); --cat-color-soft:var(--paper-3);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        </div>
+        <div class="home-cat-tile-name">Бусад</div>
+        <div class="home-cat-tile-count" id="homeCatCount-other">0</div>
+      </button>
+    </div>
   </div>
 </section>
 

@@ -1,13 +1,9 @@
-﻿  // ===== HOME LISTINGS PREVIEW =====
-  function renderHomeListings() {
-    const grid = document.getElementById('homeListingsGrid');
-    if (!grid) return;
-    // VIP/Featured plans promise homepage placement — boosted listings sort first (by
-    // recency among themselves), everything else fills the remaining slots by recency.
-    const recent = listings.filter(l => !l._inactive)
-      .sort((a, b) => (b.badges.includes('vip') - a.badges.includes('vip')) || (b.id - a.id))
-      .slice(0, 8);
-    grid.innerHTML = recent.map(l => `
+  // ===== HOME LISTINGS PREVIEW =====
+  // Shared card markup for every homepage listing grid (newest, featured) — kept in one
+  // place so both sections render identically and stay in sync with the real listing-card
+  // look used on the Listings page itself.
+  function homeCardHtml(l) {
+    return `
       <article class="listing-card" onclick="showPage('listings'); setTimeout(()=>openListing(${l.id}),150)">
         <div class="listing-img">
           <img src="${esc(l.img)}" alt="${esc(l.title)}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';"/>
@@ -39,6 +35,85 @@
           </div>
         </div>
       </article>
-    `).join('');
+    `;
   }
 
+  function renderHomeListings() {
+    const grid = document.getElementById('homeListingsGrid');
+    if (grid) {
+      // VIP/Featured plans promise homepage placement — boosted listings sort first (by
+      // recency among themselves), everything else fills the remaining slots by recency.
+      const recent = listings.filter(l => !l._inactive)
+        .sort((a, b) => (b.badges.includes('vip') - a.badges.includes('vip')) || (b.id - a.id))
+        .slice(0, 8);
+      grid.innerHTML = recent.map(homeCardHtml).join('');
+    }
+    renderFeaturedListings();
+    renderHomeCategoryCounts();
+  }
+
+  // "Онцлох зарууд" — ranked by propertyScore() (utils.js), the same real, documented,
+  // rule-based composite (price fairness vs. real comparables + verification + feature/
+  // photo completeness) used on every listing detail page. Not a paid placement and not
+  // a second, invented ranking — VIP/boosted listings aren't guaranteed a slot here the
+  // way they are in "Шинээр нэмэгдсэн" above; they show up if their real score earns it.
+  function renderFeaturedListings() {
+    const grid = document.getElementById('homeFeaturedGrid');
+    if (!grid) return;
+    const featured = listings.filter(l => !l._inactive)
+      .map(l => ({ l, score: propertyScore(l) }))
+      .sort((a, b) => b.score - a.score || b.id - a.id)
+      .slice(0, 8)
+      .map(x => x.l);
+    grid.innerHTML = featured.map(homeCardHtml).join('');
+  }
+
+  // "Категориуд" — every count is a live tally over the real `listings` array, the same
+  // source the filter-pill counts (updateCatPillCounts, filters-advanced.js) already use.
+  // The four narrower rows (Зуслан/Гараж/Худалдаа-үйлчилгээ/Бусад) key off propertyType,
+  // which only real Add-Listing submissions reliably set — older demo rows correctly show
+  // 0 there rather than a guessed number. Clicking one of those four still only narrows to
+  // its parent bucket on the Listings page (house/office) since there's no propertyType
+  // filter control there yet — it's honest about that rather than pretending to filter
+  // more precisely than the app currently can.
+  function renderHomeCategoryCounts() {
+    const active = listings.filter(l => !l._inactive);
+    const counts = {
+      apartment: active.filter(l => l.cat === 'apartment').length,
+      rent: active.filter(l => l.cat === 'rent').length,
+      office: active.filter(l => l.cat === 'office').length,
+      house: active.filter(l => l.cat === 'house').length,
+      land: active.filter(l => l.cat === 'land').length,
+      cottage: active.filter(l => l.propertyType === 'cottage').length,
+      garage: active.filter(l => l.propertyType === 'garage').length,
+      commercial: active.filter(l => l.propertyType === 'commercial').length,
+      other: active.filter(l => l.propertyType === 'other').length,
+    };
+    Object.keys(counts).forEach(key => {
+      const el = document.getElementById('homeCatCount-' + key);
+      if (el) el.textContent = fmt(counts[key]);
+    });
+
+    const heroStats = {
+      all: active.length,
+      apartment: counts.apartment,
+      rent: counts.rent,
+      landhouse: counts.land + counts.house,
+    };
+    Object.keys(heroStats).forEach(key => {
+      const el = document.getElementById('heroStat-' + key);
+      if (el) el.textContent = fmt(heroStats[key]);
+    });
+  }
+
+  // Shared by every home-category tile: jump to Listings pre-filtered to the tile's
+  // bucket (fine-grained propertyType tiles land on their parent bucket — see the note
+  // on renderHomeCategoryCounts above).
+  function goHomeCategory(cat) {
+    showPage('listings');
+    setTimeout(() => {
+      currentCat = cat;
+      document.querySelectorAll('.filter-pill[data-cat]').forEach(x => x.classList.toggle('active', x.dataset.cat === cat));
+      applyListingFilter();
+    }, 100);
+  }

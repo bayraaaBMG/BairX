@@ -71,7 +71,7 @@
     const isLandEdit = (l.propertyType || (l.cat === 'rent' ? 'apartment' : l.cat)) === 'land';
     Object.assign(addListingState, {
       step: 2,
-      intent: l.cat === 'rent' ? 'rent' : 'sell',
+      intent: l.cat === 'rent' ? 'rent' : (l.barterOk ? 'exchange' : 'sell'),
       propertyType: l.propertyType || (l.cat === 'rent' ? 'apartment' : l.cat),
       title: l.title,
       district: districtKeys[l.district] || l.district,
@@ -1573,6 +1573,10 @@
       condition: conditionLabels[s.condition] || s.condition || '',
       features: s.features.slice(),
       description: s.description || '',
+      // Real "open to a barter/exchange" signal from the intent the user actually picked
+      // in step 1 — was captured into addListingState but never carried through to the
+      // listing object before. Backs the home page's "Бартер сонсоно" quick filter.
+      barterOk: s.intent === 'exchange',
       legalNotes: 'Хэрэглэгчийн нэмсэн зар · ' + (s.name || '') + ' · ' + (s.phone || ''),
       userSubmitted: true
     };
@@ -1625,6 +1629,7 @@
         condition: newListing.condition,
         features: newListing.features,
         description: newListing.description,
+        barterOk: newListing.barterOk,
         img: newListing.img,
         images: allImages,
         videoUrl: newListing.videoUrl,

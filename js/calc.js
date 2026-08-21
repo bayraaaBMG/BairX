@@ -350,15 +350,6 @@
     });
   });
 
-  document.querySelectorAll('.search-tab').forEach(t => {
-    t.addEventListener('click', () => {
-      document.querySelectorAll('.search-tab').forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      const labels = { buy: 'Хайх', rent: 'Түрээс хайх', sell: 'Үнэлгээ авах' };
-      document.getElementById('searchBtnText').textContent = labels[t.dataset.tab];
-    });
-  });
-
   document.querySelectorAll('.filter-pill[data-cat]').forEach(t => {
     t.addEventListener('click', () => {
       document.querySelectorAll('.filter-pill[data-cat]').forEach(x => x.classList.remove('active'));
@@ -368,39 +359,10 @@
     });
   });
 
-  document.querySelectorAll('.chip').forEach(c => {
-    c.addEventListener('click', () => {
-      c.classList.toggle('active');
-      const filter = c.dataset.filter;
-      const filterNames = {
-        'loan8': 'Зээлээр авах боломжтой зарууд',
-        'new': 'Шинэ барилгын зарууд',
-        'furnished': 'Тавилгатай зарууд',
-        'garage': 'Гараажтай зарууд',
-        'below': 'Ашигтай үнэтэй зарууд'
-      };
-      // Map hero quick-filter chips onto the real filter-toggle keys used by getFilteredListings()
-      const toggleMap = { loan8: 'loan', new: 'new', furnished: 'furnished', garage: 'parking', below: 'below' };
-      const ftoggle = toggleMap[filter];
-      const active = c.classList.contains('active');
-      if (ftoggle) {
-        if (active) {
-          if (!activeFilterToggles.includes(ftoggle)) activeFilterToggles.push(ftoggle);
-        } else {
-          activeFilterToggles = activeFilterToggles.filter(x => x !== ftoggle);
-        }
-        document.querySelectorAll(`.filter-toggle[data-ftoggle="${ftoggle}"]`).forEach(t => t.classList.toggle('active', active));
-      }
-      if (active) {
-        showToast('Шүүлт нэмэгдлээ: ' + filterNames[filter]);
-        showPage('listings');
-        applyListingFilter();
-      } else {
-        showToast('Шүүлт хасагдлаа: ' + filterNames[filter]);
-        updateFilterCount();
-      }
-    });
-  });
+  // The old hero's quick-filter chips (instant-apply, one navigate-to-Listings per
+  // click) were replaced by the new home search bar's chip row (index.html) — those
+  // now just mark themselves active/inactive and only take effect once "Хайх" is
+  // pressed, via performSearch() in search.js.
 
   // ESC to close modal
   document.addEventListener('keydown', e => {

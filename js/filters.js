@@ -56,7 +56,7 @@
     const floorMax = document.getElementById('fFloorMax')?.value;
     if (floorMin) tags.push({ label: floorMin + '+давхар', onclick: `clearFilterTag('floorMin','')` });
     if (floorMax) tags.push({ label: '≤' + floorMax + 'давхар', onclick: `clearFilterTag('floorMax','')` });
-    const toggleLabels = {new:'Шинэ барилга',verified:'Баталгаажсан',below:'Зах зээлийн хямд',loan:'Зээлд хамрагдах',parking:'Паркингтай',furnished:'Тавилгатай',vip:'⭐ VIP',withphoto:'Зурагтай'};
+    const toggleLabels = {new:'Шинэ барилга',verified:'Баталгаажсан',below:'Зах зээлийн хямд',loan:'Зээлд хамрагдах',parking:'Паркингтай',furnished:'Тавилгатай',vip:'⭐ VIP',withphoto:'Зурагтай',renovated:'Засвар хийсэн',barter:'Бартер сонсоно'};
     activeFilterToggles.forEach(t => tags.push({ label: toggleLabels[t]||t, onclick: `clearFilterTag('toggle','${t}')` }));
     if (tags.length === 0) { wrap.style.display = 'none'; return; }
     wrap.style.display = 'flex';
