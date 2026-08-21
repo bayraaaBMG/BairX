@@ -35,7 +35,7 @@
       <button class="modal-close" onclick="closeModal()" style="z-index:10;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
-      <div class="gallery-main">
+      <div class="gallery-main" ontouchstart="swipeStart(event)" ontouchend="swipeEnd(event, galleryPrev, galleryNext)">
         <div class="gallery-counter">${galleryIndex + 1} / ${galleryImages.length}</div>
         <img src="${galleryImages[galleryIndex]}" alt="" />
         ${galleryImages.length > 1 ? `

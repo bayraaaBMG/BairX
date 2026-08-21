@@ -99,7 +99,7 @@
       usageType: l.usageType || '',
       deposit: l.deposit ? String(l.deposit) : '',
       minTerm: l.minTerm || '',
-      description: '',
+      description: l.description || '',
       features: Array.isArray(l.features) ? l.features.slice() : [],
       // Every existing photo already has a real URL (Storage, or a legacy base64 string
       // from before this fix) — mark it 'uploaded' with nothing to (re)upload, so the
@@ -1572,6 +1572,7 @@
       cadastre: '', collateral: '', taxDebt: '',
       condition: conditionLabels[s.condition] || s.condition || '',
       features: s.features.slice(),
+      description: s.description || '',
       legalNotes: 'Хэрэглэгчийн нэмсэн зар · ' + (s.name || '') + ' · ' + (s.phone || ''),
       userSubmitted: true
     };
@@ -1623,6 +1624,7 @@
         minTerm: newListing.minTerm,
         condition: newListing.condition,
         features: newListing.features,
+        description: newListing.description,
         img: newListing.img,
         images: allImages,
         videoUrl: newListing.videoUrl,

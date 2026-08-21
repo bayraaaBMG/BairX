@@ -156,9 +156,12 @@
       city: `хотын хэмжээний ${comps.length} зартай (дүүрэгт хангалттай харьцуулах зар олдсонгүй)`
     }[tier];
 
+    const compPrices = comps.map(a => a.l.price).filter(p => typeof p === 'number').sort((a, b) => a - b);
+
     return {
       available: true, verdict, color, confidence, tier, basisText,
-      sampleSize: comps.length, subjectPerSqm, marketPerSqm, diffPct
+      sampleSize: comps.length, subjectPerSqm, marketPerSqm, diffPct,
+      compsPriceMin: compPrices[0], compsPriceMax: compPrices[compPrices.length - 1]
     };
   }
 
@@ -201,6 +204,19 @@
     const infoFields = [l.buildingType, l.heating, l.insulation, l.condition];
     score += infoFields.filter(Boolean).length * 2.5;
     return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  // Generic horizontal-swipe detector, shared by the in-page listing gallery and the
+  // fullscreen gallery modal — a plain left/right threshold, not a full drag-tracking
+  // gesture library, since both just need "swiped left" -> next / "swiped right" -> prev.
+  let _swipeStartX = null;
+  function swipeStart(e) { _swipeStartX = e.changedTouches[0].clientX; }
+  function swipeEnd(e, prevFn, nextFn) {
+    if (_swipeStartX == null) return;
+    const dx = e.changedTouches[0].clientX - _swipeStartX;
+    _swipeStartX = null;
+    if (Math.abs(dx) < 40) return;
+    if (dx > 0) prevFn(); else nextFn();
   }
 
   function showToast(msg, type) {

@@ -9,6 +9,265 @@
     'nalaikh': 'Налайх'
   };
 
+  // ===== SPEC GRID — every row maps to a real field already on the listing; a field
+  // that's empty/unset for this particular listing is simply omitted, never filled with
+  // a placeholder or guessed value. =====
+  function ldSpecItems(l) {
+    const isLand = l.propertyType === 'land';
+    const floorParts = String(l.floor || '').split('/');
+    const floorNum = floorParts[0];
+    const totalFloors = floorParts[1];
+    const items = [];
+    if (l.area) items.push(['Талбай', l.area + ' м²']);
+    if (!isLand && typeof l.rooms === 'number') items.push(['Өрөө', l.rooms]);
+    if (isLand && typeof l.rooms === 'string' && l.rooms) items.push(['Хэмжээ', l.rooms]);
+    if (floorNum && floorNum !== '?' && floorNum !== 'Эзэмшил') items.push(['Давхар', floorNum]);
+    if (totalFloors && totalFloors !== '?') items.push(['Нийт давхар', totalFloors]);
+    if (typeof l.year === 'number') items.push(['Ашиглалтад орсон он', l.year]);
+    if (l.buildingType) items.push(['Барилгын төрөл', l.buildingType]);
+    if (l.balcony) items.push(['Тагт', l.balcony]);
+    if (l.windowDirection) items.push(['Цонхны чиглэл', l.windowDirection]);
+    if (Array.isArray(l.features) && l.features.includes('garage')) items.push(['Гараж', 'Тийм']);
+    if (l.ownership) items.push(['Өмчлөл', l.ownership]);
+    const status = l.condition || l.usageType; // apartment "Засвар" vs office "Ашиглалтын төлөв" — same concept in the spec, different source field
+    if (status) items.push(['Төлөв', status]);
+    return items;
+  }
+
+  // ===== DESCRIPTION — plain user text, expand/collapse past a length threshold. Never
+  // rendered at all when the listing has none (see the doSubmitListing fix that made this
+  // field actually get saved — older listings created before that fix have none). =====
+  function ldDescriptionHtml(l) {
+    if (!l.description) return '';
+    const long = l.description.length > 320;
+    return `
+      <div class="modal-section ld-desc">
+        <h4>Тайлбар</h4>
+        <div class="ld-desc-text">${esc(l.description).replace(/\n/g, '<br>')}</div>
+        ${long ? `<button type="button" class="ld-desc-toggle" onclick="ldToggleDescription(this)">Дэлгэрэнгүй</button>` : ''}
+      </div>
+    `;
+  }
+  function ldToggleDescription(btn) {
+    const box = btn.previousElementSibling;
+    const expanded = box.classList.toggle('expanded');
+    btn.textContent = expanded ? 'Хураах' : 'Дэлгэрэнгүй';
+  }
+
+  // ===== BREADCRUMB =====
+  function ldBreadcrumbHtml(l, districtLabel) {
+    const catLabels = { apartment: 'Орон сууц', house: 'Хаус', land: 'Газар', office: 'Оффис', rent: 'Түрээс' };
+    return `
+      <div class="ld-breadcrumb">
+        <a onclick="closeModal(); showPage('home')">Нүүр</a>
+        <span>/</span>
+        <a onclick="closeModal(); showPage('listings')">Зарууд</a>
+        ${catLabels[l.cat] ? `<span>/</span><a onclick="closeModal(); showPage('listings')">${esc(catLabels[l.cat])}</a>` : ''}
+        ${districtLabel !== 'Дүүрэг' ? `<span>/</span><span>${esc(districtLabel)}</span>` : ''}
+      </div>
+    `;
+  }
+
+  // ===== SIMILAR LISTINGS — ranked same district, then closest rooms, then closest
+  // area, then closest price (each tier weighted well below the one before it, so
+  // district always dominates and the others only break ties within it). =====
+  function ldFindSimilar(l, max) {
+    const pool = listings.filter(x => x.id !== l.id && x.cat === l.cat && !x._inactive);
+    return pool.map(x => {
+      let score = 0;
+      if (x.district === l.district) score += 10000;
+      if (typeof x.rooms === 'number' && typeof l.rooms === 'number') {
+        score += Math.max(0, 300 - Math.abs(x.rooms - l.rooms) * 80);
+      }
+      if (x.area && l.area) score += Math.max(0, 150 - (Math.abs(x.area - l.area) / l.area) * 150);
+      if (x.price && l.price) score += Math.max(0, 60 - (Math.abs(x.price - l.price) / l.price) * 60);
+      return { x, score };
+    }).sort((a, b) => b.score - a.score).slice(0, max).map(s => s.x);
+  }
+  function ldSimilarCardHtml(x) {
+    return `
+      <article class="listing-card" onclick="closeModal(); setTimeout(()=>openListing(${x.id}),200)">
+        <div class="listing-img">
+          <img src="${esc(x.img)}" alt="${esc(x.title)}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';" />
+          <button class="listing-fav ${favorites.includes(x.id) ? 'faved' : ''}" onclick="event.stopPropagation(); toggleFav(this, ${x.id})">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
+          </button>
+        </div>
+        <div class="listing-body">
+          <div class="listing-price-row">
+            <div>
+              <div class="listing-price">${fmtPrice(x.price)}</div>
+              <div class="listing-price-sub">${x.cat === 'rent' ? 'Сарын түрээс' : pricePerSqmText(x)}</div>
+            </div>
+          </div>
+          <h3 class="listing-title">${esc(x.title)}</h3>
+          <div class="listing-loc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${esc(x.loc)}</div>
+          <div class="listing-meta">
+            <span class="listing-meta-item"><strong>${x.area}</strong> м²</span>
+            ${typeof x.rooms === 'number' ? `<span class="listing-meta-item"><strong>${x.rooms}</strong> өрөө</span>` : ''}
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  // ===== MINI LOAN CALCULATOR — same amortization math and the same verified-only bank
+  // data as the standalone /calc page (banks/SAFE_DTI, calc.js); this widget just gives an
+  // immediate, listing-scoped preview. "Дэлгэрэнгүй тооцоолуур" hands the price to the
+  // real calculator page for the full breakdown/early-payoff/afford-ability tools. =====
+  function ldRateOptionsHtml() {
+    const opts = banks.filter(b => b.verified && b.annualRateText).map(b => {
+      const m = b.annualRateText.match(/(\d+(\.\d+)?)/);
+      if (!m) return '';
+      return `<option value="${m[1]}">${esc(b.name)} — ${esc(b.annualRateText)}</option>`;
+    }).join('');
+    return opts + `<option value="0">Бэлэн мөнгө (зээлгүй)</option><option value="custom">Өөрийн хүү оруулах…</option>`;
+  }
+  function ldCalcHtml(l) {
+    if (l.cat === 'rent') return '';
+    return `
+      <div class="ld-calc">
+        <div class="ld-calc-head">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Зээлийн тооцоолуур
+        </div>
+        <div class="ld-calc-row">
+          <label>Урьдчилгаа <span id="ldDownVal">30%</span></label>
+          <input type="range" class="slider" id="ldDownSlider" min="10" max="50" value="30" oninput="ldCalcUpdate(${l.price})">
+        </div>
+        <div class="ld-calc-row">
+          <label>Хугацаа <span id="ldTermVal">20 жил</span></label>
+          <input type="range" class="slider" id="ldTermSlider" min="5" max="30" value="20" oninput="ldCalcUpdate(${l.price})">
+        </div>
+        <div class="ld-calc-row">
+          <label>Хүү</label>
+          <select id="ldRateSelect" class="form-select" onchange="ldCalcRateChange(${l.price})">${ldRateOptionsHtml()}</select>
+        </div>
+        <div class="ld-calc-row" id="ldCustomRateRow" style="display:none;">
+          <label>Өөрийн хүү (%)</label>
+          <input type="number" class="form-input" id="ldCustomRate" min="0" max="40" step="0.1" value="17.5" oninput="ldCalcUpdate(${l.price})">
+        </div>
+        <div class="ld-calc-out">
+          <div class="ld-calc-out-label">Сарын төлбөр (ойролцоогоор)</div>
+          <div class="ld-calc-out-val" id="ldMonthlyOut">—</div>
+        </div>
+        <div class="ld-calc-disclaimer">Энэ бол ойролцоо тооцоолол — банк тус бүрийн эцсийн хүү, шимтгэл, нөхцөл өөрчлөгдөж болно.</div>
+        <button type="button" class="ld-calc-full-link" onclick="ldOpenFullCalc(${l.price})">
+          Дэлгэрэнгүй тооцоолуур
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    `;
+  }
+  function ldCalcRateChange(price) {
+    const sel = document.getElementById('ldRateSelect');
+    const row = document.getElementById('ldCustomRateRow');
+    if (row) row.style.display = sel.value === 'custom' ? 'block' : 'none';
+    ldCalcUpdate(price);
+  }
+  function ldCalcUpdate(price) {
+    const downSlider = document.getElementById('ldDownSlider');
+    const termSlider = document.getElementById('ldTermSlider');
+    const rateSelect = document.getElementById('ldRateSelect');
+    if (!downSlider || !termSlider || !rateSelect) return;
+    const downPct = parseInt(downSlider.value);
+    const term = parseInt(termSlider.value);
+    document.getElementById('ldDownVal').textContent = downPct + '%';
+    document.getElementById('ldTermVal').textContent = term + ' жил';
+    const rate = rateSelect.value === 'custom' ? (parseFloat(document.getElementById('ldCustomRate')?.value) || 0) : parseFloat(rateSelect.value);
+    const out = document.getElementById('ldMonthlyOut');
+    if (!rate) { out.textContent = 'Зээлгүй — бэлэн мөнгөөр'; return; }
+    const priceWon = price * 1000000;
+    const loanAmt = priceWon * (100 - downPct) / 100;
+    const r = rate / 100 / 12, n = term * 12;
+    const monthly = (loanAmt * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    out.textContent = fmt(monthly) + ' ₮ / сар';
+  }
+  function ldOpenFullCalc(price) {
+    closeModal();
+    showPage('calc');
+    setTimeout(() => {
+      const slider = document.getElementById('priceSlider');
+      if (!slider) return;
+      slider.value = Math.max(80, Math.min(2000, Math.round(price)));
+      if (typeof calculate === 'function') calculate();
+      slider.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
+  }
+
+  // ===== BAIRX MARKET INSIGHT — the same real comparable-sales analysis
+  // (computeValuation, utils.js) that used to live in its own separate "AI valuation"
+  // section, now leading with the concrete stat row the spec asks for (total price, ₮/м²,
+  // district average, %-vs-market, comparable price range) and folding the verdict/
+  // reasoning/stability checklist in underneath as the write-up. No comparable listings
+  // yet -> says so plainly, same as before; never a synthesized score or stat. =====
+  function ldMarketInsightHtml(l, valuation, stability) {
+    const statRow = valuation.available ? `
+      <div class="ld-mi-stats">
+        <div class="ld-mi-stat"><div class="ld-mi-stat-label">Нийт үнэ</div><div class="ld-mi-stat-val">${fmtPrice(l.price)}</div></div>
+        <div class="ld-mi-stat"><div class="ld-mi-stat-label">1м² үнэ</div><div class="ld-mi-stat-val">${pricePerSqmText(l) || '—'}</div></div>
+        <div class="ld-mi-stat"><div class="ld-mi-stat-label">Бүсийн дундаж 1м²</div><div class="ld-mi-stat-val">${fmt(valuation.marketPerSqm)} ₮/м²</div></div>
+        <div class="ld-mi-stat"><div class="ld-mi-stat-label">Зах зээлээс</div><div class="ld-mi-stat-val" style="color:${valuation.color};">${valuation.diffPct >= 0 ? '+' : ''}${(valuation.diffPct * 100).toFixed(0)}%</div></div>
+        ${(valuation.compsPriceMin != null) ? `
+        <div class="ld-mi-stat"><div class="ld-mi-stat-label">Харьцуулах заруудын үнэ</div><div class="ld-mi-stat-val">${fmtPrice(valuation.compsPriceMin)} – ${fmtPrice(valuation.compsPriceMax)}</div></div>
+        ` : ''}
+      </div>
+    ` : '';
+
+    let verdict, color, reasoning, confLabel, confColor, basisLine;
+    if (!valuation.available) {
+      verdict = 'Мэдээлэл хүрэлцэхгүй'; color = 'var(--ink-3)'; confLabel = null;
+      basisLine = valuation.sampleSize
+        ? `Одоогоор ${valuation.sampleSize} харьцуулах зар олдсон — найдвартай тооцоолол хийхэд хамгийн багадаа 2 хэрэгтэй.`
+        : 'BairX дээр энэ төрлийн харьцуулах зар одоогоор алга.';
+      reasoning = `Энэ байртай харьцуулах хангалттай зар платформ дээр олдсонгүй тул үнийг зах зээлтэй бодитоор харьцуулж чадахгүй байна. Дэлгэц дээрх тоо зохиомол биш — зөвхөн бодит харьцуулах зар байхгүй тул тооцоолол хийхгүй байна.`;
+    } else {
+      verdict = valuation.verdict; color = valuation.color;
+      const confMap = { high: ['Өндөр итгэмжтэй', '#009878'], medium: ['Дунд итгэмжтэй', '#C77700'], low: ['Бага итгэмжтэй', '#FF4757'] };
+      [confLabel, confColor] = confMap[valuation.confidence];
+      basisLine = `${valuation.basisText} харьцуулав.`;
+      if (valuation.verdict === 'Сонирхолтой санал') {
+        reasoning = `Харьцуулсан зарын дунджаас доогуур үнэтэй. Гэхдээ <strong>тэр болгон сайн биш</strong> — барьцаа, эзэмшлийн гэрчилгээ, барилгын чанарыг заавал шалгаарай.`;
+      } else if (valuation.verdict === 'Зах зээлээс дээгүүр') {
+        reasoning = `Харьцуулсан зарын дунджаас дээгүүр үнэтэй. Premium байршил, чанар, онцлогоос болсон байж болзошгүй — <strong>үнэ хэлэлцэх боломжтой эсэхийг ярилц</strong>.`;
+      } else {
+        reasoning = `Үнэ харьцуулсан зарын дунд түвшинд. Ердийн сонголт — бусад заруудтай харьцуулж, биечлэн очиж үзэхийг зөвлөж байна.`;
+      }
+      if (valuation.confidence === 'low') {
+        reasoning += ` <strong style="color:#C77700;">Анхаар:</strong> харьцуулах зар цөөн тул энэ дүгнэлт зөвхөн ерөнхий чиг баримжаа.`;
+      }
+    }
+
+    return `
+      <div class="modal-section">
+        <h4>BairX Market Insight</h4>
+        <div class="ld-mi">
+          ${statRow}
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+            <div style="padding:6px 12px; background:${color}; color:white; border-radius:100px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">${verdict}</div>
+            ${confLabel ? `<div style="padding:6px 12px; background:${confColor}22; color:${confColor}; border-radius:100px; font-size:11px; font-weight:700;">${confLabel}</div>` : ''}
+          </div>
+          <div style="font-size:12.5px; color:var(--ink-3); margin-bottom:10px; font-family:'JetBrains Mono',monospace;">${basisLine}</div>
+          <div style="font-size:14px; line-height:1.65; color:var(--ink-2);">${reasoning}</div>
+          <div style="font-size:11px; color:var(--ink-3); margin-top:12px; font-style:italic;">* Дүрэм-суурьтай тооцоолол — BairX дээрх бодит зарын дунджид үндэслэсэн, машин сургалт ашигладаггүй.</div>
+          ${stability.length > 0 ? `
+          <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
+            <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-3); margin-bottom:10px;">Шалгасан үзүүлэлтүүд</div>
+            ${stability.map(s => `
+              <div class="stability-item ${s.ok ? 'ok' : 'warn'}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  ${s.ok ? '<polyline points="20 6 9 17 4 12"/>' : '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>'}
+                </svg>
+                <span>${s.text}</span>
+              </div>
+            `).join('')}
+          </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }
+
   function openListing(id) {
     const l = listings.find(x => x.id === id);
     if (!l) return;
@@ -17,59 +276,15 @@
     if (l.firestoreId) {
       db.collection('listings').doc(l.firestoreId).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(() => {});
     }
-    // Compute the monthly mortgage payment live from the loan type's stated annual rate
-    // (30% down, 20yr term — same amortization formula as the /#calc page) instead of trusting
-    // a hand-typed per-listing number, which for real user-submitted listings was always 0.
-    const loanRateMatch = (l.loanType || '').match(/(\d+(\.\d+)?)\s*%/);
-    const loanRate = loanRateMatch ? parseFloat(loanRateMatch[1]) : null;
-    let monthly;
-    if (loanRate !== null && typeof l.price === 'number') {
-      const loanAmt = (l.price * 0.7) * 1000000;
-      const r = loanRate / 100 / 12, n = 240;
-      const m = (loanAmt * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-      monthly = (m / 1000000).toFixed(2) + ' сая ₮';
-    } else if (typeof l.monthly === 'string') {
-      monthly = l.monthly; // land listings show an appreciation estimate instead, e.g. "+18% / 5 жил"
-    } else {
-      monthly = null; // negotiable rate — no honest number to show
-    }
     const districtLabel = districtNames[l.district] || 'Дүүрэг';
 
-    // AI Property Valuation — реал comparable-sales тооцоолол (computeValuation() —
-    // utils.js). Демо тоо биш: платформ дээрх бодит зарууд дундаас адилавтар зар хайж,
-    // тэдгээрийн дундаж ₮/м²-тэй харьцуулна. Хангалттай харьцуулах зар олдоогүй бол
-    // тодорхой "мэдээлэл хүрэлцэхгүй" гэдгийг харуулна — тоо зохиохгүй.
+    // Real comparable-sales analysis (computeValuation() — utils.js), feeding both the
+    // BairX Market Insight section below and the Property Score badge. Demo data isn't
+    // synthesized here: it searches actual listings on the platform for comparables and
+    // openly says "insufficient data" rather than guessing when there aren't enough.
     const valuation = computeValuation(l);
     const pScore = propertyScore(l);
     const pScoreColor = pScore >= 70 ? '#009878' : pScore >= 45 ? '#C77700' : '#FF4757';
-    let aiVerdict, aiColor, aiReasoning, aiConfidenceLabel, aiConfidenceColor, aiBasisLine;
-
-    if (!valuation.available) {
-      aiVerdict = 'Мэдээлэл хүрэлцэхгүй';
-      aiColor = 'var(--ink-3)';
-      aiConfidenceLabel = null;
-      aiBasisLine = valuation.sampleSize
-        ? `Одоогоор ${valuation.sampleSize} харьцуулах зар олдсон — найдвартай тооцоолол хийхэд хамгийн багадаа 2 хэрэгтэй.`
-        : 'BairX дээр энэ төрлийн харьцуулах зар одоогоор алга.';
-      aiReasoning = `Энэ байртай харьцуулах хангалттай зар платформ дээр олдсонгүй тул үнийг зах зээлтэй бодитоор харьцуулж чадахгүй байна. Дэлгэц дээрх тоо зохиомол биш — зөвхөн бодит харьцуулах зар байхгүй тул тооцоолол хийхгүй байна. Илүү олон жинхэнэ зар нэмэгдэх тусам энэ тооцоолол ажиллаж эхэлнэ.`;
-    } else {
-      aiVerdict = valuation.verdict;
-      aiColor = valuation.color;
-      const confMap = { high: ['Өндөр итгэмжтэй', '#009878'], medium: ['Дунд итгэмжтэй', '#C77700'], low: ['Бага итгэмжтэй', '#FF4757'] };
-      [aiConfidenceLabel, aiConfidenceColor] = confMap[valuation.confidence];
-      aiBasisLine = `${valuation.basisText} харьцуулав. Зах зээлийн дундаж ${fmt(valuation.marketPerSqm)}₮/м² (энэ байр ${fmt(valuation.subjectPerSqm)}₮/м², ${valuation.diffPct >= 0 ? '+' : ''}${(valuation.diffPct * 100).toFixed(0)}%).`;
-
-      if (valuation.verdict === 'Сонирхолтой санал') {
-        aiReasoning = `Харьцуулсан зарын дунджаас доогуур үнэтэй. Гэхдээ <strong>тэр болгон сайн биш</strong>. Дараах зүйлсийг шалгана уу: (1) Барьцаатай эсэх — бэлэн мөнгөөр шилжүүлэх боломжтой эсэх. (2) Эзэмшлийн гэрчилгээний хуулбар. (3) Барилгын чанарын баримт. (4) Хороогоор шалгаж үзэх. Хэрэв эдгээр нь шалгагдаж байвал зах зээлд орох сайн боломж.`;
-      } else if (valuation.verdict === 'Зах зээлээс дээгүүр') {
-        aiReasoning = `Харьцуулсан зарын дунджаас дээгүүр үнэтэй. Premium байршил, чанар, аль нэг онцлогоос болсон байж болзошгүй. <strong>Үнэ хэлэлцэх боломжтой эсэхийг ярилц</strong>. Эсвэл агентаас "яагаад илүү үнэтэй вэ?" гэдгийг тодорхой тайлбарлуулж аваарай.`;
-      } else {
-        aiReasoning = `Үнэ харьцуулсан зарын дунд түвшинд. Энэ бол ердийн сонголт — найдвартай ч давуу талгүй. Бусад заруудтай харьцуулж, заавал биечлэн очиж үзэж, чанар нь үнэдээ таарч буй эсэхийг шалгаарай.`;
-      }
-      if (valuation.confidence === 'low') {
-        aiReasoning += ` <strong style="color:#C77700;">Анхаар:</strong> харьцуулах зар цөөн тул энэ дүгнэлт өндөр тодорхойгүй байдалтай — зөвхөн ерөнхий чиг баримжаа болгож үзнэ үү.`;
-      }
-    }
 
     // Тогтвортой байдлын үнэлгээ
     const stability = [];
@@ -85,10 +300,9 @@
     mcIdx = 0;
     mcListingId = l.id;
 
-    // Similar listings (same cat + district, closest price, max 3)
-    const similar = listings.filter(x => x.id !== l.id && x.cat === l.cat && x.district === l.district)
-      .sort((a, b) => Math.abs(a.price - l.price) - Math.abs(b.price - l.price))
-      .slice(0, 3);
+    // Similar listings — same district, then closest rooms, then closest area, then
+    // closest price (ldFindSimilar above), max 8 for a clean 3-4-per-row desktop grid.
+    const similar = ldFindSimilar(l, 8);
 
     // Seller data from lookup table (deterministic, no Math.random)
     const seller = sellerData[l.id] || { phone: '9911-2233', name: 'Хэрэглэгч', type: 'Агент' };
@@ -136,6 +350,7 @@
       </span>
     `;
 
+    document.getElementById('modalContent').className = 'modal listing-modal';
     document.getElementById('modalContent').innerHTML = `
       <button class="modal-close" onclick="closeModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -147,38 +362,19 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       </button>
 
-      <!-- INLINE GALLERY CAROUSEL -->
-      <div class="mc-wrap">
-        <div class="mc-main">
-          <img id="mcMainImg" src="${esc(mcImages[0])}" alt="${esc(l.title)}" style="transition:opacity 0.22s;" />
-          <span class="mc-counter" id="mcCounter">1 / ${mcImages.length}</span>
-          ${mcImages.length > 1 ? `
-          <button class="mc-nav prev" onclick="mcPrev()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <button class="mc-nav next" onclick="mcNext()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
-          </button>` : ''}
-          <button class="mc-expand" onclick="openGallery(${l.id})" title="Том хэмжээгээр харах">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-          </button>
-        </div>
-        ${mcImages.length > 1 ? `
-        <div class="mc-thumbs">
-          ${mcImages.map((img, i) => `<img class="mc-thumb ${i===0?'active':''}" src="${esc(img)}" onclick="mcGoto(${i})" alt="" />`).join('')}
-        </div>` : ''}
-      </div>
-
-      <div class="modal-body">
+      <div class="ld-header">
+        ${ldBreadcrumbHtml(l, districtLabel)}
         ${!l.userSubmitted ? '<span class="badge demo" style="position:static;display:inline-block;margin-bottom:8px;">Жишээ зар</span>' : ''}
-        <h2 class="modal-title">${esc(l.title)}</h2>
+        <h1 class="ld-title">${esc(l.title)}</h1>
+        <div class="ld-header-meta">
+          ${l._createdAtMs ? `<span>Нийтэлсэн: ${new Date(l._createdAtMs).toLocaleDateString('mn-MN')}</span><span class="ld-meta-dot">·</span>` : ''}
+          <span>Зарын дугаар: #${l.id}</span>
+          <span class="ld-meta-dot">·</span>
+          <span class="ld-meta-views"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${l.viewCount || 1} үзсэн</span>
+        </div>
         <div class="modal-loc">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           ${esc(l.loc)}
-          <span style="margin-left:10px;color:var(--ink-3);font-size:12px;display:inline-flex;align-items:center;gap:3px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            ${l.viewCount || 1} үзсэн
-          </span>
         </div>
         <div class="verify-status-row">
           ${verifyPill(ownerVerified, 'Эзэмшигч')}
@@ -203,368 +399,314 @@
           ${favorites.includes(l.id) ? 'Үнийн мэдэгдэл идэвхтэй' : 'Үнэ буувал мэдэгд'}
         </button>
         ` : ''}
-        <div class="modal-info-grid">
-          <div class="info-card">
-            <div class="info-card-label">Талбай</div>
-            <div class="info-card-value">${l.area} м²</div>
-          </div>
-          <div class="info-card">
-            <div class="info-card-label">Өрөө/Зэрэг</div>
-            <div class="info-card-value">${l.rooms}</div>
-          </div>
-          <div class="info-card">
-            <div class="info-card-label">Давхар</div>
-            <div class="info-card-value">${l.floor}</div>
-          </div>
-          <div class="info-card">
-            <div class="info-card-label">Он/Төлөв</div>
-            <div class="info-card-value">${l.year}</div>
-          </div>
-          ${l.bedrooms ? `
-          <div class="info-card">
-            <div class="info-card-label">Унтлагын өрөө</div>
-            <div class="info-card-value">${l.bedrooms}</div>
-          </div>
-          ` : ''}
-          ${l.bathrooms ? `
-          <div class="info-card">
-            <div class="info-card-label">Ариун цэврийн өрөө</div>
-            <div class="info-card-value">${l.bathrooms}</div>
-          </div>
-          ` : ''}
-        </div>
+      </div>
 
-        ${l.videoUrl && videoEmbedUrl(l.videoUrl) ? `
-        <div class="modal-section">
-          <h4>Видео</h4>
-          <div style="border-radius:14px; overflow:hidden; aspect-ratio:16/9; background:#0A1628;">
-            <iframe width="100%" height="100%" src="${esc(videoEmbedUrl(l.videoUrl))}" title="Зарын видео" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <div class="ld-grid">
+        <div class="ld-left">
+          <!-- INLINE GALLERY CAROUSEL -->
+          <div class="mc-wrap">
+            <div class="mc-main" ontouchstart="swipeStart(event)" ontouchend="swipeEnd(event, mcPrev, mcNext)">
+              <img id="mcMainImg" src="${esc(mcImages[0])}" alt="${esc(l.title)}" style="transition:opacity 0.22s;" />
+              <span class="mc-counter" id="mcCounter">1 / ${mcImages.length}</span>
+              ${mcImages.length > 1 ? `
+              <button class="mc-nav prev" onclick="mcPrev()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <button class="mc-nav next" onclick="mcNext()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+              </button>` : ''}
+              <button class="mc-expand" onclick="openGallery(${l.id})" title="Том хэмжээгээр харах">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+              </button>
+            </div>
+            ${mcImages.length > 1 ? `
+            <div class="mc-thumbs">
+              ${mcImages.map((img, i) => `<img class="mc-thumb ${i===0?'active':''}" src="${esc(img)}" onclick="mcGoto(${i})" alt="" />`).join('')}
+            </div>` : ''}
           </div>
-        </div>
-        ` : ''}
 
-        ${l.tourUrl && safeEmbedUrl(l.tourUrl) ? `
-        <div class="modal-section">
-          <h4>360° тойрох</h4>
-          <div style="border-radius:14px; overflow:hidden; aspect-ratio:16/9; background:#0A1628;">
-            <iframe width="100%" height="100%" src="${esc(safeEmbedUrl(l.tourUrl))}" title="360° тойрох" frameborder="0" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
-          </div>
-        </div>
-        ` : ''}
-
-        ${l.floorPlan ? `
-        <div class="modal-section">
-          <h4>Планировка</h4>
-          <img src="${esc(l.floorPlan)}" alt="Планировка" style="width:100%; border-radius:14px; border:1px solid var(--line); display:block;" />
-        </div>
-        ` : ''}
-
-        <!-- SELLER CARD -->
-        <div class="modal-section">
-          <div class="seller-card">
-            <div class="seller-av" ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}')" style="cursor:pointer;"` : ''}>${sellerLetter}</div>
-            <div class="seller-info">
-              <div class="seller-name" ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}')" style="cursor:pointer;"` : ''}>
-                ${esc(sellerName)}
-                ${isVerified ? '<span class="seller-verified">✓ Баталгаажсан</span>' : ''}
-              </div>
-              <div class="seller-meta">${esc(seller.type)}</div>
-              <div class="seller-stats">
-                ${totalListings != null ? `<span ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}')" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;"` : ''}><b>${totalListings} зар</b></span>` : ''}
-                ${memberSinceYear ? `<span>Гишүүн: <b>${memberSinceYear} оноос</b></span>` : ''}
-              </div>
-            </div>
-            <button class="btn btn-ghost" onclick="revealPhone('${l.id}')">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
-              Залгах
-            </button>
-          </div>
-        </div>
-
-        <!-- БАРИЛГЫН МЭРГЭЖЛИЙН МЭДЭЭЛЭЛ -->
-        <div class="modal-section">
-          <h4>Барилгын мэргэжлийн мэдээлэл</h4>
-          <div class="prof-info-list">
-            ${l.buildingName ? `
-            <div class="prof-info-row">
-              <div class="prof-info-label">Барилгын нэр</div>
-              <div class="prof-info-value">${esc(l.buildingName)}</div>
-            </div>
-            ` : ''}
-            ${l.complex ? `
-            <div class="prof-info-row">
-              <div class="prof-info-label">Хотхон</div>
-              <div class="prof-info-value">${esc(l.complex)}</div>
-            </div>
-            ` : ''}
-            <div class="prof-info-row">
-              <div class="prof-info-label">Барилгын төрөл</div>
-              <div class="prof-info-value">${l.buildingType || '—'}</div>
-            </div>
-            <div class="prof-info-row">
-              <div class="prof-info-label">Дулаалга</div>
-              <div class="prof-info-value">${l.insulation || '—'}</div>
-            </div>
-            <div class="prof-info-row">
-              <div class="prof-info-label">Халаалт</div>
-              <div class="prof-info-value">${l.heating || '—'}</div>
-            </div>
-            ${l.windowDirection ? `
-            <div class="prof-info-row">
-              <div class="prof-info-label">Цонхны чиглэл</div>
-              <div class="prof-info-value">${l.windowDirection}</div>
-            </div>
-            ` : ''}
-            <div class="prof-info-row">
-              <div class="prof-info-label">Паркинг</div>
-              <div class="prof-info-value">${l.parking || '—'}</div>
-            </div>
-            <div class="prof-info-row">
-              <div class="prof-info-label">Лифт</div>
-              <div class="prof-info-value">${l.elevator || '—'}</div>
-            </div>
-            ${l.balcony ? `
-            <div class="prof-info-row">
-              <div class="prof-info-label">Тагт</div>
-              <div class="prof-info-value">${l.balcony}</div>
-            </div>
-            ` : ''}
-            ${l.basement ? `
-            <div class="prof-info-row">
-              <div class="prof-info-label">Зоорь</div>
-              <div class="prof-info-value">${l.basement}</div>
-            </div>
-            ` : ''}
-            ${l.furniture ? `
-            <div class="prof-info-row">
-              <div class="prof-info-label">Тавилга</div>
-              <div class="prof-info-value">${l.furniture}</div>
-            </div>
-            ` : ''}
-            <div class="prof-info-row">
-              <div class="prof-info-label">Засвар/Төлөв</div>
-              <div class="prof-info-value">${l.condition || '—'}</div>
-            </div>
-            ${l.hoaFee ? `
-            <div class="prof-info-row">
-              <div class="prof-info-label">СӨХ-ийн төлбөр</div>
-              <div class="prof-info-value">${fmt(l.hoaFee)} ₮/сар</div>
-            </div>
-            ` : ''}
-            ${l.deposit ? `
-            <div class="prof-info-row">
-              <div class="prof-info-label">Барьцаа/Урьдчилгаа</div>
-              <div class="prof-info-value">${l.deposit} сая ₮</div>
-            </div>
-            ` : ''}
-            ${l.minTerm ? `
-            <div class="prof-info-row">
-              <div class="prof-info-label">Хамгийн бага хугацаа</div>
-              <div class="prof-info-value">${l.minTerm}</div>
-            </div>
-            ` : ''}
-            <div class="prof-info-row highlight">
-              <div class="prof-info-label">Нийтийн зардал</div>
-              <div class="prof-info-value">${l.utilityCost || '—'}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ЭРХ ЗҮЙН СТАТУС -->
-        <div class="modal-section">
-          <h4>Эрх зүйн статус ба баримт бичиг</h4>
-          <div class="legal-grid">
-            <div class="legal-item">
-              <div class="legal-label">Эзэмшлийн хэлбэр</div>
-              <div class="legal-value">${l.ownership || '—'}</div>
-            </div>
-            <div class="legal-item">
-              <div class="legal-label">Кадастр</div>
-              <div class="legal-value">${l.cadastre || '—'}</div>
-            </div>
-            <div class="legal-item ${l.collateral && l.collateral.includes('Барьцаагүй') ? 'ok' : 'warn'}">
-              <div class="legal-label">Барьцааны байдал</div>
-              <div class="legal-value">${l.collateral || '—'}</div>
-            </div>
-            <div class="legal-item ${l.taxDebt && l.taxDebt.includes('өргүй') ? 'ok' : 'warn'}">
-              <div class="legal-label">Татвар</div>
-              <div class="legal-value">${l.taxDebt || '—'}</div>
-            </div>
-          </div>
-          <div class="legal-notes">
-            <div class="legal-notes-label">Нэмэлт тэмдэглэл</div>
-            <div class="legal-notes-text">${esc(l.legalNotes) || '—'}</div>
-          </div>
-        </div>
-
-        <!-- БАЙРШИЛ -->
-        <div class="modal-section">
-          <h4>Байршил</h4>
-          <div style="border-radius:14px;overflow:hidden;border:1px solid var(--line);">
-            ${(l.geoLat && l.geoLng) ? `
-            <div id="listingDetailMap" style="width:100%;height:220px;"></div>
-            ` : `
-            <iframe
-              width="100%" height="220" style="border:0;display:block;"
-              loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-              src="https://www.google.com/maps?q=${encodeURIComponent(l.loc + ', ' + districtLabel + ' дүүрэг, Улаанбаатар, Монгол улс')}&output=embed">
-            </iframe>
-            `}
-          </div>
-          <div style="font-size:13px;color:var(--ink-2);margin-top:8px;display:flex;align-items:center;gap:5px;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            ${esc(l.loc)}
-          </div>
-        </div>
-
-        <!-- ОЙР ОРЧИМ — real OpenStreetMap data (Overpass API), fetched only once a category
-             is actually clicked, never all 8 at once, to keep the free public API's load down. -->
-        <div class="modal-section">
-          <h4>Ойр орчим</h4>
-          ${(l.geoLat && l.geoLng) ? `
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-              ${NEARBY_CATEGORIES.map(c => `
-                <button class="btn btn-ghost" data-nearby-cat="${c.key}" style="font-size:12.5px;padding:8px 12px;" onclick="loadNearbyCategory(${l.id}, ${l.geoLat}, ${l.geoLng}, '${c.key}')">${c.icon} ${esc(c.label)}</button>
-              `).join('')}
-            </div>
-            <div id="nearbyMapWrap" style="display:none;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-bottom:10px;">
-              <div id="nearbyMap" style="width:100%;height:200px;"></div>
-            </div>
-            <div id="nearbyResults" style="font-size:13px;color:var(--ink-3);">Дээрх ангиллаас сонгож ойролцоох газруудыг харна уу.</div>
-            <div style="font-size:10.5px;color:var(--ink-3);margin-top:8px;font-style:italic;">Эх сурвалж: OpenStreetMap — нийтийн бодит газрын зургийн өгөгдөл, зарын эзний оруулсан мэдээлэл биш.</div>
-          ` : `
-            <div style="font-size:13px;color:var(--ink-3);">Ойр орчмын мэдээлэл авахын тулд байршил шаардлагатай. Энэ зар байршлаа газрын зураг дээр тэмдэглээгүй байна.</div>
-          `}
-        </div>
-
-        <!-- ЗЭЭЛИЙН САНАЛ -->
-        ${l.cat !== 'rent' ? `
-        <div class="modal-section">
-          <h4>Зээлийн санал (зах зээлийн одоогийн хүү)</h4>
-          <div style="background:var(--primary-soft); padding:18px; border-radius:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <div style="font-size:13px; color:var(--primary-deep); font-weight:600;">${esc(l.loanType)}${monthly ? ', сар бүр' : ''}</div>
-              ${monthly ? `<div style="font-family:'Fraunces', serif; font-size:22px; font-weight:700; color:var(--primary-deep);">${monthly}</div>` : ''}
-            </div>
-            <div style="font-size:12px; color:var(--primary-deep); opacity:0.8;">${loanRate !== null ? `Урьдчилгаа 30% (${Math.round(l.price * 0.3)} сая ₮), хугацаа 20 жил. ${loanRate}% жилийн хүүгээр сар бүрийн тооцоолол — бодит нөхцөл банк, зээлдэгчээс хамаарч хэлбэлзэнэ.` : 'Зээлийн нөхцөлийг зарын эзэн/банктай шууд тохиролцоно уу.'}</div>
-          </div>
-        </div>
-        ` : ''}
-
-        <!-- ҮНИЙН ӨӨРЧЛӨЛТИЙН ТАЛААР -->
-        <div class="modal-section">
-          <h4>Үнийн өөрчлөлтийн талаар</h4>
-          <div style="font-size:13px; color:var(--ink-3); padding:10px 14px; background:var(--paper-2); border-radius:8px;">
-            Үл хөдлөх хөрөнгийн үнийн өөрчлөлт нь байршил, хугацаа, төслийн чанар, эрэлтээс хамаарч ялгаатай байдаг. Тухайн байрны түүхэн үнийн мэдээлэл эсвэл ирээдүйн өсөлтийн тодорхой хувийг бид баталгаатай эх сурвалжгүйгээр танд харуулахгүй — доорх зах зээлийн харьцуулалт нь одоогийн, платформ дээрх бодит зарууд дээр үндэслэсэн болно.
-          </div>
-        </div>
-
-        <!-- AI PROPERTY VALUATION -->
-        <div class="modal-section">
-          <h4>Үнийн дүн шинжилгээ — зах зээлтэй харьцуулалт</h4>
-          <div style="padding:18px; background:var(--paper-2); border-radius:14px;">
-            <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
-              <div style="padding:6px 12px; background:${aiColor}; color:white; border-radius:100px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">${aiVerdict}</div>
-              ${aiConfidenceLabel ? `<div style="padding:6px 12px; background:${aiConfidenceColor}22; color:${aiConfidenceColor}; border-radius:100px; font-size:11px; font-weight:700;">${aiConfidenceLabel}</div>` : ''}
-            </div>
-            <div style="font-size:12.5px; color:var(--ink-3); margin-bottom:10px; font-family:'JetBrains Mono',monospace;">${aiBasisLine}</div>
-            <div style="font-size:14px; line-height:1.65; color:var(--ink-2);">${aiReasoning}</div>
-            <div style="font-size:11px; color:var(--ink-3); margin-top:12px; font-style:italic;">* Дүрэм-суурьтай тооцоолол — BairX дээрх бодит зарын дунджид үндэслэсэн, машин сургалт (ML) ашигладаггүй. Тоо зохиомол биш — зөвхөн одоо байгаа бодит зар дээр тулгуурлана.</div>
-
-            ${stability.length > 0 ? `
-            <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
-              <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-3); margin-bottom:10px;">Шалгасан үзүүлэлтүүд</div>
-              ${stability.map(s => `
-                <div class="stability-item ${s.ok ? 'ok' : 'warn'}">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    ${s.ok ? '<polyline points="20 6 9 17 4 12"/>' : '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>'}
-                  </svg>
-                  <span>${s.text}</span>
-                </div>
-              `).join('')}
-            </div>
-            ` : ''}
-          </div>
-        </div>
-
-        <!-- ШАЛГАХ ЁСТОЙ ЗҮЙЛС -->
-        <div class="modal-section">
-          <h4>Худалдан авахаасаа өмнө шалгах зүйлс</h4>
-          <ol class="check-required">
-            <li>Эзэмшлийн гэрчилгээний эх хувийг харж, ХҮ-н нэртэй таарч буй эсэхийг шалгана</li>
-            <li>Шилжүүлэхэд хорьдох барьцаа, татвар, мөрдөн байцаалт байгаа эсэх</li>
-            <li>Дотор үзлэг хийж — хана, шал, дээвэр, шугам сүлжээний байдлыг харна</li>
-            <li>Хороогоор очиж — өвлийн дулаалга, чимээ, хөршүүдийн талаар асууна</li>
-            <li>Кадастрын зургаар талбайн хэмжээ нь баримтын мэдээлэлтэй таарч буй эсэх</li>
-            <li>Сүүлийн 12 сарын нийтийн төлбөрийн квитанц харж бодит зардал тооцно</li>
-          </ol>
-        </div>
-
-        <!-- ХОЛБОО БАРИХ -->
-        <div class="modal-section">
-          <h4>Холбоо барих</h4>
-          <div id="contactBox_${l.id}" style="background:var(--paper-2);border-radius:14px;padding:18px;text-align:center;">
-            <div style="font-size:13px;color:var(--ink-3);margin-bottom:12px;">Утасны дугаарыг харахдаа дарна уу</div>
-            <button class="btn btn-blue btn-lg" style="width:100%;justify-content:center;" onclick="revealPhone('${l.id}')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
-              Дугаар харах
-            </button>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button class="btn btn-primary btn-lg" onclick="openListingChat(${l.id})">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Чат бичих
-          </button>
-          <button class="btn btn-blue btn-lg" onclick="closeModal(); showPage('calc')">
-            Зээл тооцоолох
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-          </button>
-        </div>
-
-        <!-- MOBILE STICKY CALL BAR (hidden on desktop via CSS) -->
-        <div class="mobile-sticky-call">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;">
-            <button class="btn btn-blue btn-lg" style="justify-content:center;" onclick="revealPhone('${l.id}')">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
-              Залгах
-            </button>
-            <button class="btn btn-primary btn-lg" style="justify-content:center;" onclick="openListingChat(${l.id})">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              Чат
-            </button>
-          </div>
-        </div>
-
-        ${similar.length > 0 ? `
-        <!-- ИЖИЛ ТӨСТЭЙ ЗАРУУД -->
-        <div class="modal-section">
-          <h4>Ижил төстэй зарууд</h4>
-          <div class="similar-grid">
-            ${similar.map(s => `
-              <div style="cursor:pointer;border-radius:12px;overflow:hidden;border:1.5px solid var(--line);transition:box-shadow 0.15s;" onclick="closeModal(); setTimeout(()=>openListing(${s.id}),200)">
-                <img src="${esc(s.img)}" alt="${esc(s.title)}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;" onerror="this.style.background='var(--paper-2)';this.style.display='none';" />
-                <div style="padding:10px 12px;">
-                  <div style="font-weight:700;font-size:13px;color:var(--primary);font-family:'Fraunces',serif;">${fmtPrice(s.price)}</div>
-                  <div style="font-size:12px;color:var(--ink-2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.title)}</div>
-                  <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${s.area} м² · ${s.rooms} өрөө</div>
-                </div>
+          <!-- SPEC GRID -->
+          <div class="ld-spec-grid">
+            ${ldSpecItems(l).map(([label, value]) => `
+              <div class="ld-spec-item">
+                <div class="ld-spec-label">${esc(label)}</div>
+                <div class="ld-spec-value">${esc(String(value))}</div>
               </div>
             `).join('')}
           </div>
-        </div>
-        ` : ''}
 
-        <!-- REPORT BUTTON -->
-        ${l.userSubmitted && (!currentUser || l.ownerId !== currentUser.uid) ? `
-        <div class="modal-section" style="text-align:center;">
-          <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger);width:100%;justify-content:center;" onclick="reportListing(${l.id})">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-            Зарыг мэдээлэх
+          ${l.videoUrl && videoEmbedUrl(l.videoUrl) ? `
+          <div class="modal-section">
+            <h4>Видео</h4>
+            <div style="border-radius:14px; overflow:hidden; aspect-ratio:16/9; background:#0A1628;">
+              <iframe width="100%" height="100%" src="${esc(videoEmbedUrl(l.videoUrl))}" title="Зарын видео" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            </div>
+          </div>
+          ` : ''}
+
+          ${l.tourUrl && safeEmbedUrl(l.tourUrl) ? `
+          <div class="modal-section">
+            <h4>360° тойрох</h4>
+            <div style="border-radius:14px; overflow:hidden; aspect-ratio:16/9; background:#0A1628;">
+              <iframe width="100%" height="100%" src="${esc(safeEmbedUrl(l.tourUrl))}" title="360° тойрох" frameborder="0" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            </div>
+          </div>
+          ` : ''}
+
+          ${l.floorPlan ? `
+          <div class="modal-section">
+            <h4>Планировка</h4>
+            <img src="${esc(l.floorPlan)}" alt="Планировка" style="width:100%; border-radius:14px; border:1px solid var(--line); display:block;" />
+          </div>
+          ` : ''}
+
+          ${ldDescriptionHtml(l)}
+
+          <!-- БАРИЛГЫН МЭРГЭЖЛИЙН МЭДЭЭЛЭЛ -->
+          <div class="modal-section">
+            <h4>Барилгын мэргэжлийн мэдээлэл</h4>
+            <div class="prof-info-list">
+              ${l.buildingName ? `
+              <div class="prof-info-row">
+                <div class="prof-info-label">Барилгын нэр</div>
+                <div class="prof-info-value">${esc(l.buildingName)}</div>
+              </div>
+              ` : ''}
+              ${l.complex ? `
+              <div class="prof-info-row">
+                <div class="prof-info-label">Хотхон</div>
+                <div class="prof-info-value">${esc(l.complex)}</div>
+              </div>
+              ` : ''}
+              <div class="prof-info-row">
+                <div class="prof-info-label">Барилгын төрөл</div>
+                <div class="prof-info-value">${l.buildingType || '—'}</div>
+              </div>
+              <div class="prof-info-row">
+                <div class="prof-info-label">Дулаалга</div>
+                <div class="prof-info-value">${l.insulation || '—'}</div>
+              </div>
+              <div class="prof-info-row">
+                <div class="prof-info-label">Халаалт</div>
+                <div class="prof-info-value">${l.heating || '—'}</div>
+              </div>
+              ${l.windowDirection ? `
+              <div class="prof-info-row">
+                <div class="prof-info-label">Цонхны чиглэл</div>
+                <div class="prof-info-value">${l.windowDirection}</div>
+              </div>
+              ` : ''}
+              <div class="prof-info-row">
+                <div class="prof-info-label">Паркинг</div>
+                <div class="prof-info-value">${l.parking || '—'}</div>
+              </div>
+              <div class="prof-info-row">
+                <div class="prof-info-label">Лифт</div>
+                <div class="prof-info-value">${l.elevator || '—'}</div>
+              </div>
+              ${l.balcony ? `
+              <div class="prof-info-row">
+                <div class="prof-info-label">Тагт</div>
+                <div class="prof-info-value">${l.balcony}</div>
+              </div>
+              ` : ''}
+              ${l.basement ? `
+              <div class="prof-info-row">
+                <div class="prof-info-label">Зоорь</div>
+                <div class="prof-info-value">${l.basement}</div>
+              </div>
+              ` : ''}
+              ${l.furniture ? `
+              <div class="prof-info-row">
+                <div class="prof-info-label">Тавилга</div>
+                <div class="prof-info-value">${l.furniture}</div>
+              </div>
+              ` : ''}
+              <div class="prof-info-row">
+                <div class="prof-info-label">Засвар/Төлөв</div>
+                <div class="prof-info-value">${l.condition || '—'}</div>
+              </div>
+              ${l.hoaFee ? `
+              <div class="prof-info-row">
+                <div class="prof-info-label">СӨХ-ийн төлбөр</div>
+                <div class="prof-info-value">${fmt(l.hoaFee)} ₮/сар</div>
+              </div>
+              ` : ''}
+              ${l.deposit ? `
+              <div class="prof-info-row">
+                <div class="prof-info-label">Барьцаа/Урьдчилгаа</div>
+                <div class="prof-info-value">${l.deposit} сая ₮</div>
+              </div>
+              ` : ''}
+              ${l.minTerm ? `
+              <div class="prof-info-row">
+                <div class="prof-info-label">Хамгийн бага хугацаа</div>
+                <div class="prof-info-value">${l.minTerm}</div>
+              </div>
+              ` : ''}
+              <div class="prof-info-row highlight">
+                <div class="prof-info-label">Нийтийн зардал</div>
+                <div class="prof-info-value">${l.utilityCost || '—'}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ЭРХ ЗҮЙН СТАТУС -->
+          <div class="modal-section">
+            <h4>Эрх зүйн статус ба баримт бичиг</h4>
+            <div class="legal-grid">
+              <div class="legal-item">
+                <div class="legal-label">Эзэмшлийн хэлбэр</div>
+                <div class="legal-value">${l.ownership || '—'}</div>
+              </div>
+              <div class="legal-item">
+                <div class="legal-label">Кадастр</div>
+                <div class="legal-value">${l.cadastre || '—'}</div>
+              </div>
+              <div class="legal-item ${l.collateral && l.collateral.includes('Барьцаагүй') ? 'ok' : 'warn'}">
+                <div class="legal-label">Барьцааны байдал</div>
+                <div class="legal-value">${l.collateral || '—'}</div>
+              </div>
+              <div class="legal-item ${l.taxDebt && l.taxDebt.includes('өргүй') ? 'ok' : 'warn'}">
+                <div class="legal-label">Татвар</div>
+                <div class="legal-value">${l.taxDebt || '—'}</div>
+              </div>
+            </div>
+            <div class="legal-notes">
+              <div class="legal-notes-label">Нэмэлт тэмдэглэл</div>
+              <div class="legal-notes-text">${esc(l.legalNotes) || '—'}</div>
+            </div>
+          </div>
+
+          <!-- БАЙРШИЛ -->
+          <div class="modal-section">
+            <h4>Байршил</h4>
+            <div style="border-radius:14px;overflow:hidden;border:1px solid var(--line);">
+              ${(l.geoLat && l.geoLng) ? `
+              <div id="listingDetailMap" style="width:100%;height:260px;"></div>
+              ` : `
+              <iframe
+                width="100%" height="260" style="border:0;display:block;"
+                loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                src="https://www.google.com/maps?q=${encodeURIComponent(l.loc + ', ' + districtLabel + ' дүүрэг, Улаанбаатар, Монгол улс')}&output=embed">
+              </iframe>
+              `}
+            </div>
+            <div style="font-size:13px;color:var(--ink-2);margin-top:8px;display:flex;align-items:center;gap:5px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              ${esc(l.loc)}
+            </div>
+          </div>
+
+          <!-- ОЙР ОРЧИМ — real OpenStreetMap data (Overpass API), fetched only once a category
+               is actually clicked, never all 8 at once, to keep the free public API's load down. -->
+          <div class="modal-section">
+            <h4>Ойр орчим</h4>
+            ${(l.geoLat && l.geoLng) ? `
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+                ${NEARBY_CATEGORIES.map(c => `
+                  <button class="btn btn-ghost" data-nearby-cat="${c.key}" style="font-size:12.5px;padding:8px 12px;" onclick="loadNearbyCategory(${l.id}, ${l.geoLat}, ${l.geoLng}, '${c.key}')">${c.icon} ${esc(c.label)}</button>
+                `).join('')}
+              </div>
+              <div id="nearbyMapWrap" style="display:none;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-bottom:10px;">
+                <div id="nearbyMap" style="width:100%;height:200px;"></div>
+              </div>
+              <div id="nearbyResults" style="font-size:13px;color:var(--ink-3);">Дээрх ангиллаас сонгож ойролцоох газруудыг харна уу.</div>
+              <div style="font-size:10.5px;color:var(--ink-3);margin-top:8px;font-style:italic;">Эх сурвалж: OpenStreetMap — нийтийн бодит газрын зургийн өгөгдөл, зарын эзний оруулсан мэдээлэл биш.</div>
+            ` : `
+              <div style="font-size:13px;color:var(--ink-3);">Ойр орчмын мэдээлэл авахын тулд байршил шаардлагатай. Энэ зар байршлаа газрын зураг дээр тэмдэглээгүй байна.</div>
+            `}
+          </div>
+
+          ${ldMarketInsightHtml(l, valuation, stability)}
+
+          <!-- ШАЛГАХ ЁСТОЙ ЗҮЙЛС -->
+          <div class="modal-section">
+            <h4>Худалдан авахаасаа өмнө шалгах зүйлс</h4>
+            <ol class="check-required">
+              <li>Эзэмшлийн гэрчилгээний эх хувийг харж, ХҮ-н нэртэй таарч буй эсэхийг шалгана</li>
+              <li>Шилжүүлэхэд хорьдох барьцаа, татвар, мөрдөн байцаалт байгаа эсэх</li>
+              <li>Дотор үзлэг хийж — хана, шал, дээвэр, шугам сүлжээний байдлыг харна</li>
+              <li>Хороогоор очиж — өвлийн дулаалга, чимээ, хөршүүдийн талаар асууна</li>
+              <li>Кадастрын зургаар талбайн хэмжээ нь баримтын мэдээлэлтэй таарч буй эсэх</li>
+              <li>Сүүлийн 12 сарын нийтийн төлбөрийн квитанц харж бодит зардал тооцно</li>
+            </ol>
+          </div>
+
+          ${similar.length > 0 ? `
+          <!-- ИЖИЛ ТӨСТЭЙ ЗАРУУД -->
+          <div class="modal-section">
+            <h4>Ижил төстэй зарууд</h4>
+            <div class="listings-grid ld-similar-grid">
+              ${similar.map(ldSimilarCardHtml).join('')}
+            </div>
+          </div>
+          ` : ''}
+
+          <!-- REPORT BUTTON -->
+          ${l.userSubmitted && (!currentUser || l.ownerId !== currentUser.uid) ? `
+          <div class="modal-section" style="text-align:center;">
+            <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger);width:100%;justify-content:center;" onclick="reportListing(${l.id})">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+              Зарыг мэдээлэх
+            </button>
+          </div>
+          ` : ''}
+        </div>
+
+        <div class="ld-right">
+          <div class="ld-sticky">
+            <!-- SELLER CARD -->
+            <div class="seller-card">
+              <div class="seller-av" ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}')" style="cursor:pointer;"` : ''}>${sellerLetter}</div>
+              <div class="seller-info">
+                <div class="seller-name" ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}')" style="cursor:pointer;"` : ''}>
+                  ${esc(sellerName)}
+                  ${isVerified ? '<span class="seller-verified">✓ Баталгаажсан</span>' : ''}
+                </div>
+                <div class="seller-meta">${esc(seller.type)}</div>
+                <div class="seller-stats">
+                  ${totalListings != null ? `<span ${sellerClickable ? `onclick="openSellerProfile('${l.ownerId}')" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;"` : ''}><b>${totalListings} зар</b></span>` : ''}
+                  ${memberSinceYear ? `<span>Гишүүн: <b>${memberSinceYear} оноос</b></span>` : ''}
+                </div>
+              </div>
+            </div>
+
+            <!-- ХОЛБОО БАРИХ -->
+            <div id="contactBox_${l.id}" class="ld-contact-box">
+              <div style="font-size:13px;color:var(--ink-3);margin-bottom:12px;">Утасны дугаарыг харахдаа дарна уу</div>
+              <button class="btn btn-blue btn-lg" style="width:100%;justify-content:center;" onclick="revealPhone('${l.id}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
+                Дугаар харах
+              </button>
+            </div>
+            <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center;margin-top:10px;" onclick="openListingChat(${l.id})">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Чат бичих
+            </button>
+            ${totalListings != null ? `
+            <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px;border:1.5px solid var(--line-2);" onclick="openSellerProfile('${l.ownerId}')">
+              Энэ хэрэглэгчийн бусад зар
+            </button>
+            ` : ''}
+
+            ${ldCalcHtml(l)}
+          </div>
+        </div>
+      </div>
+
+      <!-- MOBILE STICKY CONTACT BAR (hidden on desktop via CSS) -->
+      <div class="mobile-sticky-call">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;">
+          <button class="btn btn-blue btn-lg" style="justify-content:center;" onclick="revealPhone('${l.id}')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
+            Утас
+          </button>
+          <button class="btn btn-primary btn-lg" style="justify-content:center;" onclick="openListingChat(${l.id})">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Чат
           </button>
         </div>
-        ` : ''}
       </div>
     `;
     document.getElementById('modal').classList.add('open');
@@ -581,6 +723,7 @@
         L.marker([l.geoLat, l.geoLng]).addTo(m);
       }, 50);
     }
+    if (l.cat !== 'rent') setTimeout(() => ldCalcUpdate(l.price), 30);
   }
 
   // ===== ОЙР ОРЧИМ — real OpenStreetMap data via the free, keyless Overpass API. Never
