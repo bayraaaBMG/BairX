@@ -1650,165 +1650,125 @@
       <p style="font-size:13.5px; color:var(--ink-3); margin-top:6px; max-width:640px; line-height:1.5;">Параметрүүдээ оруулаад сар бүрийн төлбөр, нийт хүү, орлогын дарамтаа тооцоол. Доор зарим томоохон банкны албан ёсны вэбсайтаас шалгасан нөхцөлийг («Шалгасан» тэмдэгтэй) харьцуулж үзээрэй.</p>
     </div>
 
+    <!-- Property price — the one input everything else is driven by; Listing Detail/Compare
+         hand a price straight into #priceSlider (сая ₮ units, unchanged contract), this input
+         is just a friendlier ₮-denominated view of the same value, synced both ways. -->
+    <div class="calc-price-row">
+      <label class="calc-price-label" for="priceInput">Үл хөдлөхийн үнэ</label>
+      <div class="calc-price-input-wrap">
+        <input type="text" inputmode="numeric" id="priceInput" class="calc-price-input" aria-label="Үл хөдлөхийн үнэ" />
+        <span class="calc-price-suffix">₮</span>
+      </div>
+      <input type="range" min="80" max="2000" value="400" id="priceSlider" aria-hidden="true" tabindex="-1" style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;" />
+    </div>
+
     <div class="calc-grid">
-      <!-- Inputs -->
+      <!-- Bank selector + loan inputs -->
       <div class="calc-inputs">
-        <h3>Ямар байр авах вэ?</h3>
-        <p>Зөвхөн байрныхаа үнийг оруулахад л болоо. Бусад тооцооллыг бид автоматаар хийнэ.</p>
+        <div class="bank-tabs" id="bankTabs"></div>
+        <div class="bank-info-card" id="bankInfoCard"></div>
 
-        <div class="input-row">
-          <div class="input-label">
-            <span class="input-label-text">Байрны үнэ</span>
-            <span class="input-label-val" id="priceVal">400 сая ₮</span>
-          </div>
-          <input type="range" min="80" max="2000" value="400" class="slider" id="priceSlider" aria-label="Байрны үнэ" />
-          <div class="slider-marks"><span>80 сая</span><span>1 тэрбум</span><span>2 тэрбум</span></div>
-        </div>
-
-        <!-- Auto-calculated required income card -->
-        <div class="auto-card">
-          <div class="auto-card-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-          </div>
-          <div class="auto-card-body">
-            <div class="auto-card-label">Энэ байрыг авахад танд хэрэгтэй сарын орлого</div>
-            <div class="auto-card-value" id="requiredIncome">~ 10,534,593 ₮</div>
-            <div class="auto-card-hint" id="incomeHint">Орлогын 40% нь зээлийн төлбөрт зориулагдана гэж тооцов</div>
-          </div>
+        <div id="loanCapNotice" style="display:none; align-items:flex-start; gap:8px; background:rgba(255,176,32,0.12); border:1px solid rgba(255,176,32,0.3); border-radius:10px; padding:10px 12px; margin:14px 0; font-size:12.5px; line-height:1.5; color:var(--ink-2);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2.5" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+          <span id="loanCapNoticeText"></span>
         </div>
 
         <div class="input-row">
           <div class="input-label">
-            <span class="input-label-text">Урьдчилгаа төлбөр</span>
-            <span class="input-label-val" id="downVal">120 сая ₮ (30%)</span>
+            <span class="input-label-text">Урьдчилгаа</span>
+            <span class="input-label-val" id="downVal">30% · 120,000,000₮</span>
           </div>
-          <input type="range" min="10" max="50" value="30" class="slider" id="downSlider" aria-label="Урьдчилгаа төлбөр" />
-          <div class="slider-marks"><span>10%</span><span>30%</span><span>50%</span></div>
+          <input type="range" min="10" max="90" value="30" class="slider" id="downSlider" aria-label="Урьдчилгаа" />
+          <div class="slider-marks"><span id="downMinMark">10%</span><span id="downMaxMark">90%</span></div>
         </div>
 
         <div class="input-row">
           <div class="input-label">
-            <span class="input-label-text">Таны сарын орлого</span>
-            <span class="input-label-val" id="incomeVal">4,500,000 ₮</span>
+            <span class="input-label-text">Хугацаа</span>
+            <span class="input-label-val" id="termVal">240 сар (20 жил)</span>
           </div>
-          <input type="range" min="500" max="20000" value="4500" step="100" class="slider" id="incomeSlider" aria-label="Таны сарын орлого" />
-          <div class="slider-marks"><span>500мян</span><span>10сая</span><span>20сая</span></div>
+          <input type="range" min="5" max="30" value="20" class="slider" id="termSlider" aria-label="Хугацаа" />
+          <div class="slider-marks"><span>5 жил</span><span id="termMaxMark">30 жил</span></div>
         </div>
 
-        <div class="input-row">
+        <div class="input-row" id="rateRow">
           <div class="input-label">
-            <span class="input-label-text">Зээлийн хугацаа</span>
-            <span class="input-label-val" id="termVal">20 жил</span>
+            <span class="input-label-text">Хүү (жилийн)</span>
+            <span class="input-label-val" id="rateVal">17.5%</span>
           </div>
-          <input type="range" min="5" max="30" value="20" class="slider" id="termSlider" aria-label="Зээлийн хугацаа" />
-          <div class="slider-marks"><span>5 жил</span><span>20 жил</span><span>30 жил</span></div>
+          <input type="range" min="0" max="30" step="0.1" value="17.5" class="slider" id="rateSlider" aria-label="Хүү (жилийн)" />
+          <div class="slider-marks"><span id="rateMinMark"></span><span id="rateMaxMark"></span></div>
         </div>
-
-        <div style="margin-top:28px; padding-top:24px; border-top:1px solid var(--line);">
-          <div class="input-label" style="margin-bottom:14px;">
-            <span class="input-label-text">Зээлийн төрөл</span>
-          </div>
-          <div class="loan-type-grid">
-            <button class="loan-type" data-rate="6" data-name="Ипотекийн хөнгөлөлттэй хөтөлбөр 6% (хязгаарлагдмал)" data-cap="150">
-              <div class="loan-type-name">Хөнгөлөлттэй 6%</div>
-              <div class="loan-type-rate">Жилийн 6% · улсын хөтөлбөр, банк тус бүрээр өөр байж болно</div>
-            </button>
-            <button class="loan-type active" data-rate="17.5" data-name="Энгийн ипотек ~17.5% (2026.04)">
-              <div class="loan-type-name">Энгийн ипотек</div>
-              <div class="loan-type-rate">Жилийн ~17.5% · Монголбанкны 2026 оны 4-р сарын жигнэсэн дундаж (stat.mongolbank.mn)</div>
-            </button>
-            <button class="loan-type" data-rate="0" data-name="Бэлэн мөнгөөр">
-              <div class="loan-type-name">Бэлэн мөнгө</div>
-              <div class="loan-type-rate">Зээлгүй · шууд худалдан авалт</div>
-            </button>
-          </div>
-        </div>
+        <div id="rateUnverifiedNotice" style="display:none; background:var(--paper-2); border:1px solid var(--line); border-radius:10px; padding:12px 14px; font-size:12.5px; line-height:1.5; color:var(--ink-3);"></div>
       </div>
 
-      <!-- Results -->
-      <div class="calc-results">
-        <div class="calc-results-inner">
-          <div class="results-eyebrow">Тооцоолсон үр дүн</div>
-          <h3 class="results-title" id="bestBankTitle">⚠ Орлогын дарамт өндөр байна (94%)</h3>
+      <!-- Result -->
+      <div class="calc-inputs calc-result-card">
+        <div class="monthly-hero">
+          <div class="monthly-hero-label">Сарын төлбөр · <span id="monthlyBankName">—</span></div>
+          <div class="monthly-hero-amount" id="monthlyAmt">—</div>
+        </div>
 
-          <div id="loanCapNotice" style="display:none; align-items:flex-start; gap:8px; background:rgba(255,176,32,0.14); border:1px solid rgba(255,176,32,0.35); border-radius:10px; padding:10px 12px; margin-bottom:16px; font-size:12.5px; line-height:1.5; color:#FFD37A;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
-            <span id="loanCapNoticeText"></span>
+        <div class="breakdown-bar-wrap" id="breakdownWrap">
+          <div class="breakdown-bar"><div class="breakdown-principal" id="breakdownPrincipal"></div><div class="breakdown-interest" id="breakdownInterest"></div></div>
+          <div class="breakdown-legend"><span><i class="legend-dot principal"></i>Үндсэн зээл</span><span><i class="legend-dot interest"></i>Хүүний төлбөр</span></div>
+        </div>
+
+        <div class="calc-summary-rows" id="summaryRows">
+          <div class="summary-row"><span>Зээлийн дүн</span><strong id="loanAmt">—</strong></div>
+          <div class="summary-row"><span>Нийт хүү</span><strong id="totalInterest" class="warn">—</strong></div>
+          <div class="summary-row"><span>Нийт төлөх</span><strong id="totalPay">—</strong></div>
+        </div>
+
+        <div class="calc-explain" id="calcExplain"></div>
+      </div>
+    </div>
+
+    <!-- Early payoff simulator — unchanged logic, kept as its own accent panel below the
+         main flow (not part of the Vнэ→Банк→Твлбвр hierarchy above). -->
+    <div class="calc-results" id="earlyPayoffPanel">
+      <div class="calc-results-inner">
+        <div class="early-payoff">
+          <div class="early-header">
+            <div>
+              <div class="early-eyebrow">Эрт хаалтын симулятор</div>
+              <div class="early-title">Сар бүр илүү төлвөл хэр хэмнэх вэ?</div>
+            </div>
           </div>
 
-          <div class="big-result">
-            <div class="big-result-label">Сар бүр төлөх</div>
-            <div class="big-result-amount"><span id="monthlyAmt">4,213,837</span><em> ₮</em></div>
+          <div class="early-input-row">
+            <div class="early-input-label">
+              <span>Сард илүү төлөх дүн</span>
+              <span class="early-input-val" id="extraVal">+ 200,000 ₮</span>
+            </div>
+            <input type="range" min="0" max="2000" value="200" step="50" class="slider extra-slider" id="extraSlider" aria-label="Сард илүү төлөх дүн" />
+            <div class="slider-marks"><span>0₮</span><span>1сая</span><span>2сая</span></div>
           </div>
 
-          <div class="results-grid">
-            <div class="small-result">
-              <div class="small-result-label">Нийт төлөх</div>
-              <div class="small-result-amount" id="totalPay">1011.3 сая ₮</div>
-            </div>
-            <div class="small-result">
-              <div class="small-result-label">Хүүгийн нийт</div>
-              <div class="small-result-amount" id="totalInterest">731.3 сая ₮</div>
-            </div>
-            <div class="small-result">
-              <div class="small-result-label">Орлогын харьцаа</div>
-              <div class="small-result-amount danger" id="dti">93.6%</div>
-            </div>
-            <div class="small-result">
-              <div class="small-result-label">Зээлийн хэмжээ</div>
-              <div class="small-result-amount" id="loanAmt">280 сая ₮</div>
-            </div>
-          </div>
-
-          <div class="bank-comparison">
-            <div style="font-size:13px; font-weight:600; color:rgba(255,255,255,0.6); margin-bottom:14px; text-transform:uppercase; letter-spacing:0.06em;">Банкны харьцуулалт</div>
-            <div id="bankList"></div>
-          </div>
-
-          <!-- Early payoff simulator -->
-          <div class="early-payoff">
-            <div class="early-header">
-              <div>
-                <div class="early-eyebrow">Эрт хаалтын симулятор</div>
-                <div class="early-title">Сар бүр илүү төлвөл хэр хэмнэх вэ?</div>
+          <div class="early-results" id="earlyResults">
+            <div class="early-result-card save">
+              <div class="early-result-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div class="early-result-info">
+                <div class="early-result-label">Хэмнэгдэх хүү</div>
+                <div class="early-result-value" id="savedInterest">22.4 сая ₮</div>
               </div>
             </div>
-
-            <div class="early-input-row">
-              <div class="early-input-label">
-                <span>Сард илүү төлөх дүн</span>
-                <span class="early-input-val" id="extraVal">+ 200,000 ₮</span>
+            <div class="early-result-card time">
+              <div class="early-result-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4D7CFF" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
               </div>
-              <input type="range" min="0" max="2000" value="200" step="50" class="slider extra-slider" id="extraSlider" aria-label="Сард илүү төлөх дүн" />
-              <div class="slider-marks"><span>0₮</span><span>1сая</span><span>2сая</span></div>
-            </div>
-
-            <div class="early-results" id="earlyResults">
-              <div class="early-result-card save">
-                <div class="early-result-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                </div>
-                <div class="early-result-info">
-                  <div class="early-result-label">Хэмнэгдэх хүү</div>
-                  <div class="early-result-value" id="savedInterest">22.4 сая ₮</div>
-                </div>
+              <div class="early-result-info">
+                <div class="early-result-label">Богиносох хугацаа</div>
+                <div class="early-result-value" id="savedTime">2 жил 8 сар</div>
               </div>
-              <div class="early-result-card time">
-                <div class="early-result-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4D7CFF" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                </div>
-                <div class="early-result-info">
-                  <div class="early-result-label">Богиносох хугацаа</div>
-                  <div class="early-result-value" id="savedTime">2 жил 8 сар</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="early-summary" id="earlySummary">
-              Сар бүр <strong>200,000 ₮</strong> илүү төлвөл, та <strong style="color:var(--accent);">17 жил 4 сард</strong> зээлээсээ салах ба нийт <strong style="color:var(--accent);">22.4 сая ₮</strong> хэмнэнэ.
             </div>
           </div>
 
+          <div class="early-summary" id="earlySummary">
+            Сар бүр <strong>200,000 ₮</strong> илүү төлвөл, та <strong style="color:var(--accent);">17 жил 4 сард</strong> зээлээсээ салах ба нийт <strong style="color:var(--accent);">22.4 сая ₮</strong> хэмнэнэ.
+          </div>
         </div>
       </div>
     </div>
