@@ -181,6 +181,23 @@ service cloud.firestore {
       allow create, update, delete: if isAdminOrOwner();
     }
 
+    // ===== DEMO LISTING HIDES =====
+    // Demo/placeholder listings (js/data.js, isDemo:true) are hardcoded content shipped in
+    // the client bundle — they never exist as Firestore documents, so there's nothing in
+    // `listings` for an admin "delete" to actually remove. This collection is the real
+    // persisted record of an admin/owner choosing to permanently hide one: every visitor's
+    // browser reads it once at load (applyDemoListingHides() in data.js) and filters the
+    // matching entry out of the local seed array before it ever renders. Public read so that
+    // filtering works for every visitor, including logged-out ones; only admin/owner may
+    // write one, and an actor can only ever write themselves as `hiddenBy` (never attribute
+    // the hide to someone else). No UI path ever un-hides one, so update/delete stay closed —
+    // same append-only shape as adminAuditLogs.
+    match /hiddenDemoListings/{demoId} {
+      allow read: if true;
+      allow create: if isAdminOrOwner() && request.resource.data.hiddenBy == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     // ===== FAVORITES =====
     match /favorites/{favId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;

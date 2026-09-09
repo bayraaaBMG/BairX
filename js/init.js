@@ -19,6 +19,7 @@
   renderMyListings();
   renderBuyerDocs();
   loadPublicListings();
+  applyDemoListingHides();
   loadProjects();
   renderAccountSidebar();
   renderSiteAds();

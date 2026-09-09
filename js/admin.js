@@ -296,7 +296,8 @@
     { id: 'pending', label: 'Хүлээгдэж буй' },
     { id: 'active', label: 'Нийтлэгдсэн' },
     { id: 'rejected', label: 'Татгалзсан' },
-    { id: 'flagged', label: 'Report авсан' }
+    { id: 'flagged', label: 'Report авсан' },
+    { id: 'demo', label: 'Demo' }
   ];
   let _adminListingsTab = 'pending';
 
@@ -319,6 +320,19 @@
     if (tab === 'flagged') {
       const rows = await buildFlaggedRows();
       renderListingsTableRows(wrap, rows, 'Одоогоор мэдээлэгдсэн, үнийн хэвийн бус эсвэл давхардсан зар олдсонгүй.', `renderAdminListingsSection('flagged')`);
+      return;
+    }
+    // Demo listings (js/data.js, isDemo:true) never touch Firestore — they're read straight
+    // out of the local `listings` array the whole app already shares, not fetched here.
+    if (tab === 'demo') {
+      const demoRows = listings.filter(l => l.isDemo);
+      if (demoRows.length === 0) { wrap.innerHTML = adminEmptyState('Demo зар алга', ''); return; }
+      wrap.innerHTML = `
+        <div style="margin-bottom:12px;">
+          <button type="button" class="btn btn-ghost" style="color:var(--danger);" onclick="confirmBulkDeleteDemoListings()">Бүх demo зарыг устгах (${demoRows.length})</button>
+        </div>
+        <div class="admin-list-table">${demoRows.map(normalizeDemoListingRow).map(adminDemoListingRow).join('')}</div>
+      `;
       return;
     }
     const statusMap = { all: ['pending', 'active', 'rejected', 'expired', 'sold', 'rented'], pending: ['pending'], active: ['active'], rejected: ['rejected'] };
@@ -365,6 +379,107 @@
       ownerId: source.ownerId || null,
       flagReasons: null, reportIds: null
     };
+  }
+
+  // Demo listings never go through normalizeListingRow()'s Firestore-doc/local-array shape
+  // detection — they're local-array-only and have no fsId, so they get their own tiny row
+  // shape instead of risking a mismatch in that function's isLocalShape branching.
+  function normalizeDemoListingRow(l) {
+    return {
+      demoId: l.id,
+      img: l.img || '',
+      title: l.title || '',
+      sellerName: (sellerData[l.id] && sellerData[l.id].name) || 'Demo борлуулагч',
+      price: l.price || 0
+    };
+  }
+
+  function adminDemoListingRow(row) {
+    return `
+      <div class="admin-row">
+        <img class="admin-row-img" src="${esc(row.img)}" alt="" onerror="this.style.background='var(--paper-2)';this.removeAttribute('src');" />
+        <div class="admin-row-body">
+          <div class="admin-row-title">${esc(row.title)} <span class="admin-status-pill" style="background:rgba(255,159,10,0.15);color:#b8730a;">DEMO</span></div>
+          <div class="admin-row-meta">${esc(row.sellerName)} · ${fmtPrice(row.price)}</div>
+        </div>
+        <div class="admin-row-actions">
+          <button type="button" class="btn btn-ghost" onclick="showPage('listings'); setTimeout(()=>openListing(${row.demoId}), 150);">Харах</button>
+          ${adminActionMenu('demo-' + row.demoId, [{ label: 'Устгах', onclick: `confirmDeleteDemoListing(${row.demoId})`, danger: true }])}
+        </div>
+      </div>
+    `;
+  }
+
+  // ===== DEMO LISTING DELETE =====
+  // Demo listings are hardcoded content, not Firestore documents (see js/data.js) — there is
+  // nothing in `listings` for a delete to remove server-side. Deleting one here writes a
+  // permanent tombstone to hiddenDemoListings/{id} instead (gated by the same
+  // isAdminOrOwner()+hiddenBy==self rule as every other privileged write in firestore.rules)
+  // and every visitor's browser filters that id out of the local seed array from then on —
+  // see applyDemoListingHides() in data.js. Reuses logAdminAction()'s existing schema:
+  // targetId carries the demo listing's numeric id (bulk: the count), reason carries the
+  // title (bulk: the comma-joined id list) — there's no separate "title"/"listingIds" field
+  // on adminAuditLogs, so this is how those values are captured without changing its shape.
+  function confirmDeleteDemoListing(id) {
+    const l = listings.find(x => x.id === id && x.isDemo);
+    if (!l) { showToast('Энэ demo зар олдсонгүй'); return; }
+    if (!confirm('Энэ demo зарыг бүрмөсөн устгах уу?')) return;
+    deleteDemoListing(l);
+  }
+
+  async function deleteDemoListing(l) {
+    try {
+      await db.collection('hiddenDemoListings').doc(String(l.id)).set({
+        demoListingId: l.id,
+        title: l.title || '',
+        hiddenBy: currentUser.uid,
+        hiddenByEmail: currentUser.email || '',
+        hiddenAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      const idx = listings.findIndex(x => x.id === l.id && x.isDemo);
+      if (idx > -1) listings.splice(idx, 1);
+      logAdminAction('delete_demo_listing', 'demo_listing', l.id, l.title || '');
+      showToast('Demo зар устгагдлаа', 'success');
+      renderAdminListingsSection('demo');
+      renderListings(getFilteredListings()); renderHomeListings();
+    } catch(e) {
+      console.error('deleteDemoListing failed:', e.code, e.message);
+      showToast('Алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : ''));
+    }
+  }
+
+  function confirmBulkDeleteDemoListings() {
+    const demoRows = listings.filter(l => l.isDemo);
+    if (!demoRows.length) { showToast('Устгах demo зар алга'); return; }
+    if (!confirm(`Бүх ${demoRows.length} demo зарыг устгах уу?`)) return;
+    if (!confirm('Энэ үйлдлийг буцаах боломжгүй. Устгах уу?')) return;
+    bulkDeleteDemoListings(demoRows);
+  }
+
+  async function bulkDeleteDemoListings(demoRows) {
+    try {
+      const batch = db.batch();
+      demoRows.forEach(l => {
+        const ref = db.collection('hiddenDemoListings').doc(String(l.id));
+        batch.set(ref, {
+          demoListingId: l.id, title: l.title || '',
+          hiddenBy: currentUser.uid, hiddenByEmail: currentUser.email || '',
+          hiddenAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+      await batch.commit();
+      const ids = demoRows.map(l => l.id);
+      for (let i = listings.length - 1; i >= 0; i--) {
+        if (listings[i].isDemo && ids.includes(listings[i].id)) listings.splice(i, 1);
+      }
+      logAdminAction('bulk_delete_demo_listings', 'demo_listing', demoRows.length, ids.join(','));
+      showToast(demoRows.length + ' demo зар устгагдлаа', 'success');
+      renderAdminListingsSection('demo');
+      renderListings(getFilteredListings()); renderHomeListings();
+    } catch(e) {
+      console.error('bulkDeleteDemoListings failed:', e.code, e.message);
+      showToast('Алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : ''));
+    }
   }
 
   async function buildFlaggedRows() {

@@ -295,6 +295,28 @@
   // once real listings are ready for launch. Never set on real/Firestore-loaded listings.
   listings.forEach(function(l) { l.isDemo = true; });
 
+  // ===== DEMO LISTING HIDES =====
+  // Demo listings above are hardcoded content, not Firestore documents — an admin "delete"
+  // (js/admin.js, hiddenDemoListings collection) has nothing in `listings` to actually
+  // remove, so it writes a permanent tombstone there instead. Fetched once here so a hide
+  // applies to every visitor, not just the admin's own browser; entries already removed
+  // mid-session by the admin dashboard itself never reach this function stale, since it only
+  // ever runs once, at load.
+  async function applyDemoListingHides() {
+    try {
+      const snap = await db.collection('hiddenDemoListings').get();
+      if (snap.empty) return;
+      const hiddenIds = new Set(snap.docs.map(function(d) { return d.data().demoListingId; }));
+      var removed = false;
+      for (var i = listings.length - 1; i >= 0; i--) {
+        if (listings[i].isDemo && hiddenIds.has(listings[i].id)) { listings.splice(i, 1); removed = true; }
+      }
+      if (removed) { renderHomeListings(); renderListings(getFilteredListings()); updateCatPillCounts(); }
+    } catch(e) {
+      console.error('applyDemoListingHides failed:', e.code, e.message);
+    }
+  }
+
   // Backfill khoroo/complex for demo listings from their loc string (e.g. "Хан-Уул, 15-р
   // хороо · Зайсан Тольт") so khoroo/complex search works against demo data too, not only
   // new listings submitted after these fields were added to the Add Listing form.
