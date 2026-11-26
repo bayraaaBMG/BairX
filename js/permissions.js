@@ -26,8 +26,18 @@
   function isAdminOrOwnerUser(u) {
     return isOwnerUser(u) || isAdminUser(u);
   }
+  // CRM staff: owner/admin/manager see every lead; agents only those assigned to them.
+  // UI gate only — firestore.rules isStaff()/isAgent() is what actually enforces it.
+  function isStaffUser(u) {
+    u = u || (typeof currentUser !== 'undefined' ? currentUser : null);
+    return isAdminOrOwnerUser(u) || (!!u && u.role === 'manager');
+  }
+  function isAgentUser(u) {
+    u = u || (typeof currentUser !== 'undefined' ? currentUser : null);
+    return !!u && u.role === 'agent';
+  }
   function roleLabel(role) {
-    return { owner: 'Owner', admin: 'Admin', user: 'Хэрэглэгч' }[role] || 'Хэрэглэгч';
+    return { owner: 'Owner', admin: 'Admin', manager: 'Менежер', agent: 'Агент', user: 'Хэрэглэгч' }[role] || 'Хэрэглэгч';
   }
 
   // ===== ADMIN AUDIT LOG =====

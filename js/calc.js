@@ -5,77 +5,53 @@
   // рендерлэгддэг тул script-ээр шинэчилж чадаагүй — 2026-08-13-нд дахин шалгахыг оролдоход
   // ч шинэ мэдээлэл олдоогүй тул огноог UI дээр тодорхой харуулж байна (доорх сануулга).
   //
-  // ЭХ СУРВАЛЖИЙН ТАЙЛБАР (сүүлд шалгасан: 2026-08-13): доорх банк бүрийн хүү/нөхцөл ЗӨВХӨН
-  // тухайн банкны албан ёсны вэбсайтаас шууд уншиж баталгаажуулсан утга (verified: true) эсвэл
-  // "Тодорхойгүй" гэж илэрхий тэмдэглэсэн (verified: false). Зарим банкны вэбсайт JavaScript-аар
-  // рендерлэгддэг тул зөвхөн хуудасны гарчиг/навигацид байгаа мэдээлэл (ж: бүтээгдэхүүний нэр,
-  // "6%" гэсэн гарчигт байгаа хүү) шууд уншигдсан бол verified:true, харин дэлгэрэнгүй нөхцөл
-  // (урьдчилгаа, хугацаа, шимтгэл) уншигдаагүй бол тухайн талбарууд "Тодорхойгүй" хэвээр —
-  // ямар ч тоо ЗОХИОГООГҮЙ. Хуучирсан эсвэл өөрчлөгдсөн байж болзошгүй тул эцсийн шийдвэр
-  // гаргахын өмнө sourceUrl-аар орж баталгаажуулна уу.
-  //
-  // `phone` талбарыг энэ шатанд бүх банкинд null-ээр орхисон — банк тус бүрийн бодит холбоо
-  // барих дугаарыг тухайн банкны албан ёсны хуудаснаас нэгбүрчлэн шалгаж баталгаажуулаагүй тул
-  // (зарим сайт JS-ээр рендерлэгддэг тул найдвартай уншиж чадаагүй). Fake дугаар зохиохоос илүү
-  // "Тодорхойгүй" гэж үзүүлэх нь дээрх бодлоготой нийцнэ.
-  //
-  // `cap` (сая ₮) — зарим банкны 6% хямдралтай хөтөлбөр улсын хөтөлбөрийн хэмжээгээр
-  // хязгаарлагддаг (өмнөх хувилбарт ерөнхий "Хөнгөлөлттэй 6%" гэсэн ганц сонголтод байсан
-  // тоо, банк тус бүрд шилжсэн — verified 6% үзүүлж буй 4 банкинд адилхан хэрэглэнэ).
-  const banks = [
-    {
-      name: 'Голомт Банк', short: 'ГБ', color: '#E31E24',
-      productName: 'Амины орон сууц худалдан авах зээл',
-      annualRateText: '16.8–21.6%', downPaymentText: '40%-иас багагүй', loanTermText: '240 сар хүртэл',
-      feeText: '10,000₮ хүсэлтийн хураамж + зээлийн дүнгийн 1%', phone: null,
-      verified: true, sourceUrl: 'https://www.golomtbank.com/retail/loans/786', lastUpdated: '2026-08-13'
-    },
-    {
-      name: 'Хас Банк', short: 'ХБ', color: '#00A651',
-      productName: 'Хөнгөлөлттэй хөтөлбөрийн орон сууцны зээл',
-      annualRateText: '6%', downPaymentText: 'Тодорхойгүй', loanTermText: '240 сар хүртэл',
-      feeText: 'Тодорхойгүй', phone: null, cap: 150,
-      verified: true, sourceUrl: 'https://xacbank.mn/mortgage', lastUpdated: '2026-08-13'
-    },
-    {
-      name: 'Төрийн Банк', short: 'ТБ', color: '#FFB81C', dark: true,
-      productName: 'Орон сууцны ипотекийн зээл',
-      annualRateText: '6%', downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй',
-      feeText: 'Тодорхойгүй', phone: null, cap: 150,
-      verified: true, sourceUrl: 'https://www.statebank.mn/personal/product/10054', lastUpdated: '2026-08-13'
-    },
-    {
-      name: 'Худалдаа Хөгжлийн Банк', short: 'ХХБ', color: '#003F87',
-      productName: 'Орон сууц худалдан авах зээл',
-      annualRateText: '18.60–20.40% (бодит өртөг 19.07–20.87%)', downPaymentText: '20%-иас багагүй (нэмэлт барьцаагүй тохиолдолд 40%+)',
-      loanTermText: '240 сар хүртэл (20 жил)', feeText: 'Үйлчилгээний хураамж зээлийн дүнгийн 1% (дээд тал нь 1,500,000₮)', phone: null,
-      verified: true, sourceUrl: 'https://www.tdbm.mn/mn/retail/loans/oron-suutsnii-zeel/oron-suuc-khudaldan-avakh-zeel', lastUpdated: '2026-08-13'
-    },
-    {
-      name: 'Богд Банк', short: 'ББ', color: '#0A1628',
-      productName: 'Орон сууцны ипотекийн 6% зээл',
-      annualRateText: '6%', downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй', phone: null, cap: 150,
-      verified: true, sourceUrl: 'https://www.bogdbank.com/product/53', lastUpdated: '2026-08-13'
-    },
-    {
-      name: 'Ариг Банк', short: 'АБ', color: '#FF6B35',
-      productName: 'Ипотекийн зээл 6%',
-      annualRateText: '6%', downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй', phone: null, cap: 150,
-      verified: true, sourceUrl: 'https://www.arigbank.mn/mn/product/loan/26', lastUpdated: '2026-08-13'
-    },
-    {
-      name: 'Хаан Банк', short: 'ХнБ', color: '#0066B3',
-      productName: 'Орон сууц худалдан авах зээл (5 жил тутам хувьсах хүүтэй)', annualRateText: 'Тодорхойгүй',
-      downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй', phone: null,
-      verified: false, sourceUrl: 'https://www.khanbank.com/personal/product/detail/39/', lastUpdated: '2026-08-13'
-    },
-    {
-      name: 'Капитрон Банк', short: 'КБ', color: '#7B2CBF',
-      productName: 'Орон сууцны зээл', annualRateText: 'Тодорхойгүй',
-      downPaymentText: 'Тодорхойгүй', loanTermText: 'Тодорхойгүй', feeText: 'Тодорхойгүй', phone: null,
-      verified: false, sourceUrl: 'https://www.capitronbank.mn/c/%D0%BE%D1%80%D0%BE%D0%BD-%D1%81%D1%83%D1%83%D1%86%D0%BD%D1%8B-%D0%B7%D1%8D%D1%8D%D0%BB', lastUpdated: '2026-08-13'
+  // ЭХ СУРВАЛЖ: банкны жагсаалт кодод hardcode хийгдэхгүй — /data/banks.json-оос ачаална.
+  // Банк бүрийн хүү/нөхцөл ЗӨВХӨН тухайн банкны албан ёсны вэбсайтаас шалгасан утга
+  // (verified: true) эсвэл "Тодорхойгүй" (verified: false); checkedAt нь сүүлд шалгасан огноо.
+  // Банк нэмэх/хасах, хүү шинэчлэхдээ зөвхөн тэр JSON файлыг засна — нүүрний банкны мөр,
+  // тооцоолуурын таб, "N банк" гэсэн тоо бүгд тэндээс автоматаар үүснэ.
+  let banks = [];
+  let banksMeta = { updatedAt: null };
+  let _banksLoaded = false;
+
+  async function loadBanks() {
+    try {
+      const res = await fetch("/data/banks.json", { cache: "no-cache" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const json = await res.json();
+      banks = Array.isArray(json.banks) ? json.banks : [];
+      banksMeta = { updatedAt: json.updatedAt || null };
+    } catch (e) {
+      console.error("loadBanks failed:", e.message);
+      banks = [];
     }
-  ];
+    _banksLoaded = true;
+    renderBankTabs();
+    if (banks.length) selectBank(currentBankIdx >= banks.length ? 0 : currentBankIdx);
+    else selectBank(-1);
+    renderBanksStrip();
+    document.querySelectorAll("[data-bank-count]").forEach(el => { el.textContent = banks.length; });
+  }
+
+  function bankCheckedText(b) {
+    return b && b.checkedAt ? "Шалгасан: " + b.checkedAt : "Шалгаагүй";
+  }
+
+  // Нүүр хуудасны "Банк" мөр — banks.json-оос үүснэ (өмнө нь index.html-д гараар 8 ширхэг бичигдсэн байсан).
+  function renderBanksStrip() {
+    const row = document.getElementById("banksRow");
+    if (!row) return;
+    if (!banks.length) { row.innerHTML = "<div class=\"banks-empty\">Банкны мэдээлэл ачаалж чадсангүй.</div>"; return; }
+    row.innerHTML = banks.map(b => {
+      const rate = b.verified && b.annualRateText ? b.annualRateText.split("(")[0].trim() : "Хүү тодорхойгүй";
+      return `<a class="bank-pill" href="${esc(b.sourceUrl)}" target="_blank" rel="noopener noreferrer" title="${esc(b.name + " — " + b.productName)}">
+        <div class="bp-logo" style="background:${b.color};${b.dark ? "color:#0A1628;" : ""}">${esc(b.short)}</div>
+        <div class="bp-text"><div class="bp-name">${esc(b.name)}</div>
+        <div class="bp-rate">${esc(rate)}</div>
+        <div class="bp-checked">${esc(bankCheckedText(b))}</div></div>
+      </a>`;
+    }).join("");
+  }
 
   // Derived purely from the verified text fields above at render/select time — never a
   // second, separately-maintained copy of a number that could drift out of sync with the
@@ -120,7 +96,8 @@
     el.innerHTML = banks.map((b, i) => `
       <button type="button" class="bank-tab${i === currentBankIdx ? ' active' : ''}" data-idx="${i}" onclick="selectBank(${i})">
         <div class="bank-logo" style="width:24px;height:24px;font-size:10px;background:${b.color};${b.dark ? 'color:#0A1628;' : ''}">${esc(b.short)}</div>
-        <span class="bank-tab-name">${esc(b.name)}</span>
+        <span class="bank-tab-text"><span class="bank-tab-name">${esc(b.name)}</span>
+        <span class="bank-tab-rate">${b.verified && b.annualRateText ? esc(b.annualRateText.split("(")[0].trim()) : "Хүү тодорхойгүй"} · ${esc(bankCheckedText(b))}</span></span>
       </button>
     `).join('') + `
       <button type="button" class="bank-tab${currentBankIdx === -1 ? ' active' : ''}" data-idx="-1" onclick="selectBank(-1)">
@@ -143,7 +120,7 @@
       return;
     }
     const verifiedBadge = bank.verified
-      ? `<span class="bank-info-verified">✓ Шалгасан · ${esc(bank.lastUpdated)}</span>`
+      ? `<span class="bank-info-verified">✓ Шалгасан: ${esc(bank.checkedAt || "—")}</span>`
       : `<span class="bank-info-unverified">Шалгаагүй</span>`;
     el.innerHTML = `
       <div class="bank-info-head">
@@ -457,7 +434,7 @@
 
   // ===== INIT + EVENT LISTENERS =====
   renderBankTabs();
-  selectBank(currentBankIdx);
+  loadBanks();
 
   const priceInputEl = document.getElementById('priceInput');
   if (priceInputEl) priceInputEl.addEventListener('input', handlePriceInputChange);

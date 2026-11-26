@@ -4,6 +4,14 @@
     return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
   function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
+
+  // Result-count label for list headers ("12 зар олдлоо"). Never shows a bare "0" — an empty
+  // result reads as a sentence instead, so a visitor never lands on "0 зар олдлоо".
+  function setResultCountLabel(labelId, n, noun, emptyText) {
+    const el = document.getElementById(labelId);
+    if (!el) return;
+    el.innerHTML = n > 0 ? `<strong>${fmt(n)}</strong> ${noun} олдлоо` : esc(emptyText || 'Тохирох ' + noun + ' олдсонгүй');
+  }
   // Strips everything but digits and keeps the last 8 (Mongolian mobile numbers are 8
   // digits; this lets "+976 8811-2233", "88112233" and "976-88112233" all compare equal.
   function normalizePhone(phone) {
@@ -235,14 +243,18 @@
         const el = document.getElementById(sid);
         if (el) el.classList.add('page-active');
       });
-      if (history.pushState) history.pushState(null, '', location.pathname);
+      // Always land on the root path — a hash page opened from /privacy or /complex/x must
+      // not keep that path in the URL (it would re-open the path route on reload).
+      if (history.pushState) history.pushState(null, '', '/');
     } else {
       const el = document.getElementById(target);
       if (el) {
         el.classList.add('page-active');
-        if (history.pushState) history.pushState(null, '', '#' + target);
+        if (history.pushState) history.pushState(null, '', '/#' + target);
       }
     }
+    if (typeof resetMetaForHashPages === 'function') resetMetaForHashPages();
+    if (typeof trackEvent === 'function') trackEvent('page_view', { page: target });
     document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
     const activeLink = document.querySelector(`.nav-links a[onclick*="'${target}'"]`);
     if (activeLink) activeLink.classList.add('active');

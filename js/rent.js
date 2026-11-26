@@ -73,8 +73,7 @@
     const grid = document.getElementById('rentGrid');
     if (!grid) return;
     const items = getFilteredRentListings();
-    const countEl = document.getElementById('rentFilterCount');
-    if (countEl) countEl.textContent = items.length;
+    setResultCountLabel('rentFilterCountLabel', items.length, 'зар', 'Тохирох түрээсийн зар олдсонгүй');
     const mfCount = document.getElementById('rentMobileFilterCount');
     if (mfCount) {
       const n = rentActiveFilterCount();

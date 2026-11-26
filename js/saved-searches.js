@@ -41,9 +41,13 @@
         <div style="display:flex;align-items:flex-start;gap:10px;padding:14px;background:var(--paper-2);border-radius:12px;margin-bottom:20px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <div>
-            <div style="font-weight:700;font-size:14px;">Мэдэгдэл BairX-ийн хонхны цэсэд ирнэ</div>
-            <div style="font-size:12px;color:var(--ink-3);">Энэ нөхцөлд тохирох шинэ зар орох бүрт BairX-ыг нээх/шинэчлэх үед мэдэгдэнэ. И-мэйлээр илгээхгүй.</div>
+            <div style="font-weight:700;font-size:14px;">Тохирох шинэ зар батлагдмагц мэдэгдэнэ</div>
+            <div style="font-size:12px;color:var(--ink-3);">BairX-ийн хонхны цэсэд үргэлж ирнэ. Нэмэлтээр доорх сувгийг сонгож болно.</div>
           </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;font-size:13.5px;">
+          <label style="display:flex;gap:8px;align-items:center;${pushConfigured() ? '' : 'opacity:.5;'}"><input type="checkbox" id="ssChPush" ${pushConfigured() ? '' : 'disabled'}> Web Push (утас/компьютерт)${pushConfigured() ? '' : ' — удахгүй'}</label>
+          <label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="ssChEmail" ${currentUser.email ? '' : 'disabled'}> И-мэйл${currentUser.email ? ' (' + esc(currentUser.email) + ')' : ' — и-мэйлгүй бүртгэл'}</label>
         </div>
         <button class="btn btn-blue btn-lg" style="width:100%;justify-content:center;" onclick="confirmSaveSearch(${JSON.stringify({ district, priceMin, priceMax, areaMin, areaMax, rooms, keyword, category: currentCat, toggles: activeFilterToggles, label }).replace(/"/g, '&quot;')})">
           Хадгалах
@@ -55,11 +59,16 @@
   }
 
   async function confirmSaveSearch(filters) {
+    // Channels feed the server-side matcher (functions/index.js onListingActivated).
+    const channels = ['inapp'];
+    if (document.getElementById('ssChEmail')?.checked) channels.push('email');
+    if (document.getElementById('ssChPush')?.checked && await enablePush()) channels.push('push');
     try {
       await db.collection('savedSearches').add({
         userId: currentUser.uid,
         userEmail: currentUser.email,
         ...filters,
+        channels,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       closeModal();

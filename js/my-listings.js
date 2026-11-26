@@ -1115,6 +1115,7 @@
         <div style="padding:14px; background:var(--paper-2); border-radius:10px; font-size:12px; color:var(--ink-3); line-height:1.5; margin-top:18px;">
           Зар нийтлэхээр <a href="javascript:void(0)" style="color:var(--primary); font-weight:600;" onclick="openInfoPage('terms', 'addListing')">Үйлчилгээний нөхцөл</a> болон <a href="javascript:void(0)" style="color:var(--primary); font-weight:600;" onclick="openInfoPage('privacy', 'addListing')">Нууцлалын бодлого</a>-той зөвшөөрсөнд тооцогдоно. Хуурамч мэдээлэл оруулсан тохиолдолд зар нь устгагдаж, бүртгэл блоклогдох эрсдэлтэй.
         </div>
+        <div style="margin-top:12px;">${consentCheckboxHtml('addConsent')}</div>
 
         <div class="step-nav">
           <button class="btn btn-ghost btn-back" onclick="prevStep(7)">
@@ -1618,6 +1619,8 @@
   }
 
   async function submitListing() {
+    // The listing publishes the seller's name + phone — explicit privacy consent required.
+    if (document.getElementById('addConsent') && !consentGiven('addConsent')) return;
     // Defensive re-check — step 6 (Contact) is already validated once by nextStep(6)
     // before the Preview step is even reachable, so this should never actually fail in
     // normal use. If it somehow does, jump back to step 6 first (jumpToStep re-renders
@@ -1862,8 +1865,21 @@
         badges: newListing.badges,
         boosted: false,
         userSubmitted: true,
+        // ---- Price-data fields (see js/pricing.js, functions/index.js) ----
+        complexId: (typeof resolveComplexId === 'function' ? resolveComplexId(newListing.complex || newListing.buildingName) : BairxPricing.slugify(newListing.complex || newListing.buildingName)) || '',
+        areaM2: BairxPricing.num(newListing.area),
+        pricePerM2: newListing.cat === 'rent' ? null : BairxPricing.round(BairxPricing.pricePerM2(newListing.price, newListing.area), 4),
+        floorNum: BairxPricing.parseFloorNum(newListing.floor),
+        source: 'user',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
+      // Price history: append only when the price actually changed (and always on create).
+      {
+        const prev = editingListingId ? listings.find(x => x.id === editingListingId) : null;
+        const priceEntry = { price: newListing.price, at: new Date().toISOString().slice(0, 10) };
+        if (!prev) fsDoc.priceHistory = [priceEntry];
+        else if (Number(prev.price) !== Number(newListing.price)) fsDoc.priceHistory = firebase.firestore.FieldValue.arrayUnion(priceEntry);
+      }
       // Belt-and-suspenders: images are always short Storage URLs by this point, but the
       // floor plan is still a raw base64 image (out of scope for this fix — see
       // handleFloorPlanUpload) and could theoretically still push the document too large.
@@ -1877,6 +1893,7 @@
         } else {
           fsDoc.createdAt = firebase.firestore.FieldValue.serverTimestamp();
           fsDoc.viewCount = 0; fsDoc.favoriteCount = 0; fsDoc.reportCount = 0;
+          fsDoc.mlsId = 'BX-' + Date.now().toString(36).toUpperCase();
           const docRef = await db.collection('listings').add(fsDoc);
           newListing.firestoreId = docRef.id;
         }
@@ -2041,7 +2058,9 @@
     l.status = newStatus;
     l._inactive = true;
     if (l.firestoreId) {
-      try { await db.collection('listings').doc(l.firestoreId).update({ status: newStatus }); } catch(e) {}
+      // soldAt feeds the price-data pipeline (sold listings become deal candidates for staff
+      // to confirm in Admin → Хэлцэл); it's a plain ISO date so it stays human-readable.
+      try { await db.collection('listings').doc(l.firestoreId).update({ status: newStatus, soldAt: new Date().toISOString().slice(0, 10) }); } catch(e) {}
     }
     showToast(newStatus === 'rented' ? 'Түрээслэгдсэн болгов' : 'Зарагдсан болгов', 'success');
     renderMyListings('sold');

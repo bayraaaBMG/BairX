@@ -188,8 +188,7 @@
     const el = document.getElementById('newdevGrid');
     if (!el) return;
     const items = getFilteredProjects();
-    const countEl = document.getElementById('newdevFilterCount');
-    if (countEl) countEl.textContent = items.length;
+    setResultCountLabel('newdevFilterCountLabel', items.length, 'төсөл', 'Удахгүй шинэ төслүүд нэмэгдэнэ');
     const mfCount = document.getElementById('newdevMobileFilterCount');
     if (mfCount) {
       const n = newdevActiveFilterCount();
@@ -707,6 +706,7 @@
             <input type="text" class="form-input" id="npContactName" placeholder="Жнь: Борлуулалтын алба" maxlength="60" value="${esc(s.contactName)}" />
           </div>
         </div>
+        ${consentCheckboxHtml('npConsent')}
 
         <div class="step-nav">
           <button class="btn btn-ghost btn-back" onclick="prevProjectStep(3)">
@@ -970,6 +970,7 @@
 
   async function submitProject() {
     if (!validateProjectStep(3)) return;
+    if (!consentGiven('npConsent')) return;
     try {
       await doSubmitProject();
     } catch(e) {

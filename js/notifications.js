@@ -52,7 +52,7 @@
       return;
     }
     list.innerHTML = notifications.map(n => `
-      <div class="notif-item ${n.read ? '' : 'unread'}" onclick="readNotif('${n.id}', this, ${n.listingLocalId != null ? n.listingLocalId : 'null'})">
+      <div class="notif-item ${n.read ? '' : 'unread'}" onclick="readNotif('${n.id}', this, ${n.listingLocalId != null ? Number(n.listingLocalId) : 'null'})">
         <div class="notif-icon ${n.type}">${icons[n.type] || icons.match}</div>
         <div class="notif-content">
           <div class="notif-text">${n.text}</div>
@@ -78,6 +78,10 @@
     if (listingLocalId != null && !isNaN(listingLocalId) && listings.some(l => l.id === listingLocalId)) {
       document.getElementById('notifPanel').classList.remove('open');
       openListing(listingLocalId);
+    } else if (n && n.listingFsId) {
+      // Server-written notifications (functions/index.js) only know the Firestore id.
+      document.getElementById('notifPanel').classList.remove('open');
+      openListingByFsId(n.listingFsId);
     }
   }
 

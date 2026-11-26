@@ -2,19 +2,33 @@
   // Ангилал select IS the category picker — its value is the source of truth for
   // performSearch's category, no separate tab row to keep in sync anymore.
   function performSearch() {
-    const cat = document.getElementById('hSearchType')?.value || 'all';
-    const district = document.getElementById('hSearchDistrict')?.value || 'all';
-    const keyword = (document.getElementById('hSearchKeyword')?.value || '').trim();
-    const priceMin = document.getElementById('hSearchPriceMin')?.value || '';
-    const priceMax = document.getElementById('hSearchPriceMax')?.value || '';
-    const areaMin = document.getElementById('hSearchAreaMin')?.value || '';
+    let cat = document.getElementById('hSearchType')?.value || 'all';
+    let district = document.getElementById('hSearchDistrict')?.value || 'all';
+    let keyword = (document.getElementById('hSearchKeyword')?.value || '').trim();
+    let priceMin = document.getElementById('hSearchPriceMin')?.value || '';
+    let priceMax = document.getElementById('hSearchPriceMax')?.value || '';
+    let areaMin = document.getElementById('hSearchAreaMin')?.value || '';
     const areaMax = document.getElementById('hSearchAreaMax')?.value || '';
-    const rooms = document.getElementById('hSearchRooms')?.value || 'all';
+    let rooms = document.getElementById('hSearchRooms')?.value || 'all';
     const floorMin = document.getElementById('hSearchFloorMin')?.value || '';
     const floorMax = document.getElementById('hSearchFloorMax')?.value || '';
     const yearMin = document.getElementById('hSearchYearMin')?.value || '';
     const yearMax = document.getElementById('hSearchYearMax')?.value || '';
     const chipFilters = Array.from(document.querySelectorAll('.home-chip-row .chip.active')).map(c => c.dataset.filter);
+
+    // Natural-language search (rule-based, js/pricing.js parseNaturalQuery):
+    // "500 сая хүртэл 3 өрөө Зайсан" → priceMax 500, rooms 3, keyword "зайсан". Parsed values
+    // only fill fields the visitor left empty — an explicit dropdown/input always wins.
+    let nl = {};
+    if (keyword && /\d|хүртэл|дээш|өрөө|сая|тэрбум/i.test(keyword)) nl = BairxPricing.parseNaturalQuery(keyword);
+    if (nl.kind === 'rent' && cat === 'all') cat = 'rent';
+    if (nl.district && district === 'all') district = nl.district;
+    if (nl.minPrice != null && !priceMin) priceMin = String(nl.minPrice);
+    if (nl.maxPrice != null && !priceMax) priceMax = String(nl.maxPrice);
+    if (nl.minArea != null && !areaMin) areaMin = String(nl.minArea);
+    if (nl.rooms != null && rooms === 'all') rooms = String(Math.min(nl.rooms, 4));
+    if (Object.keys(nl).length) keyword = nl.text || '';
+    if (keyword || Object.keys(nl).length) trackEvent('search', { page: 'home', channel: Object.keys(nl).length ? 'nl' : 'keyword' });
 
     // Sync onto the real Listings-page filter panel, then let getFilteredListings()
     // (filters-advanced.js) do the actual filtering — same pattern the category-tile

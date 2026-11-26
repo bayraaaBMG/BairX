@@ -1,0 +1,6 @@
+functions/
+tests/
+scripts/
+docs/
+*.log
+.claude/

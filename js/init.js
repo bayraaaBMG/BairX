@@ -27,7 +27,16 @@
   // Initialize page router + listing hash restore
   (function() {
     const hash = location.hash.replace('#', '');
-    if (hash.startsWith('listing-')) {
+    // Push / e-mail links from functions/index.js: /?l=<firestoreId>
+    const linkedFsId = new URLSearchParams(location.search).get('l');
+    if (linkedFsId) {
+      history.replaceState(null, '', '/');
+      setTimeout(() => openListingByFsId(linkedFsId), 200);
+    }
+    // Path routes (/privacy, /complexes, /b/250 …) take priority — see js/router.js.
+    if (location.pathname !== '/' && !location.hash && typeof showRoute === 'function' && matchRoute(location.pathname)) {
+      showRoute(location.pathname + location.search, { fromPop: true });
+    } else if (hash.startsWith('listing-')) {
       const id = parseInt(hash.replace('listing-', ''), 10);
       showPage('listings');
       if (!isNaN(id)) setTimeout(() => openListing(id), 100);
@@ -39,7 +48,9 @@
     }
     window.addEventListener('popstate', function() {
       const h = location.hash.replace('#', '');
-      if (h.startsWith('listing-')) {
+      if (location.pathname !== '/' && !location.hash && typeof showRoute === 'function' && matchRoute(location.pathname)) {
+        showRoute(location.pathname + location.search, { fromPop: true });
+      } else if (h.startsWith('listing-')) {
         const id = parseInt(h.replace('listing-', ''), 10);
         showPage('listings');
         if (!isNaN(id)) setTimeout(() => openListing(id), 100);

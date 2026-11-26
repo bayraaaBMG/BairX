@@ -188,6 +188,13 @@
         </div>` : ''}
 
         <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:20px;color:var(--danger);" onclick="closeModal(); logout();">Гарах</button>
+
+        ${currentUser.role !== 'owner' ? `
+        <div class="danger-zone">
+          <div class="danger-zone-title">Бүртгэлээ устгах</div>
+          <div class="danger-zone-text">Профайл, бүх зар, зураг, хадгалсан зүйлс болон нэвтрэх бүртгэл бүрмөсөн устана. <a href="/privacy" target="_blank" rel="noopener">Дэлгэрэнгүй</a></div>
+          <button class="btn btn-ghost danger-zone-btn" onclick="openDeleteAccount()">Бүртгэлээ устгах</button>
+        </div>` : ''}
       </div>
     `;
     document.getElementById('modal').classList.add('open');

@@ -4,6 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>BairX — Монголын Ухаалаг Үл Хөдлөх Платформ</title>
+<meta name="description" content="Орон сууц, түрээс, газар, оффисын зар. Хотхон бүрийн 1 м²-ийн дундаж үнэ, хямд зарын жагсаалт, байраа үнэлүүлэх." />
+<link rel="canonical" href="https://bairx.vercel.app/" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#1E5BFF" />
 <meta name="mobile-web-app-capable" content="yes" />
@@ -45,6 +47,8 @@
       <a onclick="showPage('listings')">Зар хайх</a>
       <a onclick="showPage('rent')">Түрээс</a>
       <a onclick="showPage('newdev')">Шинэ орон сууц</a>
+      <a href="/complexes" onclick="return go(event, '/complexes')">Хотхонууд</a>
+      <a href="/hotlist" onclick="return go(event, '/hotlist')">Хямд зар</a>
       <a onclick="showPage('calc')">Тооцоолуур</a>
       <a onclick="showPage('resources')">Зөвлөгөө</a>
       <a onclick="currentUser ? showPage('dashboard') : openAuth()">Миний самбар</a>
@@ -81,8 +85,8 @@
           <span id="userAvLetter">Б</span>
         </div>
         <div class="user-dropdown" id="userDropdown">
-          <div class="user-dropdown-name" id="userDropName">Хэрэглэгч</div>
-          <div class="user-dropdown-phone" id="userDropPhone">+976 --------</div>
+          <div class="user-dropdown-name" id="userDropName"></div>
+          <div class="user-dropdown-phone" id="userDropPhone"></div>
           <a onclick="showPage('dashboard'); toggleUserMenu(null)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             Хувийн самбар
@@ -102,6 +106,10 @@
           <a onclick="openAddListing(); toggleUserMenu(null)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
             Зар нэмэх
+          </a>
+          <a id="crmNavLink" href="/crm" onclick="toggleUserMenu(null); return go(event, '/crm')" style="display:none;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Ажлын самбар (лид)
           </a>
           <a id="adminNavLink" onclick="showPage('admin'); toggleUserMenu(null)" style="display:none;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -123,6 +131,12 @@
     <a onclick="showPage('listings'); toggleMobileMenu()">Зар хайх</a>
     <a onclick="showPage('rent'); toggleMobileMenu()">Түрээс</a>
     <a onclick="showPage('newdev'); toggleMobileMenu()">Шинэ орон сууц</a>
+    <a href="/complexes" onclick="return go(event, '/complexes')">Хотхонууд · 1 м²-ийн үнэ</a>
+    <a href="/hotlist" onclick="return go(event, '/hotlist')">Дунджаас хямд зар</a>
+    <a href="/valuation" onclick="return go(event, '/valuation')">Байраа үнэлүүлэх</a>
+    <a href="/growth" onclick="return go(event, '/growth')">Үнийн өсөлт</a>
+    <a href="/budget" onclick="return go(event, '/budget')">Төсвөөр хэдэн м²</a>
+    <a href="/alerts" onclick="return go(event, '/alerts')">Мэдэгдэл авах</a>
     <a onclick="showPage('compare'); toggleMobileMenu()">Авах vs Түрээслэх</a>
     <a onclick="showPage('calc'); toggleMobileMenu()">Зээл тооцоолуур</a>
     <a onclick="showPage('resources'); toggleMobileMenu()">Зөвлөгөө</a>
@@ -150,7 +164,7 @@
           </div>
           <div class="hs-keyword-wrap">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
-            <input type="text" id="hSearchKeyword" placeholder="Хотхон, хороолол, байр, зар хайх…" autocomplete="off" onkeydown="if(event.key==='Enter') performSearch()" />
+            <input type="text" id="hSearchKeyword" placeholder="Жнь: 500 сая хүртэл 3 өрөө Зайсан" autocomplete="off" onkeydown="if(event.key==='Enter') performSearch()" />
           </div>
           <button type="button" class="btn btn-blue hs-search-btn" onclick="performSearch()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
@@ -290,10 +304,10 @@
         <p class="hero-compact-sub">Орон сууц, түрээс, газар, оффисын зарыг нэг дороос.</p>
       </div>
       <div class="home-info-stats-inline" id="heroMiniStats">
-        <span class="his-item"><strong id="heroStat-all">0</strong> зар</span>
-        <span class="his-item"><strong id="heroStat-apartment">0</strong> орон сууц</span>
-        <span class="his-item"><strong id="heroStat-rent">0</strong> түрээс</span>
-        <span class="his-item"><strong id="heroStat-landhouse">0</strong> газар, хашаа байшин</span>
+        <span class="his-item"><strong id="heroStat-all" class="sk-num"></strong> зар</span>
+        <span class="his-item"><strong id="heroStat-apartment" class="sk-num"></strong> орон сууц</span>
+        <span class="his-item"><strong id="heroStat-rent" class="sk-num"></strong> түрээс</span>
+        <span class="his-item"><strong id="heroStat-landhouse" class="sk-num"></strong> газар, хашаа байшин</span>
       </div>
     </div>
   </div>
@@ -302,6 +316,12 @@
 <!-- ============ HOME PORTAL ============ -->
 <section class="home-portal-section" id="home-portal">
   <div class="home-content-inner">
+    <div class="price-tools">
+      <a class="price-tool" href="/hotlist" onclick="return go(event, '/hotlist')"><span class="pt-k">−15%+</span><span class="pt-t">Хотхоны дунджаас хямд зар</span></a>
+      <a class="price-tool" href="/valuation" onclick="return go(event, '/valuation')"><span class="pt-k">₮ / м²</span><span class="pt-t">Байраа үнэлүүлэх</span></a>
+      <a class="price-tool" href="/complexes" onclick="return go(event, '/complexes')"><span class="pt-k">Хотхон</span><span class="pt-t">1 м²-ийн дундаж үнэ</span></a>
+      <a class="price-tool" href="/budget" onclick="return go(event, '/budget')"><span class="pt-k">Төсөв</span><span class="pt-t">Хэдэн м² авах вэ</span></a>
+    </div>
     <div id="homeAdBanner"></div>
     <div class="portal-section-head">
       <div>
@@ -312,7 +332,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </button>
     </div>
-    <div id="homeListingsGrid" class="home-listings-grid"></div>
+    <div id="homeListingsGrid" class="home-listings-grid" aria-busy="true"><div class="sk-card" aria-hidden="true"><div class="sk-img"></div><div class="sk-line w60"></div><div class="sk-line w90"></div><div class="sk-line w40"></div></div><div class="sk-card" aria-hidden="true"><div class="sk-img"></div><div class="sk-line w60"></div><div class="sk-line w90"></div><div class="sk-line w40"></div></div><div class="sk-card" aria-hidden="true"><div class="sk-img"></div><div class="sk-line w60"></div><div class="sk-line w90"></div><div class="sk-line w40"></div></div><div class="sk-card" aria-hidden="true"><div class="sk-img"></div><div class="sk-line w60"></div><div class="sk-line w90"></div><div class="sk-line w40"></div></div></div>
 
     <div class="portal-section-head portal-section-head-spaced">
       <div>
@@ -323,7 +343,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </button>
     </div>
-    <div id="homeFeaturedGrid" class="home-listings-grid"></div>
+    <div id="homeFeaturedGrid" class="home-listings-grid" aria-busy="true"><div class="sk-card" aria-hidden="true"><div class="sk-img"></div><div class="sk-line w60"></div><div class="sk-line w90"></div><div class="sk-line w40"></div></div><div class="sk-card" aria-hidden="true"><div class="sk-img"></div><div class="sk-line w60"></div><div class="sk-line w90"></div><div class="sk-line w40"></div></div><div class="sk-card" aria-hidden="true"><div class="sk-img"></div><div class="sk-line w60"></div><div class="sk-line w90"></div><div class="sk-line w40"></div></div><div class="sk-card" aria-hidden="true"><div class="sk-img"></div><div class="sk-line w60"></div><div class="sk-line w90"></div><div class="sk-line w40"></div></div></div>
 
     <div class="portal-section-head portal-section-head-spaced">
       <div>
@@ -336,63 +356,63 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M13 21V11l6 3v7"/></svg>
         </div>
         <div class="home-cat-tile-name">Орон сууц</div>
-        <div class="home-cat-tile-count" id="homeCatCount-apartment">0</div>
+        <div class="home-cat-tile-count" id="homeCatCount-apartment"><span class="sk-num"></span></div>
       </button>
       <button class="home-cat-tile" onclick="goHomeCategory('rent')">
         <div class="home-cat-tile-icon" style="--cat-color:#C77700; --cat-color-soft:rgba(255,176,32,0.16);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.5 12.5 20 3M17 6l3 3M14 9l2 2"/></svg>
         </div>
         <div class="home-cat-tile-name">Түрээс</div>
-        <div class="home-cat-tile-count" id="homeCatCount-rent">0</div>
+        <div class="home-cat-tile-count" id="homeCatCount-rent"><span class="sk-num"></span></div>
       </button>
       <button class="home-cat-tile" onclick="goHomeCategory('office')">
         <div class="home-cat-tile-icon" style="--cat-color:#7B2CBF; --cat-color-soft:rgba(123,44,191,0.12);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
         </div>
         <div class="home-cat-tile-name">Оффис</div>
-        <div class="home-cat-tile-count" id="homeCatCount-office">0</div>
+        <div class="home-cat-tile-count" id="homeCatCount-office"><span class="sk-num"></span></div>
       </button>
       <button class="home-cat-tile" onclick="goHomeCategory('house')">
         <div class="home-cat-tile-icon" style="--cat-color:#00A886; --cat-color-soft:rgba(0,212,170,0.14);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </div>
         <div class="home-cat-tile-name">Хашаа байшин</div>
-        <div class="home-cat-tile-count" id="homeCatCount-house">0</div>
+        <div class="home-cat-tile-count" id="homeCatCount-house"><span class="sk-num"></span></div>
       </button>
       <button class="home-cat-tile" onclick="goHomeCategory('land')">
         <div class="home-cat-tile-icon" style="--cat-color:#009878; --cat-color-soft:rgba(0,152,120,0.12);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
         </div>
         <div class="home-cat-tile-name">Газар</div>
-        <div class="home-cat-tile-count" id="homeCatCount-land">0</div>
+        <div class="home-cat-tile-count" id="homeCatCount-land"><span class="sk-num"></span></div>
       </button>
       <button class="home-cat-tile" onclick="goHomeCategory('house')" title="Хаус бүсэд хайна">
         <div class="home-cat-tile-icon" style="--cat-color:#00A886; --cat-color-soft:rgba(0,212,170,0.14);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V11L12 4l8 7v10"/><path d="M9 21v-6h6v6"/></svg>
         </div>
         <div class="home-cat-tile-name">Зуслан</div>
-        <div class="home-cat-tile-count" id="homeCatCount-cottage">0</div>
+        <div class="home-cat-tile-count" id="homeCatCount-cottage"><span class="sk-num"></span></div>
       </button>
       <button class="home-cat-tile" onclick="goHomeCategory('house')" title="Хаус бүсэд хайна">
         <div class="home-cat-tile-icon" style="--cat-color:#00A886; --cat-color-soft:rgba(0,212,170,0.14);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V9l9-6 9 6v12"/><path d="M5 21v-8h14v8"/></svg>
         </div>
         <div class="home-cat-tile-name">Гараж</div>
-        <div class="home-cat-tile-count" id="homeCatCount-garage">0</div>
+        <div class="home-cat-tile-count" id="homeCatCount-garage"><span class="sk-num"></span></div>
       </button>
       <button class="home-cat-tile" onclick="goHomeCategory('office')" title="Оффис бүсэд хайна">
         <div class="home-cat-tile-icon" style="--cat-color:#7B2CBF; --cat-color-soft:rgba(123,44,191,0.12);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5M4 9h16v11H4z"/><path d="M9 20v-6h6v6"/></svg>
         </div>
         <div class="home-cat-tile-name">Худалдаа, үйлчилгээ</div>
-        <div class="home-cat-tile-count" id="homeCatCount-commercial">0</div>
+        <div class="home-cat-tile-count" id="homeCatCount-commercial"><span class="sk-num"></span></div>
       </button>
       <button class="home-cat-tile" onclick="showPage('listings')" title="Бүх зарыг харна">
         <div class="home-cat-tile-icon" style="--cat-color:var(--ink-3); --cat-color-soft:var(--paper-3);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
         </div>
         <div class="home-cat-tile-name">Бусад</div>
-        <div class="home-cat-tile-count" id="homeCatCount-other">0</div>
+        <div class="home-cat-tile-count" id="homeCatCount-other"><span class="sk-num"></span></div>
       </button>
     </div>
   </div>
@@ -402,15 +422,8 @@
 <section class="banks-section" id="banks">
   <div class="banks-inner">
     <div class="banks-label">Банк дээр дарж шууд зээлийн хуудсанд нь орно уу</div>
-    <div class="banks-row">
-      <a class="bank-pill" href="https://www.khanbank.com/personal/product/detail/39/" target="_blank" rel="noopener noreferrer" title="Хаан Банк — Орон сууц худалдан авах зээл (5 жил тутам хувьсах хүүтэй). Хүү тодорхойгүй — банкны хуудаснаас шалгана уу." onclick="showToast('khanbank.com руу шилжиж байна...')"><div class="bp-logo" style="background:#0066B3">ХБ</div><div class="bp-name">Хаан Банк</div></a>
-      <a class="bank-pill" href="https://www.golomtbank.com/retail/loans/786" target="_blank" rel="noopener noreferrer" title="Голомт Банк — Амины орон сууц худалдан авах зээл, жилийн 16.8–21.6%. Дэлгэрэнгүй нөхцөлийг банкны хуудаснаас шалгана уу." onclick="showToast('golomtbank.com руу шилжиж байна...')"><div class="bp-logo" style="background:#E31E24">ГБ</div><div class="bp-name">Голомт Банк</div></a>
-      <a class="bank-pill" href="https://www.tdbm.mn/mn/retail/loans/oron-suutsnii-zeel/oron-suuc-khudaldan-avakh-zeel" target="_blank" rel="noopener noreferrer" title="Худалдаа Хөгжлийн Банк — Орон сууц худалдан авах зээл, жилийн 18.60–20.40%. TDB Online апп-аар бүрэн онлайнаар хүсэлт гаргах боломжтой." onclick="showToast('tdbm.mn руу шилжиж байна...')"><div class="bp-logo" style="background:#003F87">ХХБ</div><div class="bp-name">Худалдаа Хөгжлийн</div></a>
-      <a class="bank-pill" href="https://www.statebank.mn/personal/product/10054" target="_blank" rel="noopener noreferrer" title="Төрийн Банк — Орон сууцны ипотекийн зээл, төрийн хөтөлбөрийн жилийн 6% (шаардлага хангасан тохиолдолд)." onclick="showToast('statebank.mn руу шилжиж байна...')"><div class="bp-logo" style="background:#FFB81C; color:#0A1628">ТБ</div><div class="bp-name">Төрийн Банк</div></a>
-      <a class="bank-pill" href="https://xacbank.mn/mortgage" target="_blank" rel="noopener noreferrer" title="Хас Банк — Хөнгөлөлттэй хөтөлбөрийн орон сууцны зээл, жилийн 6%. Урьдчилгаа, хугацаа, дээд дүн тодорхойгүй — банкны хуудаснаас шалгана уу." onclick="showToast('xacbank.mn руу шилжиж байна...')"><div class="bp-logo" style="background:#00A651">ХА</div><div class="bp-name">Хас Банк</div></a>
-      <a class="bank-pill" href="https://www.capitronbank.mn/c/%D0%BE%D1%80%D0%BE%D0%BD-%D1%81%D1%83%D1%83%D1%86%D0%BD%D1%8B-%D0%B7%D1%8D%D1%8D%D0%BB" target="_blank" rel="noopener noreferrer" title="Капитрон Банк — Орон сууцны зээл. Хүү тодорхойгүй — банкны хуудаснаас шалгана уу." onclick="showToast('capitronbank.mn руу шилжиж байна...')"><div class="bp-logo" style="background:#7B2CBF">КБ</div><div class="bp-name">Капитрон</div></a>
-      <a class="bank-pill" href="https://www.arigbank.mn/mn/product/loan/26" target="_blank" rel="noopener noreferrer" title="Ариг Банк — Ипотекийн зээл, жилийн 6%. Урьдчилгаа, хугацаа, дээд дүн тодорхойгүй — банкны хуудаснаас шалгана уу." onclick="showToast('arigbank.mn руу шилжиж байна...')"><div class="bp-logo" style="background:#FF6B35">АБ</div><div class="bp-name">Ариг Банк</div></a>
-      <a class="bank-pill" href="https://www.bogdbank.com/product/53" target="_blank" rel="noopener noreferrer" title="Богд Банк — Орон сууцны ипотекийн 6% зээл. Бусад нөхцөл тодорхойгүй — банкны хуудаснаас шалгана уу." onclick="showToast('bogdbank.com руу шилжиж байна...')"><div class="bp-logo" style="background:#0A1628">ББ</div><div class="bp-name">Богд Банк</div></a>
+    <div class="banks-row" id="banksRow" aria-busy="true">
+      <div class="bank-pill skeleton-pill"></div><div class="bank-pill skeleton-pill"></div><div class="bank-pill skeleton-pill"></div><div class="bank-pill skeleton-pill"></div>
     </div>
   </div>
 </section>
@@ -1056,7 +1069,7 @@
         </div>
 
         <div class="listings-results-header">
-          <div class="lrh-count"><strong id="filterCount">0</strong> зар олдлоо</div>
+          <div class="lrh-count" id="filterCountLabel">Ачааллаж байна…</div>
           <div class="lrh-actions">
             <select id="sortSelect" onchange="setSorting(this.value)" aria-label="Эрэмбэлэх">
               <option value="default">Шинэ зар</option>
@@ -1233,7 +1246,7 @@
 
       <div class="listings-main">
         <div class="listings-results-header">
-          <div class="lrh-count"><strong id="rentFilterCount">0</strong> зар олдлоо</div>
+          <div class="lrh-count" id="rentFilterCountLabel">Ачааллаж байна…</div>
           <div class="lrh-actions">
             <select id="rentSortSelect" onchange="setRentSorting(this.value)" aria-label="Эрэмбэлэх">
               <option value="default">Шинэ зар</option>
@@ -1353,7 +1366,7 @@
 
       <div class="listings-main">
         <div class="listings-results-header">
-          <div class="lrh-count"><strong id="newdevFilterCount">0</strong> төсөл олдлоо</div>
+          <div class="lrh-count" id="newdevFilterCountLabel">Ачааллаж байна…</div>
           <div class="lrh-actions">
             <select id="newdevSortSelect" onchange="setNewdevSorting(this.value)">
               <option value="default">Шинээр нэмэгдсэн</option>
@@ -1966,7 +1979,7 @@
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         </div>
         <h4>Банкны нөхцөл харьцуулалт</h4>
-        <p>8 банкны зээлийн нөхцөлийг нэг дороос үзэж, банкны албан ёсны сайтаас шалгасан эсэхийг нь тэмдгээр харна.</p>
+        <p><span data-bank-count>Олон</span> банкны зээлийн нөхцөлийг нэг дороос үзэж, банкны албан ёсны сайтаас шалгасан эсэхийг нь тэмдгээр харна.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">
@@ -2005,6 +2018,11 @@
       </div>
     </div>
   </div>
+</section>
+
+<!-- ============ PATH-ROUTED PAGES (/privacy, /optout, /complexes, /complex/:id, /hotlist, /valuation, /b/:slug) — js/router.js ============ -->
+<section class="route-section" id="route">
+  <div class="route-inner" id="routeContent"></div>
 </section>
 
 <!-- ============ RESOURCES HUB ============ -->
@@ -2122,10 +2140,26 @@
         </ul>
       </div>
       <div class="footer-col">
+        <h5>Үнийн өгөгдөл</h5>
+        <ul>
+          <li><a href="/complexes" onclick="return go(event, '/complexes')">Хотхонууд</a></li>
+          <li><a href="/hotlist" onclick="return go(event, '/hotlist')">Хямд зарууд</a></li>
+          <li><a href="/growth" onclick="return go(event, '/growth')">Үнийн өсөлт</a></li>
+          <li><a href="/b/250" onclick="return go(event, '/b/250')">250 сая хүртэл</a></li>
+          <li><a href="/b/250-500" onclick="return go(event, '/b/250-500')">250–500 сая</a></li>
+          <li><a href="/b/500-1000" onclick="return go(event, '/b/500-1000')">500 сая – 1 тэрбум</a></li>
+          <li><a href="/b/1000" onclick="return go(event, '/b/1000')">1 тэрбумаас дээш</a></li>
+          <li><a href="/b/r2" onclick="return go(event, '/b/r2')">Түрээс 2 сая хүртэл</a></li>
+          <li><a href="/b/r2-4" onclick="return go(event, '/b/r2-4')">Түрээс 2–4 сая</a></li>
+          <li><a href="/b/r4" onclick="return go(event, '/b/r4')">Түрээс 4 саяас дээш</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
         <h5>Хууль</h5>
         <ul>
           <li><a onclick="openInfoPage('terms')">Үйлчилгээний нөхцөл</a></li>
-          <li><a onclick="openInfoPage('privacy')">Нууцлал</a></li>
+          <li><a href="/privacy" onclick="return go(event, '/privacy')">Нууцлалын бодлого</a></li>
+          <li><a href="/optout" onclick="return go(event, '/optout')">Зараа хасуулах</a></li>
           <li><a onclick="openInfoPage('security')">Аюулгүй байдал</a></li>
         </ul>
       </div>
@@ -2342,8 +2376,12 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script src="/js/firebase-init.js"></script>
+<script src="/js/pricing.js"></script>
 <script src="/js/permissions.js"></script>
 <script src="/js/utils.js"></script>
+<script src="/js/contact.js"></script>
+<script src="/js/router.js"></script>
+<script src="/js/legal.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/data.js"></script>
 <script src="/js/home.js"></script>
@@ -2370,6 +2408,9 @@
 <script src="/js/education.js"></script>
 <script src="/js/new-developments.js"></script>
 <script src="/js/admin.js"></script>
+<script src="/js/complexes.js"></script>
+<script src="/js/alerts.js"></script>
+<script src="/js/crm.js"></script>
 <script src="/js/init.js"></script>
 
 <!-- ============ MOBILE BOTTOM NAV ============ -->
@@ -2388,6 +2429,10 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
       </div>
       Зар нэмэх
+    </button>
+    <button class="mbn-btn mbn-call" id="mbn-call" onclick="mbnCall()" aria-label="Залгах">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
+      Залгах
     </button>
     <button class="mbn-btn" id="mbn-fav" onclick="openFavorites()" style="position:relative;">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
