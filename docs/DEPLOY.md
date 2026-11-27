@@ -76,6 +76,21 @@ npm run test:rules     # Firestore дүрмийн тест, Java 11+ болон 
 
 `vercel.json` нь `/privacy`, `/optout`, `/complexes`, `/complex/:id`, `/hotlist`, `/valuation`, `/growth`, `/budget`, `/alerts`, `/crm`, `/b/:slug` замуудыг `index.html` руу чиглүүлнэ. `.vercelignore` нь `functions/`, `tests/`, `docs/`-ийг сайтад оруулахгүй.
 
+## 9. Зөв дараалал
+
+1. Firestore дүрэм, index, Storage дүрмийг deploy хийнэ. Энэ нь одоогийн сайтыг эвдэхгүй (зөвхөн шинэ collection нэмнэ).
+2. Blaze идэвхжүүлээд Cloud Functions-ийг deploy хийнэ, "Статистик одоо шинэчлэх"-ийг нэг удаа ажиллуулна.
+3. Сүүлд нь PR-ийг `main` руу merge хийнэ. Vercel автоматаар production руу deploy хийнэ.
+
+Frontend-ийг дүрмээс өмнө гаргавал шинэ хуудсууд хоосон эсвэл "алдаа" харуулна.
+
+## 10. CI/CD (`.github/workflows/firebase.yml`)
+
+- PR бүрт: syntax шалгалт, unit тест, emulator дээр дүрмийн тест.
+- `main`-д push хийхэд: зөвхөн "production" environment дээр зөвшөөрөл өгсний дараа Firebase deploy.
+- Тохируулах: GitHub → Settings → Environments → `production` үүсгэж Required reviewers-т өөрийгөө нэмнэ. Мөн `FIREBASE_SERVICE_ACCOUNT` secret-д service account JSON-ыг хадгална (Firebase Admin, Cloud Functions Admin, Service Account User эрхтэй). Түлхүүрийг repo-д хэзээ ч бүү хийгээрэй.
+- Vercel: Git integration аль хэдийн идэвхтэй. `main` → production, бусад branch → preview.
+
 ## Deploy-ийн дараах шалгалт
 
 - Нүүр хуудсанд "0" гэсэн тоо харагдахгүй.
