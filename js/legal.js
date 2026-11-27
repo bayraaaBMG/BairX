@@ -104,6 +104,7 @@
     if (!phone) { showToast('8 оронтой утасны дугаар оруулна уу'); return; }
     if (reason !== 'delete_lead' && !listingRef) { showToast('Зарын холбоос эсвэл дугаарыг оруулна уу'); return; }
     if (!consentGiven('ooConsent')) return;
+    if (!(await requireServerReady(document.getElementById('optoutForm')))) return;
     const btn = document.getElementById('ooSubmit');
     btn.disabled = true; btn.textContent = 'Илгээж байна…';
     try {

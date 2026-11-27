@@ -26,6 +26,11 @@ test.beforeEach(async ({ page }, info) => {
   page.on('pageerror', (e) => problems.pageerror.push(String(e)));
   page.on('response', (r) => {
     const u = r.url();
+    // Emulator 4xx are not failures by themselves, but record them so a console "400" can be traced.
+    if (r.status() >= 400 && /127\.0\.0\.1:(8080|9099|9199|5001)\//.test(u)) {
+      info.annotations.push({ type: 'emulator-' + r.status(), description: r.request().method() + ' ' + u.slice(0, 200) });
+      console.log('[emulator ' + r.status() + '] ' + info.title + ' ' + r.request().method() + ' ' + u.slice(0, 200));
+    }
     if (r.status() >= 400 && !u.includes(':8080') && !u.includes(':9099') && !u.includes(':9199') && !u.includes(':5001')) {
       (EXTERNAL_SOFT.test(u) ? problems.soft : problems.http).push(r.status() + ' ' + u);
     }
@@ -131,7 +136,7 @@ test('4. Complex page: KPIs, growth, recent sales, contact buttons', async ({ pa
   await expect(page.locator('.route-title')).toContainText('Зайсан Тольт');
   await expect(page.locator('.cx-kpi').nth(0)).toContainText('4.90 сая ₮/м²');
   await expect(page.locator('.cx-kpi').nth(3)).toContainText('+22.5%');
-  await expect(page.locator('.data-table tbody tr')).toHaveCount(8);
+  await expect(page.locator('#routeContent .data-table tbody tr')).toHaveCount(8);
   const hrefs = await page.$$eval('.cx-contact .contact-btns a', (as) => as.map((a) => a.getAttribute('href')));
   expect(hrefs[0]).toBe('tel:+97672119435');
   expect(hrefs[1]).toContain('viber://chat?number=%2B97672119435');
@@ -179,8 +184,8 @@ test('6. Valuation: consent required, result = avg × area ±10%, lead saved', a
 
 test('7. Growth table and budget-to-m² use only deal data', async ({ page }) => {
   await route(page, '/growth');
-  await expect(page.locator('tr', { hasText: 'Зайсан Тольт' })).toContainText('+22.5%');
-  await expect(page.locator('tr', { hasText: 'Олимп тауэр' })).toContainText('өгөгдөл хүрэлцээгүй');
+  await expect(page.locator('#routeContent tr', { hasText: 'Зайсан Тольт' })).toContainText('+22.5%');
+  await expect(page.locator('#routeContent tr', { hasText: 'Олимп тауэр' })).toContainText('өгөгдөл хүрэлцээгүй');
   await route(page, '/budget?b=500');
   await expect(page.locator('#budgetTable tbody tr')).toHaveCount(1); // only complexes with ≥3 deals
   await expect(page.locator('#budgetTable tbody tr')).toContainText('102 м²');
@@ -335,7 +340,7 @@ test('17. PWA: service worker active with the current cache version, manifest OK
 
 test('18. No broken internal links (home, footer, route pages)', async ({ page }) => {
   const hrefs = new Set();
-  for (const p of ['/', '/complexes', '/hotlist', '/b/250']) {
+  for (const p of ['/', '/complexes', '/hotlist', '/b/250', '/market']) {
     await page.goto(p);
     // Firestore keeps a long-poll open, so "networkidle" never fires — wait for content.
     await page.waitForSelector('#routeContent .route-loading', { state: 'detached' }).catch(() => {});
@@ -345,4 +350,43 @@ test('18. No broken internal links (home, footer, route pages)', async ({ page }
   const bad = [];
   for (const h of hrefs) { const r = await page.request.get(h); if (r.status() !== 200) bad.push(r.status() + ' ' + h); }
   expect(bad).toEqual([]);
+});
+
+// ---------- Phase 1: home market block, building chart, /market, short paths ----------
+test('19. Home market block: real stats, building chart, hot list, FAQ', async ({ page }, info) => {
+  await page.goto('/');
+  await page.waitForSelector('#homeMarket .mk-stats');
+  // Building chart: only complexes whose average is usable; tallest (most expensive) first.
+  const blds = page.locator('#homeMarket .sky-bld');
+  await expect(blds.first()).toBeVisible();
+  await expect(blds.first()).toHaveAttribute('aria-label', /Олимп тауэр.*: 6\.00 сая ₮\/м²/);
+  await expect(page.locator('#homeMarket .sky-bld[href="/complex/zaisan-tolt"]')).toHaveAttribute('aria-label', /Зайсан Тольт.*: 4\.90 сая ₮\/м²/);
+  const prices = await blds.evaluateAll((els) => els.map((e) => parseFloat(e.querySelector('.sky-price').textContent)));
+  expect(prices).toEqual([...prices].sort((a, b) => b - a)); // expensive → cheap
+  await expect(page.locator('#homeMarket .sky-bld', { hasText: 'Ногоон нуур' })).toHaveCount(0);
+  // Stats strip comes from siteStats/summary written by the Cloud Function in test 1.
+  const summary = (await emulatorDocs('siteStats')).find((d) => d.id === 'summary').f;
+  await expect(page.locator('#homeMarket .mk-stat').nth(1).locator('strong')).toHaveText(String(summary.complexCount.integerValue));
+  await expect(page.locator('#homeMarket .hot-mini')).toHaveCount(1);
+  await expect(page.locator('#homeFaq .faq-item')).toHaveCount(6);
+  await shot(page, info, 'home-market');
+});
+
+test('20. /market: chart, district and listing-vs-deal tables; building click opens complex', async ({ page }, info) => {
+  await route(page, '/market');
+  await expect(page.locator('#routeContent h1')).toHaveText('Орон сууцны зах зээл');
+  await expect(page.locator('#routeContent .data-table').first()).toBeVisible();
+  await expect(page.locator('#routeContent .data-table', { hasText: 'Хэлцлийн 1 м² (12 сар)' })).toContainText('Зайсан Тольт');
+  await shot(page, info, 'market');
+  await page.locator('#routeContent .sky-bld[href="/complex/zaisan-tolt"]').click();
+  await page.waitForURL(/\/complex\/zaisan-tolt$/);
+  await expect(page.locator('#routeContent h1')).toContainText('Зайсан Тольт');
+});
+
+test('21. Short paths open the existing pages and survive a refresh', async ({ page }) => {
+  for (const [p, id] of [['/listings', 'listings'], ['/rent', 'rent'], ['/loan', 'calc'], ['/new-projects', 'newdev']]) {
+    const r = await page.goto(p);
+    expect(r.status(), p).toBe(200);
+    await expect(page.locator('#' + id)).toHaveClass(/page-active/);
+  }
 });

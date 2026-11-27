@@ -304,6 +304,7 @@
     if (!name) { showToast('Нэрээ оруулна уу'); return; }
     if (!phone) { showToast('8 оронтой утасны дугаар оруулна уу'); return; }
     if (!consentGiven('valConsent')) return;
+    if (!(await requireServerReady(e.target))) return;
     const st = statsFor(complexId);
     const v = P_.valuation(usableAvg(st), area);
     const btn = document.getElementById('valSubmit');

@@ -3880,3 +3880,68 @@
     .nav-links a[href="/#resources"], .nav-links a:last-child { display: none; }
   }
   .nav-actions .btn { white-space: nowrap; }
+
+  /* ===== Phase 1: home market block · building price chart · /market ===== */
+  .home-market { margin: 8px 0 12px; }
+  .mk-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0 4px; }
+  .mk-stat { background: white; border: 1px solid var(--line); border-radius: var(--radius-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+  .mk-stat strong { font-size: 26px; font-weight: 800; color: var(--primary-deep); font-variant-numeric: tabular-nums; }
+  .mk-stat span { font-size: 13px; color: var(--ink-3); }
+  .mk-note { margin: 6px 0 0; }
+
+  .sky-scroll { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; padding: 4px 2px 0; border-radius: var(--radius-md);
+    background: linear-gradient(180deg, var(--primary-soft) 0%, white 85%); border: 1px solid var(--line); }
+  .sky-scroll:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .sky-row { display: flex; align-items: flex-end; gap: 10px; height: 300px; padding: 64px 16px 0; min-width: max-content; border-bottom: 3px solid var(--ink-3); }
+  .sky-bld { position: relative; flex: 0 0 64px; height: var(--h); display: flex; flex-direction: column; justify-content: flex-end; text-decoration: none; color: var(--ink);
+    animation: skyRise .6s ease-out both; animation-delay: calc(var(--i) * 30ms); transform-origin: bottom; }
+  .sky-body { position: relative; flex: 1; border-radius: 6px 6px 0 0; background: linear-gradient(90deg, var(--primary) 0 62%, var(--primary-deep) 62% 100%);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); transition: filter .15s, transform .15s; }
+  .sky-win { position: absolute; inset: 10px 8px 8px; background-image: repeating-linear-gradient(0deg, transparent 0 8px, rgba(255,255,255,.55) 8px 12px),
+    repeating-linear-gradient(90deg, transparent 0 6px, var(--primary) 6px 10px); background-blend-mode: normal; opacity: .55; border-radius: 2px; }
+  .sky-label { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); width: 84px; text-align: center; line-height: 1.15; pointer-events: none; }
+  .sky-price { display: block; font-weight: 800; font-size: 13px; color: var(--primary-deep); font-variant-numeric: tabular-nums; }
+  .sky-name { display: block; font-size: 11px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sky-tip { position: absolute; z-index: 3; bottom: 50%; left: 50%; transform: translate(-50%, 0); background: var(--ink); color: white; font-size: 12px; padding: 6px 8px;
+    border-radius: 8px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s; }
+  .sky-bld:hover .sky-body, .sky-bld:focus-visible .sky-body { filter: brightness(1.12); transform: translateY(-3px); }
+  .sky-bld:hover .sky-tip, .sky-bld:focus-visible .sky-tip { opacity: 1; }
+  .sky-bld:focus-visible { outline: 2px solid var(--accent, var(--primary)); outline-offset: 3px; border-radius: 6px; }
+  .sky-legend { font-size: 12px; color: var(--ink-3); margin: 6px 2px 0; display: flex; gap: 12px; flex-wrap: wrap; }
+  .sky-empty { margin: 0; }
+  @keyframes skyRise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  @media (prefers-reduced-motion: reduce) { .sky-bld { animation: none; } .sky-body { transition: none; } }
+
+  .mk-tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0 4px; }
+  .mk-tool { background: white; border: 1px solid var(--line); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .mk-tool-title { font-weight: 700; font-size: 15px; }
+  .mk-tool .btn { align-self: flex-start; }
+
+  .hot-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .hot-mini { display: flex; gap: 10px; background: white; border: 1px solid var(--line); border-radius: var(--radius-md); padding: 8px; text-decoration: none; color: var(--ink); }
+  .hot-mini:hover { box-shadow: var(--shadow-sm); }
+  .hot-mini-img { position: relative; flex: 0 0 96px; height: 76px; border-radius: 8px; overflow: hidden; background: var(--paper-3); }
+  .hot-mini-img img { width: 100%; height: 100%; object-fit: cover; }
+  .hot-mini-badge { position: absolute; top: 4px; left: 4px; background: var(--danger); color: white; font-weight: 800; font-size: 12px; padding: 2px 6px; border-radius: 6px; }
+  .hot-mini-body { display: flex; flex-direction: column; gap: 2px; font-size: 13px; min-width: 0; }
+  .hot-mini-body span { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hot-mini-cmp { font-size: 11.5px; color: var(--ink-3) !important; }
+
+  .faq-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+  .faq-item { background: white; border: 1px solid var(--line); border-radius: var(--radius-md); padding: 12px 16px; }
+  .faq-item summary { cursor: pointer; font-weight: 600; list-style-position: outside; }
+  .faq-item p { margin: 8px 0 0; color: var(--ink-2); line-height: 1.6; font-size: 14px; }
+
+  .svc-closed { background: #FFF6E5; border: 1px solid var(--warning, #E0A000); color: var(--ink); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; line-height: 1.5; margin-bottom: 12px; }
+
+  @media (max-width: 900px) {
+    .mk-tools, .hot-mini-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 600px) {
+    .mk-stats { grid-template-columns: 1fr 1fr; }
+    .mk-stat strong { font-size: 22px; }
+    .mk-tools, .hot-mini-grid { grid-template-columns: 1fr; }
+    .sky-row { height: 240px; gap: 8px; }
+    .sky-bld { flex-basis: 52px; }
+    .sky-label { width: 70px; }
+  }

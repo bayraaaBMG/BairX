@@ -34,6 +34,7 @@
   loadProjects();
   renderAccountSidebar();
   renderSiteAds();
+  if (typeof renderHomeMarket === 'function') renderHomeMarket();
 
   // Initialize page router + listing hash restore
   (function() {
@@ -45,7 +46,10 @@
       setTimeout(() => openListingByFsId(linkedFsId), 200);
     }
     // Path routes (/privacy, /complexes, /b/250 …) take priority — see js/router.js.
-    if (location.pathname !== '/' && !location.hash && typeof showRoute === 'function' && matchRoute(location.pathname)) {
+    const alias = !location.hash && typeof pathAlias === 'function' ? pathAlias(location.pathname) : null;
+    if (alias) {
+      showPage(alias);
+    } else if (location.pathname !== '/' && !location.hash && typeof showRoute === 'function' && matchRoute(location.pathname)) {
       showRoute(location.pathname + location.search, { fromPop: true });
     } else if (hash.startsWith('listing-')) {
       const id = parseInt(hash.replace('listing-', ''), 10);
@@ -59,7 +63,10 @@
     }
     window.addEventListener('popstate', function() {
       const h = location.hash.replace('#', '');
-      if (location.pathname !== '/' && !location.hash && typeof showRoute === 'function' && matchRoute(location.pathname)) {
+      const a = !location.hash && typeof pathAlias === 'function' ? pathAlias(location.pathname) : null;
+      if (a) {
+        showPage(a);
+      } else if (location.pathname !== '/' && !location.hash && typeof showRoute === 'function' && matchRoute(location.pathname)) {
         showRoute(location.pathname + location.search, { fromPop: true });
       } else if (h.startsWith('listing-')) {
         const id = parseInt(h.replace('listing-', ''), 10);

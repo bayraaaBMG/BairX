@@ -1,20 +1,113 @@
 {
   "cleanUrls": false,
   "rewrites": [
-    { "source": "/privacy", "destination": "/index.html" },
-    { "source": "/optout", "destination": "/index.html" },
-    { "source": "/complexes", "destination": "/index.html" },
-    { "source": "/complex/:id", "destination": "/index.html" },
-    { "source": "/hotlist", "destination": "/index.html" },
-    { "source": "/valuation", "destination": "/index.html" },
-    { "source": "/budget", "destination": "/index.html" },
-    { "source": "/growth", "destination": "/index.html" },
-    { "source": "/alerts", "destination": "/index.html" },
-    { "source": "/crm", "destination": "/index.html" },
-    { "source": "/b/:slug", "destination": "/index.html" }
+    {
+      "source": "/privacy",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/optout",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/complexes",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/complex/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/hotlist",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/valuation",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/budget",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/growth",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/alerts",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/crm",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/b/:slug",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/market",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/listings",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/sale",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/rent",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/new-projects",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/loan",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/compare",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/contact",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/favorites",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
-    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
-    { "source": "/data/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=300" }] }
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/data/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300"
+        }
+      ]
+    }
   ]
 }

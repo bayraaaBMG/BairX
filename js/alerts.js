@@ -24,6 +24,7 @@
   async function enablePush() {
     if (!currentUser) { openAuth(); return false; }
     if (!pushConfigured()) { showToast('Web Push одоогоор тохируулагдаагүй байна. И-мэйл сонгоно уу.'); return false; }
+    if (!(await requireServerReady(null))) return false;
     try {
       const perm = await Notification.requestPermission();
       if (perm !== 'granted') { showToast('Хөтөч мэдэгдэл илгээхийг зөвшөөрөөгүй байна'); return false; }
@@ -92,6 +93,7 @@
     const complexId = document.getElementById('alComplex').value;
     const onlyHot = document.getElementById('alOnlyHot').checked;
     if (!consentGiven('alConsent')) return;
+    if (!(await requireServerReady(e.target))) return;
     const btn = document.getElementById('alSubmit');
     if (!currentUser) {
       const name = (document.getElementById('alName').value || '').trim();
