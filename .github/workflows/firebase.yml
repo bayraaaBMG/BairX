@@ -44,9 +44,25 @@ jobs:
       - name: Unit tests (pricing formulas)
         working-directory: tests
         run: npm run test:unit
-      - name: Firestore rules tests (emulator)
+      - name: Install Firebase CLI + function deps
+        run: |
+          npm install -g firebase-tools@15
+          cd functions && npm ci && node -e "require('fs').copyFileSync('../js/pricing.js','pricing.js')"
+      - name: Firestore + Storage rules tests (emulator)
         working-directory: tests
-        run: npx --yes firebase-tools@15 emulators:exec --only firestore --project demo-bairx "node --test rules.test.js"
+        run: npm run test:rules
+      - name: Browser tests — Chromium desktop/tablet/mobile (emulator, never production)
+        working-directory: tests
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+      - name: Upload browser test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: tests/e2e-results
+          retention-days: 14
 
   deploy:
     needs: test

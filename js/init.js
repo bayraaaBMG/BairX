@@ -1,23 +1,34 @@
 ﻿  // ===== INIT =====
   checkExpiredListings();
-  renderListings(listings);
   renderHomeListings();
   // Update filter pill counts
   updateCatPillCounts();
   calculate();
-  renderRentListings('all');
-  calculateCompare();
-  renderDemographics();
-  renderFeed();
   renderNotifications();
   updateNotifCount();
-  renderViewsChart();
   updateFilterCount();
   renderFilterTags();
   updateChatCount();
   updateFavCount();
-  renderMyListings();
-  renderBuyerDocs();
+
+  // Performance: these only fill pages that are hidden on first load (Listings, Rent,
+  // Compare, Feed, Dashboard …). They run once when the browser is idle — or immediately,
+  // the moment any of those pages is opened (showPage → runDeferredInit) or when the app
+  // was opened directly on one of them — so the home page paints without that work.
+  let _deferredInitDone = false;
+  function runDeferredInit() {
+    if (_deferredInitDone) return;
+    _deferredInitDone = true;
+    [() => renderListings(getFilteredListings()), () => renderRentListings('all'), calculateCompare, renderDemographics,
+     renderFeed, renderViewsChart, renderMyListings, renderBuyerDocs].forEach(fn => {
+      try { fn(); } catch (e) { console.error('deferred init failed:', e); }
+    });
+  }
+  {
+    const h = location.hash.replace('#', '');
+    if (h && h !== 'home') runDeferredInit();
+    else (window.requestIdleCallback || ((cb) => setTimeout(cb, 200)))(runDeferredInit, { timeout: 2000 });
+  }
   loadPublicListings();
   applyDemoListingHides();
   loadProjects();

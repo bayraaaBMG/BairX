@@ -20,7 +20,7 @@ const P = require('./pricing.js');
 
 admin.initializeApp();
 const db = admin.firestore();
-const FieldValue = admin.firestore.FieldValue;
+const { FieldValue } = require('firebase-admin/firestore');
 
 setGlobalOptions({ region: 'asia-east2', maxInstances: 2, memory: '512MiB' });
 

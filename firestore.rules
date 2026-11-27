@@ -14,7 +14,7 @@ service cloud.firestore {
     // ID token itself and cannot be spoofed by any client-supplied document data.
     function ownerEmail() { return 'bbayraaa20@gmail.com'; }
     function isSignedIn() { return request.auth != null; }
-    function isOwner() { return isSignedIn() && request.auth.token.email == ownerEmail(); }
+    function isOwner() { return isSignedIn() && request.auth.token.get('email', '') == ownerEmail(); }
     function userRole(uid) {
       return get(/databases/$(database)/documents/users/$(uid)).data.get('role', 'user');
     }

@@ -159,6 +159,12 @@ test('leads: a signed-in user can read/delete only the leads they submitted', as
   await assertSucceeds(deleteDoc(doc(as('userUid'), 'leads/mine')));
 });
 
+test('users: a phone-auth user (token without email) can create their own profile as role user', async () => {
+  const phoneDb = env.authenticatedContext('phoneUid', { phone_number: '+97699112233' }).firestore();
+  await assertSucceeds(setDoc(doc(phoneDb, 'users/phoneUid'), { uid: 'phoneUid', firstName: 'Хэрэглэгч', role: 'user' }));
+  await assertFails(setDoc(doc(phoneDb, 'users/phoneUid2'), { uid: 'phoneUid2', role: 'user' }));
+});
+
 // ---------- users self-delete ----------
 test('users: a user can delete their own profile, never someone else\'s or the owner\'s', async () => {
   await assertSucceeds(deleteDoc(doc(as('userUid'), 'users/userUid')));

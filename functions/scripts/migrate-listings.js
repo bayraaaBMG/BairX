@@ -80,7 +80,7 @@ function patchFor(id, d) {
       if ((await ref.get()).exists) continue;
       created++;
       console.log('complex', id, JSON.stringify(c));
-      if (APPLY) await ref.set(Object.assign({ id, photos: [], yearBuilt: null, floors: null, createdAt: admin.firestore.FieldValue.serverTimestamp() }, c));
+      if (APPLY) await ref.set(Object.assign({ id, photos: [], yearBuilt: null, floors: null, createdAt: require('firebase-admin/firestore').FieldValue.serverTimestamp() }, c));
     }
     console.log(`${created} complexes ${APPLY ? 'created' : 'would be created'}`);
   }

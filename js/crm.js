@@ -193,7 +193,9 @@
     btn.disabled = true; btn.textContent = 'Шинэчилж байна…';
     try {
       await loadScriptOnce('https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js');
-      const res = await firebase.app().functions('asia-east2').httpsCallable('recomputeStatsNow')();
+      const fns = firebase.app().functions('asia-east2');
+      if (window.BAIRX_EMULATOR && !window._bairxFnsEmu) { fns.useEmulator('127.0.0.1', 5001); window._bairxFnsEmu = true; }
+      const res = await fns.httpsCallable('recomputeStatsNow')();
       showToast(`Шинэчлэгдлээ: ${res.data.complexes} хотхон, ${res.data.hot} хямд зар`, 'success');
       loadPriceData(true);
     } catch (e) {

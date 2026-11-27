@@ -5,6 +5,13 @@
   }
   function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
 
+  // Listing cards render ~300px wide, so Unsplash demo photos are requested at 480px instead
+  // of the 800px originals (≈3× fewer bytes). Any other URL (Firebase Storage) is unchanged.
+  function cardThumbUrl(url) {
+    const u = String(url || '');
+    return /^https:\/\/images\.unsplash\.com\//.test(u) ? u.replace(/([?&])w=\d+/, '$1w=480').replace(/([?&])q=\d+/, '$1q=70') : u;
+  }
+
   // Result-count label for list headers ("12 зар олдлоо"). Never shows a bare "0" — an empty
   // result reads as a sentence instead, so a visitor never lands on "0 зар олдлоо".
   function setResultCountLabel(labelId, n, noun, emptyText) {
@@ -199,6 +206,7 @@
   // ===== PAGE ROUTER =====
   function showPage(id) {
     const target = id || 'home';
+    if (target !== 'home' && typeof runDeferredInit === 'function') runDeferredInit();
     document.querySelectorAll('section').forEach(s => s.classList.remove('page-active'));
     if (target === 'home') {
       ['home', 'banks', 'home-portal', 'features'].forEach(function(sid) {

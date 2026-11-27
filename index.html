@@ -15,8 +15,11 @@
 <link rel="apple-touch-icon" href="/icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://www.gstatic.com" />
+<link rel="preconnect" href="https://images.unsplash.com" />
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" /></noscript>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" media="print" onload="this.media='all'" />
 <link rel="stylesheet" href="/css/main.css" />
 </head>
 <body>
@@ -39,18 +42,18 @@
 <!-- ============ NAV ============ -->
 <nav class="nav">
   <div class="nav-inner">
-    <a class="logo" onclick="showPage('home')">
+    <a class="logo" href="/" onclick="showPage('home'); return false;">
       <div class="logo-mark">B</div>
       <div class="logo-text">Bair<em>X</em></div>
     </a>
     <div class="nav-links">
-      <a onclick="showPage('listings')">Зар хайх</a>
-      <a onclick="showPage('rent')">Түрээс</a>
-      <a onclick="showPage('newdev')">Шинэ орон сууц</a>
+      <a href="/#listings" onclick="showPage('listings'); return false;">Зар хайх</a>
+      <a href="/#rent" onclick="showPage('rent'); return false;">Түрээс</a>
+      <a href="/#newdev" onclick="showPage('newdev'); return false;">Шинэ орон сууц</a>
       <a href="/complexes" onclick="return go(event, '/complexes')">Хотхонууд</a>
       <a href="/hotlist" onclick="return go(event, '/hotlist')">Хямд зар</a>
-      <a onclick="showPage('calc')">Тооцоолуур</a>
-      <a onclick="showPage('resources')">Зөвлөгөө</a>
+      <a href="/#calc" onclick="showPage('calc'); return false;">Тооцоолуур</a>
+      <a href="/#resources" onclick="showPage('resources'); return false;">Зөвлөгөө</a>
       <a onclick="currentUser ? showPage('dashboard') : openAuth()">Миний самбар</a>
     </div>
     <div class="nav-actions">
@@ -2369,49 +2372,49 @@
 <!-- ============ TOAST ============ -->
 <div class="toast" id="toast"></div>
 
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script src="/js/firebase-init.js"></script>
-<script src="/js/pricing.js"></script>
-<script src="/js/permissions.js"></script>
-<script src="/js/utils.js"></script>
-<script src="/js/contact.js"></script>
-<script src="/js/router.js"></script>
-<script src="/js/legal.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/data.js"></script>
-<script src="/js/home.js"></script>
-<script src="/js/listings.js"></script>
-<script src="/js/favorites.js"></script>
-<script src="/js/listing-detail.js"></script>
-<script src="/js/my-listings.js"></script>
-<script src="/js/info-pages.js"></script>
-<script src="/js/filters.js"></script>
-<script src="/js/search.js"></script>
-<script src="/js/calc.js"></script>
-<script src="/js/rent.js"></script>
-<script src="/js/compare.js"></script>
-<script src="/js/demographics.js"></script>
-<script src="/js/feed.js"></script>
-<script src="/js/notifications.js"></script>
-<script src="/js/dashboard.js"></script>
-<script src="/js/saved-searches.js"></script>
-<script src="/js/filters-advanced.js"></script>
-<script src="/js/map.js"></script>
-<script src="/js/forecast.js"></script>
-<script src="/js/gallery.js"></script>
-<script src="/js/chat.js"></script>
-<script src="/js/education.js"></script>
-<script src="/js/new-developments.js"></script>
-<script src="/js/admin.js"></script>
-<script src="/js/complexes.js"></script>
-<script src="/js/alerts.js"></script>
-<script src="/js/crm.js"></script>
-<script src="/js/init.js"></script>
+<script defer src="/js/firebase-init.js"></script>
+<script defer src="/js/pricing.js"></script>
+<script defer src="/js/permissions.js"></script>
+<script defer src="/js/utils.js"></script>
+<script defer src="/js/contact.js"></script>
+<script defer src="/js/router.js"></script>
+<script defer src="/js/legal.js"></script>
+<script defer src="/js/auth.js"></script>
+<script defer src="/js/data.js"></script>
+<script defer src="/js/home.js"></script>
+<script defer src="/js/listings.js"></script>
+<script defer src="/js/favorites.js"></script>
+<script defer src="/js/listing-detail.js"></script>
+<script defer src="/js/my-listings.js"></script>
+<script defer src="/js/info-pages.js"></script>
+<script defer src="/js/filters.js"></script>
+<script defer src="/js/search.js"></script>
+<script defer src="/js/calc.js"></script>
+<script defer src="/js/rent.js"></script>
+<script defer src="/js/compare.js"></script>
+<script defer src="/js/demographics.js"></script>
+<script defer src="/js/feed.js"></script>
+<script defer src="/js/notifications.js"></script>
+<script defer src="/js/dashboard.js"></script>
+<script defer src="/js/saved-searches.js"></script>
+<script defer src="/js/filters-advanced.js"></script>
+<script defer src="/js/map.js"></script>
+<script defer src="/js/forecast.js"></script>
+<script defer src="/js/gallery.js"></script>
+<script defer src="/js/chat.js"></script>
+<script defer src="/js/education.js"></script>
+<script defer src="/js/new-developments.js"></script>
+<script defer src="/js/admin.js"></script>
+<script defer src="/js/complexes.js"></script>
+<script defer src="/js/alerts.js"></script>
+<script defer src="/js/crm.js"></script>
+<script defer src="/js/init.js"></script>
 
 <!-- ============ MOBILE BOTTOM NAV ============ -->
 <div class="mobile-bottom-nav">

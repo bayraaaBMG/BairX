@@ -3865,3 +3865,18 @@
     .crm-row { flex-direction: column; }
     .crm-row-side { width: auto; }
   }
+
+  /* ---- Nav fit after adding Хотхонууд / Хямд зар (and logo now being a real link) ---- */
+  a.logo { text-decoration: none; color: inherit; }
+  .nav-links a { white-space: nowrap; }
+  @media (max-width: 1440px) {
+    .nav-inner { gap: 16px; }
+    .nav-links a { padding: 8px 9px; font-size: 14px; }
+  }
+  @media (max-width: 1280px) {
+    .nav-links { gap: 0; }
+    .nav-links a { padding: 7px 7px; font-size: 13.5px; }
+    /* Reachable from the account menu / footer; hidden here so the bar stays one line. */
+    .nav-links a[href="/#resources"], .nav-links a:last-child { display: none; }
+  }
+  .nav-actions .btn { white-space: nowrap; }

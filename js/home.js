@@ -12,7 +12,7 @@
     return `
       <article class="listing-card" onclick="${fullFeatures ? `openListing(${l.id})` : `showPage('listings'); setTimeout(()=>openListing(${l.id}),150)`}">
         <div class="listing-img">
-          <img src="${esc(l.img)}" alt="${esc(l.title)}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';"/>
+          <img src="${esc(cardThumbUrl(l.img))}" alt="${esc(l.title)}" loading="lazy" decoding="async" width="480" height="360" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';"/>
           <div class="listing-badges">
             ${!l.userSubmitted ? '<span class="badge demo">Жишээ зар</span>' : ''}
             ${l.badges.includes('vip') ? '<span class="badge vip">⭐ VIP</span>' : (l.badges.includes('hot') ? '<span class="badge hot">Эрэлттэй</span>' : '')}
@@ -21,7 +21,7 @@
             ${(l.listingVerified || l.sellerVerified) ? '<span class="badge verified">✓ Баталгаажсан</span>' : ''}
             ${hotBadgeHtml(l)}
           </div>
-          <button class="listing-fav ${favorites.includes(l.id) ? 'faved' : ''}" onclick="event.stopPropagation(); toggleFav(this, ${l.id})">
+          <button class="listing-fav ${favorites.includes(l.id) ? 'faved' : ''}" aria-label="Хадгалах" onclick="event.stopPropagation(); toggleFav(this, ${l.id})">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
           </button>
           ${fullFeatures ? `
