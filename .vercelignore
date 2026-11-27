@@ -1,0 +1,8 @@
+functions/
+tests/
+scripts/
+docs/
+*.log
+.claude/
+.github/
+firestore.indexes.json

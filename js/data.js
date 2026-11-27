@@ -331,6 +331,7 @@
       const tail = parts[parts.length - 1];
       if (parts.length > 1 && tail && !/^\d+-р хороо$/.test(tail)) l.complex = tail;
     }
+    if (!l.complexId && l.complex) l.complexId = BairxPricing.slugify(l.complex);
   });
 
   // Load any user-submitted listings from localStorage
@@ -365,6 +366,70 @@
     } catch(e) {}
   })();
 
+  // Maps one Firestore listings/{id} doc into the in-memory `listings` array (or returns the
+  // already-loaded entry). Shared by the public pager below and openListingByFsId().
+  function ingestListingDoc(doc) {
+    const existing = listings.find(l => l.firestoreId === doc.id);
+    if (existing) return existing;
+    const d = doc.data();
+    const numId = listings.reduce((m, l) => l.id > m ? l.id : m, 0) + 1;
+    const feats = d.features || [];
+    const entry = {
+      id: numId, firestoreId: doc.id, ownerId: d.ownerId, sellerVerified: !!d.sellerVerified,
+      phoneVerified: !!d.phoneVerified, listingVerified: !!d.listingVerified, reportCount: d.reportCount || 0,
+      cat: d.category || 'apartment', propertyType: d.propertyType || d.category || 'apartment',
+      title: d.title, loc: d.loc, district: d.district,
+      khoroo: d.khoroo || null,
+      geoLat: d.geoLat || null, geoLng: d.geoLng || null,
+      price: d.price, area: d.area, rooms: d.rooms, floor: d.floor, year: d.year,
+      bedrooms: d.bedrooms || null, bathrooms: d.bathrooms || null,
+      buildingName: d.buildingName || '', complex: d.complex || '',
+      complexId: BairxPricing.slugify(d.complexId || d.complex || d.buildingName || ''),
+      mlsId: d.mlsId || '', source: d.source || 'user', priceHistory: d.priceHistory || [],
+      buildingType: d.buildingType || '', insulation: d.insulation || '', windowDirection: d.windowDirection || '',
+      hoaFee: d.hoaFee || null, heating: d.heating || '',
+      parking: feats.includes('parking') ? 'Паркинг бий' : '', elevator: feats.includes('elevator') ? 'Лифттэй' : '',
+      balcony: feats.includes('balcony') ? 'Тагттай' : '', basement: feats.includes('basement') ? 'Зоорьтой' : '',
+      furniture: feats.includes('furnished') ? 'Тавилгатай' : '',
+      landArea: d.landArea || null, usageType: d.usageType || '', barterOk: !!d.barterOk,
+      deposit: d.deposit || null, minTerm: d.minTerm || '',
+      condition: d.condition || '', features: feats, description: d.description || '',
+      videoUrl: d.videoUrl || '', tourUrl: d.tourUrl || '', floorPlan: d.floorPlan || null,
+      img: (d.images && d.images[0]) || d.img || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
+      tag: { type: 'new', text: 'Шинэ зар' }, badges: d.badges || ['new', 'user'],
+      loanType: 'Тохиролцоно', monthly: 0,
+      userSubmitted: true, isDemo: false,
+      // This query already only fetches status=='active' docs, so _inactive is false in
+      // practice — kept as a real status check (not a hardcoded false) so this stays
+      // correct if the query is ever loosened.
+      status: d.status || 'active', rejectionReason: d.rejectionReason || '',
+      _inactive: (d.status || 'active') !== 'active',
+      viewCount: d.viewCount || 0, favoriteCount: d.favoriteCount || 0, contactCount: d.contactCount || 0,
+      expiresAt: d.expiresAt || null, _bumpedAt: d.bumpedAt || numId,
+      _createdAtMs: d.createdAt?.toMillis?.() || 0
+    };
+    listings.push(entry);
+    if (d.images && d.images.length > 1) listingExtras[numId] = { coords: { x: 50, y: 50 }, gallery: d.images };
+    sellerData[numId] = { phone: d.sellerPhone || '', name: d.sellerName || 'Хэрэглэгч', type: d.sellerType || 'Хувь хүн', company: d.sellerCompany || '' };
+    return entry;
+  }
+
+  // Opens a listing by its Firestore id — used by server-sent notifications and push links
+  // (/?l=<id>), which don't know the in-memory numeric id.
+  async function openListingByFsId(fsId) {
+    if (!fsId) return;
+    let l = listings.find(x => x.firestoreId === fsId);
+    if (!l) {
+      try {
+        const doc = await db.collection('listings').doc(fsId).get();
+        if (!doc.exists) { showToast('Зар олдсонгүй эсвэл хасагдсан байна'); return; }
+        l = ingestListingDoc(doc);
+      } catch (e) { showToast('Зарыг ачаалж чадсангүй'); return; }
+    }
+    showPage('listings');
+    setTimeout(() => openListing(l.id), 120);
+  }
+
   // ===== PUBLIC LISTINGS FROM FIRESTORE =====
   // Everyone (logged in or not) needs to see every active real listing, not just their own —
   // this is what actually makes user-submitted listings visible across devices/accounts.
@@ -386,44 +451,7 @@
       let added = false;
       snap.forEach(doc => {
         if (listings.some(l => l.firestoreId === doc.id)) return;
-        const d = doc.data();
-        const numId = listings.reduce((m, l) => l.id > m ? l.id : m, 0) + 1;
-        const feats = d.features || [];
-        const entry = {
-          id: numId, firestoreId: doc.id, ownerId: d.ownerId, sellerVerified: !!d.sellerVerified,
-          phoneVerified: !!d.phoneVerified, listingVerified: !!d.listingVerified, reportCount: d.reportCount || 0,
-          cat: d.category || 'apartment', propertyType: d.propertyType || d.category || 'apartment',
-          title: d.title, loc: d.loc, district: d.district,
-          khoroo: d.khoroo || null,
-          geoLat: d.geoLat || null, geoLng: d.geoLng || null,
-          price: d.price, area: d.area, rooms: d.rooms, floor: d.floor, year: d.year,
-          bedrooms: d.bedrooms || null, bathrooms: d.bathrooms || null,
-          buildingName: d.buildingName || '', complex: d.complex || '',
-          buildingType: d.buildingType || '', insulation: d.insulation || '', windowDirection: d.windowDirection || '',
-          hoaFee: d.hoaFee || null, heating: d.heating || '',
-          parking: feats.includes('parking') ? 'Паркинг бий' : '', elevator: feats.includes('elevator') ? 'Лифттэй' : '',
-          balcony: feats.includes('balcony') ? 'Тагттай' : '', basement: feats.includes('basement') ? 'Зоорьтой' : '',
-          furniture: feats.includes('furnished') ? 'Тавилгатай' : '',
-          landArea: d.landArea || null, usageType: d.usageType || '', barterOk: !!d.barterOk,
-          deposit: d.deposit || null, minTerm: d.minTerm || '',
-          condition: d.condition || '', features: feats, description: d.description || '',
-          videoUrl: d.videoUrl || '', tourUrl: d.tourUrl || '', floorPlan: d.floorPlan || null,
-          img: (d.images && d.images[0]) || d.img || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
-          tag: { type: 'new', text: 'Шинэ зар' }, badges: d.badges || ['new', 'user'],
-          loanType: 'Тохиролцоно', monthly: 0,
-          userSubmitted: true, isDemo: false,
-          // This query already only fetches status=='active' docs, so _inactive is false in
-          // practice — kept as a real status check (not a hardcoded false) so this stays
-          // correct if the query is ever loosened.
-          status: d.status || 'active', rejectionReason: d.rejectionReason || '',
-          _inactive: (d.status || 'active') !== 'active',
-          viewCount: d.viewCount || 0, favoriteCount: d.favoriteCount || 0, contactCount: d.contactCount || 0,
-          expiresAt: d.expiresAt || null, _bumpedAt: d.bumpedAt || numId,
-          _createdAtMs: d.createdAt?.toMillis?.() || 0
-        };
-        listings.push(entry);
-        if (d.images && d.images.length > 1) listingExtras[numId] = { coords: { x: 50, y: 50 }, gallery: d.images };
-        sellerData[numId] = { phone: d.sellerPhone || '', name: d.sellerName || 'Хэрэглэгч', type: d.sellerType || 'Хувь хүн', company: d.sellerCompany || '' };
+        ingestListingDoc(doc);
         added = true;
       });
       if (added) {

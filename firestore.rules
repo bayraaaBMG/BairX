@@ -14,12 +14,27 @@ service cloud.firestore {
     // ID token itself and cannot be spoofed by any client-supplied document data.
     function ownerEmail() { return 'bbayraaa20@gmail.com'; }
     function isSignedIn() { return request.auth != null; }
-    function isOwner() { return isSignedIn() && request.auth.token.email == ownerEmail(); }
+    function isOwner() { return isSignedIn() && request.auth.token.get('email', '') == ownerEmail(); }
     function userRole(uid) {
       return get(/databases/$(database)/documents/users/$(uid)).data.get('role', 'user');
     }
     function isAdmin() { return isSignedIn() && userRole(request.auth.uid) == 'admin'; }
     function isAdminOrOwner() { return isAdmin() || isOwner(); }
+    // CRM roles (Sprint 3): 'manager' works the lead pipeline but has no moderation powers;
+    // 'agent' sees only the leads assigned to them. Both are granted by the owner only.
+    function isManager() { return isSignedIn() && userRole(request.auth.uid) == 'manager'; }
+    function isAgent() { return isSignedIn() && userRole(request.auth.uid) == 'agent'; }
+    function isStaff() { return isAdminOrOwner() || isManager(); }
+
+    // Phone numbers in public lead/opt-out forms are stored normalized: exactly 8 digits.
+    function validPhone(p) { return p is string && p.matches('^[0-9]{8}$'); }
+    function shortString(s, max) { return s is string && s.size() <= max; }
+    function nonEmpty(s, max) { return s is string && s.size() > 0 && s.size() <= max; }
+    // Complex ids are slugs (js/pricing.js slugify) — they end up in URLs and doc ids.
+    function validComplexId(s) { return s is string && s.matches('^[a-z0-9-]{0,60}$'); }
+    function optNumber(d, k) { return !(k in d) || d[k] == null || d[k] is number; }
+    // Fields that feed the public price statistics (complexStats, hot list).
+    function priceFields() { return ['price', 'area', 'areaM2', 'pricePerM2', 'complexId', 'complex', 'category', 'floor', 'rooms']; }
 
     // A blocked user can no longer create or edit listings — set by an admin/owner (see the
     // users/{uid} rules below), never by the user themselves.
@@ -70,7 +85,7 @@ service cloud.firestore {
       // - touches nothing but role (+ an updatedAt timestamp for the audit trail)
       allow update: if isOwner() && request.auth.uid != uid
                     && resource.data.get('role', 'user') != 'owner'
-                    && request.resource.data.role in ['admin', 'user']
+                    && request.resource.data.role in ['admin', 'manager', 'agent', 'user']
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'updatedAt']);
 
       // Block/unblock a user. Admin may only ever touch a plain 'user' row (never another
@@ -82,10 +97,14 @@ service cloud.firestore {
                     && resource.data.get('role', 'user') != 'owner'
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['blocked']);
 
-      // No one can delete a profile doc through the client — the owner's row is immutable by
-      // definition, and deleting any other user's row would silently orphan their listings/
-      // favorites/chats. (Account deletion, if ever needed, is a Firebase-Console operation.)
-      allow delete: if false;
+      // "Бүртгэлээ устгах" (js/legal.js): a user may delete only their OWN profile doc, and the
+      // owner's row stays immutable. The client deletes the user's listings/favorites/etc.
+      // first, then this doc, then the Auth record.
+      // A blocked user can't delete (and so silently recreate) their profile — that would
+      // erase the block. Their deletion request goes through support instead.
+      allow delete: if isSignedIn() && request.auth.uid == uid
+                    && resource.data.get('role', 'user') != 'owner'
+                    && resource.data.get('blocked', false) != true;
     }
 
     // ===== LISTINGS =====
@@ -103,6 +122,7 @@ service cloud.firestore {
       // users can't create listings at all.
       allow create: if isSignedIn()
                     && request.resource.data.ownerId == request.auth.uid
+                    && validComplexId(request.resource.data.get('complexId', ''))
                     && request.resource.data.get('listingVerified', false) == false
                     && request.resource.data.get('status', 'pending') == 'pending'
                     && !isBlocked();
@@ -117,6 +137,13 @@ service cloud.firestore {
       // something INTO 'active' from 'pending'/'rejected', or move it INTO 'rejected' at all.
       allow update: if isSignedIn() && resource.data.ownerId == request.auth.uid
                     && !isBlocked()
+                    && validComplexId(request.resource.data.get('complexId', ''))
+                    // An approved (active) listing can't change price/area/complex while staying
+                    // active — that would move the public averages and hot list unreviewed.
+                    // Editing goes back to 'pending' (my-listings.js does this on every save).
+                    && !(resource.data.get('status', '') == 'active'
+                         && request.resource.data.get('status', '') == 'active'
+                         && request.resource.data.diff(resource.data).affectedKeys().hasAny(priceFields()))
                     && !(request.resource.data.get('listingVerified', false) == true
                          && resource.data.get('listingVerified', false) != true)
                     && request.resource.data.get('reportCount', 0) == resource.data.get('reportCount', 0)
@@ -143,6 +170,11 @@ service cloud.firestore {
       allow update: if isAdminOrOwner()
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'listingVerified', 'rejectionReason'])
                     && (request.resource.data.get('status', '') != 'rejected' || request.resource.data.get('rejectionReason', '').size() > 0);
+
+      // Staff photo upload (js/crm.js, 2.6): append Storage URLs to an existing listing's
+      // gallery — touches nothing but the image fields.
+      allow update: if isStaff()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['images', 'img']);
 
       // Admin/owner can hard-delete any listing (spam/abuse) — owners can only delete their
       // own, via the rule above. The moderation UI always pairs this with an adminAuditLogs
@@ -226,7 +258,8 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
-      allow delete: if false;
+      // Own notifications may be deleted only as part of account deletion (js/legal.js).
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
     // ===== REPORTS =====
@@ -274,6 +307,139 @@ service cloud.firestore {
                       && request.resource.data.senderId == request.auth.uid;
         allow update, delete: if false;
       }
+    }
+
+    // =====================================================================
+    // PRICE DATA + LEADS (growth sprint). Rule of thumb for every collection below:
+    // statistics are computed server-side only (scheduled Cloud Function, Admin SDK — which
+    // bypasses these rules), personal data (leads, sales, opt-out requests) is never
+    // readable by the public, and every public write is shape-validated field by field.
+    // =====================================================================
+
+    // ===== COMPLEXES (хотхон) — public catalogue, staff-curated =====
+    match /complexes/{complexId} {
+      allow read: if true;
+      allow create, update: if isStaff() && validComplexId(complexId)
+                    && nonEmpty(request.resource.data.name, 120)
+                    && shortString(request.resource.data.get('district', ''), 40);
+      allow delete: if isAdminOrOwner();
+    }
+
+    // ===== COMPLEX STATS — written ONLY by the scheduled Cloud Function =====
+    // Public read so the site can show averages/growth; no client (not even admin) can write,
+    // so a number on the site can always be traced back to the function's formula.
+    match /complexStats/{complexId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ===== SITE STATS (siteStats/hotlist, siteStats/summary) — Cloud Function only =====
+    match /siteStats/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ===== SALES (зарагдсан хэлцэл) — staff only, never public =====
+    // The public "Саяхан зарагдсан" block reads an anonymized copy the stats function writes
+    // into complexStats.recentSales — never this collection.
+    match /sales/{saleId} {
+      allow read: if isStaff();
+      allow create, update: if isStaff()
+                    && nonEmpty(request.resource.data.complexId, 80)
+                    && validComplexId(request.resource.data.complexId)
+                    && request.resource.data.price is number && request.resource.data.price > 0
+                    && request.resource.data.areaM2 is number && request.resource.data.areaM2 > 0
+                    && request.resource.data.date is string
+                    && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+      allow delete: if isStaff();
+    }
+
+    // ===== LEADS — anyone may CREATE (with consent), only staff may READ =====
+    match /leads/{leadId} {
+      allow create: if request.resource.data.keys().hasOnly(['type', 'phone', 'name', 'budget', 'complexId',
+                         'consent', 'createdAt', 'source', 'listingRef', 'areaM2', 'rooms', 'floor',
+                         'estimate', 'note', 'status', 'uid'])
+                    && request.resource.data.type in ['valuation', 'alert', 'call']
+                    && request.resource.data.consent == true
+                    && validPhone(request.resource.data.phone)
+                    && nonEmpty(request.resource.data.name, 80)
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.status == 'new'
+                    && shortString(request.resource.data.get('source', ''), 40)
+                    && shortString(request.resource.data.get('complexId', ''), 80)
+                    && shortString(request.resource.data.get('note', ''), 1000)
+                    && shortString(request.resource.data.get('listingRef', ''), 300)
+                    && validComplexId(request.resource.data.get('complexId', ''))
+                    && optNumber(request.resource.data, 'budget') && optNumber(request.resource.data, 'areaM2')
+                    && optNumber(request.resource.data, 'rooms') && optNumber(request.resource.data, 'floor')
+                    && optNumber(request.resource.data, 'estimate')
+                    && (!('uid' in request.resource.data)
+                        || (isSignedIn() && request.resource.data.uid == request.auth.uid));
+      // Staff read everything; an agent reads only the leads assigned to them (CRM).
+      allow read: if isStaff()
+                  || (isAgent() && resource.data.get('assignedTo', '') == request.auth.uid)
+                  || (isSignedIn() && resource.data.get('uid', '') == request.auth.uid);
+      // CRM pipeline: status / notes / assignment only — the lead's own contact details and
+      // consent record are never editable after the fact. Agents can't reassign.
+      allow update: if (isStaff() || (isAgent() && resource.data.get('assignedTo', '') == request.auth.uid))
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'notes', 'assignedTo', 'updatedAt'])
+                    && request.resource.data.status in ['new', 'contacted', 'closed']
+                    && (isStaff() || request.resource.data.get('assignedTo', '') == resource.data.get('assignedTo', ''));
+      // Deletion requests (/optout "delete my data") are carried out by staff; a signed-in
+      // user may delete the leads they submitted themselves ("Бүртгэлээ устгах").
+      allow delete: if isStaff() || (isSignedIn() && resource.data.get('uid', '') == request.auth.uid);
+    }
+
+    // ===== ALERTS (мэдэгдэл) — owned by a signed-in user =====
+    match /alerts/{alertId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isStaff());
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.channel in ['push', 'email', 'telegram']
+                    && (request.resource.data.get('budgetMax', null) == null || request.resource.data.budgetMax is number)
+                    && shortString(request.resource.data.get('complexId', ''), 80);
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.channel in ['push', 'email', 'telegram'];
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // ===== PUSH TOKENS (FCM) — one doc per device, owned by its user =====
+    match /pushTokens/{tokenId} {
+      allow read, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create, update: if isSignedIn() && request.resource.data.userId == request.auth.uid
+                    && nonEmpty(request.resource.data.token, 4096);
+    }
+
+    // ===== EVENTS (хэмжилт) — anonymous, create-only for the public =====
+    // No name/phone/uid is ever stored here (see js/contact.js trackEvent).
+    match /events/{eventId} {
+      allow create: if request.resource.data.keys().hasOnly(['type', 'channel', 'page', 'listingRef', 'complexId', 'source', 'createdAt'])
+                    && request.resource.data.type in ['contact_click', 'page_view', 'lead_submit', 'search']
+                    && shortString(request.resource.data.channel, 20)
+                    && shortString(request.resource.data.page, 60)
+                    && shortString(request.resource.data.listingRef, 60)
+                    && shortString(request.resource.data.complexId, 80)
+                    && shortString(request.resource.data.source, 40)
+                    && request.resource.data.createdAt == request.time;
+      allow read: if isStaff();
+      allow update, delete: if false;
+    }
+
+    // ===== OPT-OUT REQUESTS ("Зараа хасуулах") — public create, staff read =====
+    match /optoutRequests/{reqId} {
+      allow create: if request.resource.data.keys().hasOnly(['listingRef', 'reason', 'name', 'phone', 'note', 'consent', 'status', 'source', 'createdAt'])
+                    && request.resource.data.reason in ['not_mine', 'sold', 'wrong_info', 'delete_lead', 'other']
+                    && request.resource.data.consent == true
+                    && validPhone(request.resource.data.phone)
+                    && nonEmpty(request.resource.data.name, 80)
+                    && shortString(request.resource.data.listingRef, 300)
+                    && shortString(request.resource.data.note, 1000)
+                    && request.resource.data.status == 'new'
+                    && request.resource.data.createdAt == request.time;
+      allow read: if isStaff();
+      allow update: if isStaff()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'handledBy', 'handledAt']);
+      allow delete: if isAdminOrOwner();
     }
   }
 }

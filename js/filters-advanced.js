@@ -202,7 +202,9 @@
     // badges:['verified'] metadata some demo listings still carry, which isn't backed by
     // any real verification and would otherwise let demo listings match this filter.
     if (activeFilterToggles.includes('verified')) results = results.filter(l => l.sellerVerified === true || l.listingVerified === true);
-    if (activeFilterToggles.includes('below')) results = results.filter(l => l.tag && l.tag.type === 'below');
+    // "Зах зээлээс хямд" = the hot-list rule (js/complexes.js isHotListing): pricePerM2 at least
+    // 15% below its complex's server-computed average. Not the old hand-written demo tag.
+    if (activeFilterToggles.includes('below')) results = results.filter(l => typeof isHotListing === 'function' && isHotListing(l));
     if (activeFilterToggles.includes('loan')) results = results.filter(l => l.loanType && !l.loanType.includes('Бэлэн'));
     if (activeFilterToggles.includes('parking')) results = results.filter(l =>
       (l.parking && !l.parking.includes('Байхгүй') && !l.parking.includes('Хамаарахгүй')) ||
@@ -255,8 +257,7 @@
   function updateFilterCount() {
     const count = getFilteredListings().length;
     const total = listings.filter(l => !l._inactive).length;
-    const el = document.getElementById('filterCount');
-    if (el) el.textContent = count;
+    setResultCountLabel('filterCountLabel', count, 'зар');
     const totalEl = document.getElementById('filterTotalCount');
     if (totalEl) totalEl.textContent = total;
 

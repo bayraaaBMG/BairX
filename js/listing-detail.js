@@ -211,7 +211,7 @@
       <div class="ld-mi-stats">
         <div class="ld-mi-stat"><div class="ld-mi-stat-label">Нийт үнэ</div><div class="ld-mi-stat-val">${fmtPrice(l.price)}</div></div>
         <div class="ld-mi-stat"><div class="ld-mi-stat-label">1м² үнэ</div><div class="ld-mi-stat-val">${pricePerSqmText(l) || '—'}</div></div>
-        <div class="ld-mi-stat"><div class="ld-mi-stat-label">Бүсийн дундаж 1м²</div><div class="ld-mi-stat-val">${fmt(valuation.marketPerSqm)} ₮/м²</div></div>
+        <div class="ld-mi-stat"><div class="ld-mi-stat-label">Хотхоны дундаж 1м²</div><div class="ld-mi-stat-val">${fmt(valuation.marketPerSqm)} ₮/м²</div></div>
         <div class="ld-mi-stat"><div class="ld-mi-stat-label">Зах зээлээс</div><div class="ld-mi-stat-val" style="color:${valuation.color};">${valuation.diffPct >= 0 ? '+' : ''}${(valuation.diffPct * 100).toFixed(0)}%</div></div>
         ${(valuation.compsPriceMin != null) ? `
         <div class="ld-mi-stat"><div class="ld-mi-stat-label">Харьцуулах заруудын үнэ</div><div class="ld-mi-stat-val">${fmtPrice(valuation.compsPriceMin)} – ${fmtPrice(valuation.compsPriceMax)}</div></div>
@@ -223,7 +223,7 @@
     if (!valuation.available) {
       verdict = 'Зах зээлийн үнэлгээ хийхэд мэдээлэл хангалтгүй'; color = 'var(--ink-3)'; confLabel = null;
       basisLine = valuation.sampleSize
-        ? `Одоогоор ${valuation.sampleSize} харьцуулах зар олдсон — найдвартай тооцоолол хийхэд хамгийн багадаа 2 хэрэгтэй.`
+        ? `Одоогоор ${valuation.sampleSize} харьцуулах зар олдсон — хотхоны дундажийг харуулахад хамгийн багадаа ${BairxPricing.MIN_LISTINGS} хэрэгтэй.`
         : 'BairX дээр энэ төрлийн харьцуулах зар одоогоор алга.';
       reasoning = `Энэ байртай харьцуулах хангалттай зар платформ дээр олдсонгүй тул үнийг зах зээлтэй бодитоор харьцуулж чадахгүй байна. Дэлгэц дээрх тоо зохиомол биш — зөвхөн бодит харьцуулах зар байхгүй тул тооцоолол хийхгүй байна.`;
     } else {
@@ -879,6 +879,7 @@
       box.innerHTML = `<div style="font-size:13px; color:var(--ink-3); padding:8px 0;">Холбогдох дугаар олдсонгүй.</div>`;
       return;
     }
+    trackEvent('contact_click', { channel: 'reveal', listingRef: listingRefOf(l), complexId: l && l.complexId, page: 'listing' });
     if (l) {
       l.contactCount = (l.contactCount || 0) + 1;
       if (l.firestoreId) {
@@ -888,12 +889,9 @@
     }
     box.innerHTML = `
       <div style="font-size:22px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--ink);letter-spacing:2px;margin-bottom:16px;">${esc(phone)}</div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <a href="tel:${phone.replace(/\D/g,'')}" class="btn btn-blue">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.21 3.39 2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 8 8l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 18l-.08-1.08z"/></svg>
-          Залгах
-        </a>
-        <button class="btn btn-primary" id="copyPhoneBtn_${listingId}">
+      ${contactButtonsHtml(phone, { listingRef: listingRefOf(l), complexId: l && l.complexId, message: 'Сайн байна уу, BairX дээрх "' + ((l && l.title) || 'зар') + '" зарын талаар асуух гэсэн юм.' }) || `<a href="tel:${String(phone).replace(/[^0-9+]/g, '')}" class="btn btn-blue">Залгах</a>`}
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;">
+        <button class="btn btn-ghost" style="border:1.5px solid var(--line-2);" id="copyPhoneBtn_${listingId}">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           Хуулах
         </button>

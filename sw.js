@@ -1,4 +1,4 @@
-const CACHE = 'bairx-v3';
+const CACHE = 'bairx-v4';
 const OFFLINE_PAGE = '/';
 
 const PRECACHE = [
@@ -52,7 +52,8 @@ self.addEventListener('fetch', e => {
   // Same-origin app code (js/css/html) — network-first so a new deploy is picked up
   // immediately instead of silently serving a stale cached script forever. Cache is
   // only a fallback for when the network is unavailable (offline support).
-  if (url.origin.includes(self.location.hostname) && /\.(js|css)$/.test(url.pathname)) {
+  // /data/*.json (bank list etc.) is included: it changes without a code deploy.
+  if (url.origin.includes(self.location.hostname) && /\.(js|css|json)$/.test(url.pathname)) {
     e.respondWith(
       fetch(e.request).then(res => {
         if (res && res.status === 200) {
@@ -65,6 +66,7 @@ self.addEventListener('fetch', e => {
     return;
   }
 
+  // Path-routed pages (/complexes, /b/250 …) are navigations, handled above.
   // Cache-first for everything else (fonts, images — rarely change, safe to cache aggressively)
   e.respondWith(
     caches.match(e.request).then(cached => {
@@ -77,4 +79,25 @@ self.addEventListener('fetch', e => {
       }).catch(() => null);
     })
   );
+});
+
+// ===== WEB PUSH (FCM) — alerts from functions/index.js =====
+// FCM delivers { notification: { title, body, icon }, fcmOptions: { link } } (or the same
+// under data); shown here without loading the Firebase SDK into the worker.
+self.addEventListener('push', e => {
+  let p = {};
+  try { p = e.data ? e.data.json() : {}; } catch (err) { p = { notification: { title: 'BairX', body: e.data && e.data.text() } }; }
+  const n = p.notification || p.data || {};
+  const link = (p.fcmOptions && p.fcmOptions.link) || (p.data && p.data.link) || '/';
+  e.waitUntil(self.registration.showNotification(n.title || 'BairX', {
+    body: n.body || '', icon: n.icon || '/icon-192.png', badge: '/icon-192.png', data: { link }
+  }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const link = (e.notification.data && e.notification.data.link) || '/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) { if ('focus' in c) { c.navigate(link); return c.focus(); } }
+    return self.clients.openWindow(link);
+  }));
 });

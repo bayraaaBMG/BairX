@@ -1,23 +1,34 @@
 ﻿  // ===== INIT =====
   checkExpiredListings();
-  renderListings(listings);
   renderHomeListings();
   // Update filter pill counts
   updateCatPillCounts();
   calculate();
-  renderRentListings('all');
-  calculateCompare();
-  renderDemographics();
-  renderFeed();
   renderNotifications();
   updateNotifCount();
-  renderViewsChart();
   updateFilterCount();
   renderFilterTags();
   updateChatCount();
   updateFavCount();
-  renderMyListings();
-  renderBuyerDocs();
+
+  // Performance: these only fill pages that are hidden on first load (Listings, Rent,
+  // Compare, Feed, Dashboard …). They run once when the browser is idle — or immediately,
+  // the moment any of those pages is opened (showPage → runDeferredInit) or when the app
+  // was opened directly on one of them — so the home page paints without that work.
+  let _deferredInitDone = false;
+  function runDeferredInit() {
+    if (_deferredInitDone) return;
+    _deferredInitDone = true;
+    [() => renderListings(getFilteredListings()), () => renderRentListings('all'), calculateCompare, renderDemographics,
+     renderFeed, renderViewsChart, renderMyListings, renderBuyerDocs].forEach(fn => {
+      try { fn(); } catch (e) { console.error('deferred init failed:', e); }
+    });
+  }
+  {
+    const h = location.hash.replace('#', '');
+    if (h && h !== 'home') runDeferredInit();
+    else (window.requestIdleCallback || ((cb) => setTimeout(cb, 200)))(runDeferredInit, { timeout: 2000 });
+  }
   loadPublicListings();
   applyDemoListingHides();
   loadProjects();
@@ -27,7 +38,16 @@
   // Initialize page router + listing hash restore
   (function() {
     const hash = location.hash.replace('#', '');
-    if (hash.startsWith('listing-')) {
+    // Push / e-mail links from functions/index.js: /?l=<firestoreId>
+    const linkedFsId = new URLSearchParams(location.search).get('l');
+    if (linkedFsId) {
+      history.replaceState(null, '', '/');
+      setTimeout(() => openListingByFsId(linkedFsId), 200);
+    }
+    // Path routes (/privacy, /complexes, /b/250 …) take priority — see js/router.js.
+    if (location.pathname !== '/' && !location.hash && typeof showRoute === 'function' && matchRoute(location.pathname)) {
+      showRoute(location.pathname + location.search, { fromPop: true });
+    } else if (hash.startsWith('listing-')) {
       const id = parseInt(hash.replace('listing-', ''), 10);
       showPage('listings');
       if (!isNaN(id)) setTimeout(() => openListing(id), 100);
@@ -39,7 +59,9 @@
     }
     window.addEventListener('popstate', function() {
       const h = location.hash.replace('#', '');
-      if (h.startsWith('listing-')) {
+      if (location.pathname !== '/' && !location.hash && typeof showRoute === 'function' && matchRoute(location.pathname)) {
+        showRoute(location.pathname + location.search, { fromPop: true });
+      } else if (h.startsWith('listing-')) {
         const id = parseInt(h.replace('listing-', ''), 10);
         showPage('listings');
         if (!isNaN(id)) setTimeout(() => openListing(id), 100);
@@ -53,9 +75,26 @@
   })();
 
   // PWA — Service Worker
+  // Update mechanism: sw.js is served with Cache-Control: no-cache (vercel.json), the browser
+  // re-checks it on every load and once an hour; a new worker activates immediately
+  // (skipWaiting + clients.claim in sw.js) and deletes the old versioned cache. When that
+  // happens on an already-open tab, offer a reload so the page's JS matches the new worker.
+  // Bump CACHE in sw.js on every release that changes cached assets.
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/sw.js').catch(function() {});
+      const hadController = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.register('/sw.js').then(function(reg) {
+        setInterval(function() { reg.update().catch(function() {}); }, 60 * 60 * 1000);
+      }).catch(function() {});
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (!hadController || window._bairxSwReloadOffered) return;
+        window._bairxSwReloadOffered = true;
+        const t = document.getElementById('toast');
+        if (!t) return;
+        t.innerHTML = 'BairX шинэчлэгдлээ. <a href="javascript:location.reload()" style="color:#fff;text-decoration:underline;font-weight:700;">Дахин ачаалах</a>';
+        t.classList.add('show');
+        setTimeout(function() { t.classList.remove('show'); }, 12000);
+      });
     });
   }
 

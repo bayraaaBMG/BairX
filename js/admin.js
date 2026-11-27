@@ -18,6 +18,7 @@
     { id: 'users', label: 'Хэрэглэгчид', ownerOnly: true },
     { id: 'projects', label: 'Шинэ орон сууц' },
     { id: 'ads', label: 'Сурталчилгаа' },
+    { id: 'pricedata', label: 'Үнэ, лид, хэлцэл' },
     { id: 'settings', label: 'Тохиргоо' }
   ];
 
@@ -26,7 +27,9 @@
     verify: 'Баталгаажуулах', dismiss_reports: 'Report хаах', block_user: 'Блоклох',
     unblock_user: 'Блок цуцлах', grant_admin: 'Admin эрх өгсөн', revoke_admin: 'Admin эрх цуцалсан',
     create_ad: 'Ad үүсгэсэн', update_ad: 'Ad засварласан', delete_ad: 'Ad устгасан',
-    activate_ad: 'Ad идэвхжүүлсэн', deactivate_ad: 'Ad идэвхгүй болгосон'
+    activate_ad: 'Ad идэвхжүүлсэн', deactivate_ad: 'Ad идэвхгүй болгосон',
+    grant_manager: 'Менежер эрх өгсөн', grant_agent: 'Агент эрх өгсөн', revoke_crm_role: 'CRM эрх цуцалсан',
+    add_sales: 'Хэлцэл оруулсан', upload_images: 'Зураг оруулсан', save_complex: 'Хотхон хадгалсан'
   };
 
   let _adminSection = 'overview';
@@ -62,6 +65,14 @@
     else if (s === 'projects') await renderAdminProjectsSection();
     else if (s === 'ads') await renderAdminAdsSection();
     else if (s === 'settings') await renderAdminSettingsSection();
+    else if (s === 'pricedata') {
+      const el = adminSectionEl();
+      if (el) el.innerHTML = `<div class="admin-state-block">
+        <div class="admin-state-title">Үнэ, лид, хэлцлийн ажлын самбар</div>
+        <div class="admin-state-sub">Лидүүд (CRM), зарагдсан хэлцэл олноор оруулах, хотхон ба зураг, хэмжилт, зараа хасуулах хүсэлт.</div>
+        <a class="btn btn-blue" href="/crm" onclick="return go(event, '/crm')">Ажлын самбар нээх →</a>
+      </div>`;
+    }
   }
 
   function renderAdminHeaderBar() {
@@ -795,7 +806,7 @@
       const name = ((u.lastName || '') + ' ' + (u.firstName || '')).toLowerCase();
       return name.includes(q) || (u.email || '').toLowerCase().includes(q);
     });
-    const roleFilters = [{ id: 'all', label: 'Бүгд' }, { id: 'owner', label: 'Owner' }, { id: 'admin', label: 'Admin' }, { id: 'user', label: 'User' }];
+    const roleFilters = [{ id: 'all', label: 'Бүгд' }, { id: 'owner', label: 'Owner' }, { id: 'admin', label: 'Admin' }, { id: 'manager', label: 'Менежер' }, { id: 'agent', label: 'Агент' }, { id: 'user', label: 'User' }];
     el.innerHTML = `
       <div class="admin-search-row">
         <input type="text" class="form-input" id="adminUserSearch" placeholder="Нэр эсвэл email хайх" value="${esc(_adminUsersSearch)}" oninput="adminFilterUsers(this.value)" />
@@ -824,7 +835,13 @@
       const nameJs = name.replace(/'/g, "\\'");
       primaryBtn = role === 'admin'
         ? `<button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger);" onclick="confirmRevokeAdmin('${u.uid}', '${nameJs}')">Admin эрх цуцлах</button>`
-        : `<button class="btn btn-blue" onclick="confirmGrantAdmin('${u.uid}', '${nameJs}')">Admin болгох</button>`;
+        : (role === 'manager' || role === 'agent')
+          ? `<button class="btn btn-ghost" onclick="confirmSetCrmRole('${u.uid}', '${nameJs}', 'user')">${roleLabel(role)} эрх цуцлах</button>`
+          : `<button class="btn btn-blue" onclick="confirmGrantAdmin('${u.uid}', '${nameJs}')">Admin болгох</button>`;
+      if (role === 'user') {
+        menuActions.push({ label: 'Менежер болгох (CRM)', onclick: `confirmSetCrmRole('${u.uid}', '${nameJs}', 'manager')` });
+        menuActions.push({ label: 'Агент болгох (CRM)', onclick: `confirmSetCrmRole('${u.uid}', '${nameJs}', 'agent')` });
+      }
       menuActions.push(u.blocked
         ? { label: 'Блок цуцлах', onclick: `adminUnblockUser('${u.uid}')` }
         : { label: 'Блоклох', onclick: `adminBlockUser('${u.uid}')`, danger: true });
@@ -874,6 +891,24 @@
     } catch(e) {
       console.error('revokeAdminRole failed:', e.code, e.message);
       showToast('Эрх цуцлахад алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : ''));
+    }
+  }
+
+  // CRM roles (manager / agent) — same owner-only privileged path as grantAdminRole.
+  function confirmSetCrmRole(uid, name, role) {
+    const msg = role === 'user' ? `${name || 'Энэ хэрэглэгч'}-ийн CRM эрхийг цуцлах уу?` : `${name || 'Энэ хэрэглэгч'}-д ${roleLabel(role)} эрх өгөх үү?`;
+    if (!confirm(msg)) return;
+    setCrmRole(uid, name, role);
+  }
+  async function setCrmRole(uid, name, role) {
+    try {
+      await db.collection('users').doc(uid).update({ role, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      logAdminAction(role === 'user' ? 'revoke_crm_role' : 'grant_' + role, 'user', uid, name || '');
+      showToast('Эрх шинэчлэгдлээ', 'success');
+      renderAdminUsersSection();
+    } catch (e) {
+      console.error('setCrmRole failed:', e.code, e.message);
+      showToast('Эрх өөрчлөхөд алдаа гарлаа' + (e.code ? ' (' + e.code + ')' : ''));
     }
   }
 

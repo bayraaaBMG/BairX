@@ -12,15 +12,16 @@
     return `
       <article class="listing-card" onclick="${fullFeatures ? `openListing(${l.id})` : `showPage('listings'); setTimeout(()=>openListing(${l.id}),150)`}">
         <div class="listing-img">
-          <img src="${esc(l.img)}" alt="${esc(l.title)}" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';"/>
+          <img src="${esc(cardThumbUrl(l.img))}" alt="${esc(l.title)}" loading="lazy" decoding="async" width="480" height="360" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #1B2D4F, #1E5BFF)';"/>
           <div class="listing-badges">
             ${!l.userSubmitted ? '<span class="badge demo">Жишээ зар</span>' : ''}
             ${l.badges.includes('vip') ? '<span class="badge vip">⭐ VIP</span>' : (l.badges.includes('hot') ? '<span class="badge hot">Эрэлттэй</span>' : '')}
             ${l.badges.includes('new') || l.badges.includes('user') ? '<span class="badge new">Шинэ</span>' : ''}
             ${fullFeatures && sellerData[l.id]?.type === 'Агент' ? '<span class="badge agent">Агент</span>' : ''}
             ${(l.listingVerified || l.sellerVerified) ? '<span class="badge verified">✓ Баталгаажсан</span>' : ''}
+            ${hotBadgeHtml(l)}
           </div>
-          <button class="listing-fav ${favorites.includes(l.id) ? 'faved' : ''}" onclick="event.stopPropagation(); toggleFav(this, ${l.id})">
+          <button class="listing-fav ${favorites.includes(l.id) ? 'faved' : ''}" aria-label="Хадгалах" onclick="event.stopPropagation(); toggleFav(this, ${l.id})">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
           </button>
           ${fullFeatures ? `
@@ -65,6 +66,15 @@
     `;
   }
 
+  // Hot-list badge: "−18% хотхоны дунджаас" — the comparison is against the server-computed
+  // complex average (js/complexes.js), never an average computed in this browser.
+  function hotBadgeHtml(l) {
+    if (typeof isHotListing !== 'function' || !isHotListing(l)) return '';
+    const st = statsFor(l.complexId);
+    const pct = BairxPricing.discountPct(BairxPricing.listingPpm2(l), st.avgPpm2);
+    return `<span class="badge hot" title="Хотхоны 1 м²-ийн дундаж ${st.avgPpm2.toFixed(2)} сая ₮ (шинэчилсэн ${esc(st.updatedDate || '')})">−${pct}% хотхоны дунджаас</span>`;
+  }
+
   function renderHomeListings() {
     const grid = document.getElementById('homeListingsGrid');
     if (grid) {
@@ -73,7 +83,8 @@
       const recent = listings.filter(l => !l._inactive)
         .sort((a, b) => (b.badges.includes('vip') - a.badges.includes('vip')) || (b.id - a.id))
         .slice(0, 8);
-      grid.innerHTML = recent.map(l => listingCardHtml(l)).join('');
+      grid.removeAttribute('aria-busy');
+      grid.innerHTML = recent.length ? recent.map(l => listingCardHtml(l)).join('') : homeEmptyStateHtml();
     }
     renderFeaturedListings();
     renderHomeCategoryCounts();
@@ -92,7 +103,18 @@
       .sort((a, b) => b.score - a.score || b.id - a.id)
       .slice(0, 8)
       .map(x => x.l);
-    grid.innerHTML = featured.map(l => listingCardHtml(l)).join('');
+    grid.removeAttribute('aria-busy');
+    grid.innerHTML = featured.length ? featured.map(l => listingCardHtml(l)).join('') : homeEmptyStateHtml();
+  }
+
+  // Shown only when there is truly nothing to render (no real listings AND every demo
+  // listing hidden by an admin) — the home page never falls back to a bare "0".
+  function homeEmptyStateHtml() {
+    return `<div class="home-empty-state">
+      <div class="home-empty-title">Удахгүй зар нэмэгдэнэ</div>
+      <div class="home-empty-sub">Шинэ зарууд шалгагдаж байна. Өөрийн байрыг анхны зар болгон байршуулаарай.</div>
+      <button class="btn btn-blue" onclick="openAddListing()">Зар нэмэх</button>
+    </div>`;
   }
 
   // "Категориуд" — every count is a live tally over the real `listings` array, the same
@@ -116,9 +138,12 @@
       commercial: active.filter(l => l.propertyType === 'commercial').length,
       other: active.filter(l => l.propertyType === 'other').length,
     };
+    // A zero tile reads "Удахгүй" (coming soon) instead of a bare "0".
     Object.keys(counts).forEach(key => {
       const el = document.getElementById('homeCatCount-' + key);
-      if (el) el.textContent = fmt(counts[key]);
+      if (!el) return;
+      el.textContent = counts[key] > 0 ? fmt(counts[key]) + ' зар' : 'Удахгүй';
+      el.classList.toggle('is-soon', counts[key] === 0);
     });
 
     const heroStats = {
@@ -129,7 +154,11 @@
     };
     Object.keys(heroStats).forEach(key => {
       const el = document.getElementById('heroStat-' + key);
-      if (el) el.textContent = fmt(heroStats[key]);
+      if (!el) return;
+      el.classList.remove('sk-num');
+      el.textContent = fmt(heroStats[key]);
+      // Hide an individual stat that is zero rather than printing "0 түрээс".
+      if (el.parentElement) el.parentElement.style.display = heroStats[key] > 0 ? '' : 'none';
     });
     // No fake "0 зар" — only show the inline stat strip once there's something real to count.
     const statsStrip = document.getElementById('heroMiniStats');

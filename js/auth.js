@@ -61,6 +61,7 @@
           // (js/admin.js grantAdminRole()), which writes through the one privileged
           // firestore.rules path for it — never settable by the user themselves.
           currentUser.role = data.role || 'user';
+          currentUser.blocked = !!data.blocked;
           // Self-heal: the owner's profile doc may already have existed (role:'user' or no
           // role at all) from before this permission system shipped — the create-time
           // bootstrap in createAccount()/loginWithGoogle() only ever runs on a brand-new doc,
@@ -109,6 +110,8 @@
             floor: d.floor, year: d.year,
             bedrooms: d.bedrooms || null, bathrooms: d.bathrooms || null,
             buildingName: d.buildingName || '', complex: d.complex || '',
+            complexId: BairxPricing.slugify(d.complexId || d.complex || d.buildingName || ''),
+            mlsId: d.mlsId || '', source: d.source || 'user', priceHistory: d.priceHistory || [],
             buildingType: d.buildingType || '', insulation: d.insulation || '', windowDirection: d.windowDirection || '',
             hoaFee: d.hoaFee || null, heating: d.heating || '',
             parking: feats.includes('parking') ? 'Паркинг бий' : '', elevator: feats.includes('elevator') ? 'Лифттэй' : '',
@@ -154,10 +157,16 @@
       if (loginBtn) loginBtn.style.display = '';
       if (userAvatar) userAvatar.style.display = 'none';
       if (userAvatarWrap) userAvatarWrap.style.display = 'none';
+      // Never leave the previous user's name/phone (or a "+976 --------" placeholder) in the
+      // hidden dropdown once signed out.
+      ['userDropName', 'userDropPhone'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = ''; });
       const banner = document.getElementById('emailVerifyBanner');
       if (banner) banner.style.display = 'none';
       const adminLink = document.getElementById('adminNavLink');
       if (adminLink) adminLink.style.display = 'none';
+      const crmLink = document.getElementById('crmNavLink');
+      if (crmLink) crmLink.style.display = 'none';
+      if (typeof refreshCrmIfActive === 'function') refreshCrmIfActive();
       if (typeof subscribeMyChats === 'function') subscribeMyChats();
       if (typeof refreshSavedSearchesCount === 'function') refreshSavedSearchesCount();
       if (typeof renderAccountSidebar === 'function') renderAccountSidebar();
@@ -486,6 +495,9 @@
     if (userDropPhone) userDropPhone.textContent = currentUser.isGoogle ? 'Google хэрэглэгч' : (currentUser.isPhone ? (currentUser.phoneNumber || '') : (currentUser.email || ''));
     const adminLink = document.getElementById('adminNavLink');
     if (adminLink) adminLink.style.display = isAdminOrOwnerUser(currentUser) ? '' : 'none';
+    const crmLink = document.getElementById('crmNavLink');
+    if (crmLink) crmLink.style.display = (isStaffUser(currentUser) || isAgentUser(currentUser)) ? '' : 'none';
+    if (typeof refreshCrmIfActive === 'function') refreshCrmIfActive();
   }
 
   function toggleUserMenu(e) {
