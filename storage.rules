@@ -7,7 +7,7 @@ service firebase.storage {
     // still exactly one place a role is granted.
     function isStaff() {
       return request.auth != null && (
-        request.auth.token.email == 'bbayraaa20@gmail.com' ||
+        (request.auth.token.email == 'bbayraaa20@gmail.com' && request.auth.token.email_verified == true) ||
         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('role', 'user') in ['owner', 'admin', 'manager']
       );
     }

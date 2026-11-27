@@ -80,14 +80,14 @@
     const cx = l.complexId ? (priceData.complexes.get(l.complexId)?.name || l.complexId) : '';
     const details = [
       cx && 'Хотхон: ' + esc(cx),
-      l.areaM2 && l.areaM2 + ' м²', l.rooms && l.rooms + ' өрөө', l.floor != null && l.floor !== '' && l.floor + ' давхар',
-      l.budget && 'Төсөв: ' + l.budget + ' сая ₮', l.estimate && 'Үнэлгээ: ' + l.estimate + ' сая ₮',
+      l.areaM2 && esc(l.areaM2) + ' м²', l.rooms && esc(l.rooms) + ' өрөө', l.floor != null && l.floor !== '' && esc(l.floor) + ' давхар',
+      l.budget && 'Төсөв: ' + esc(l.budget) + ' сая ₮', l.estimate && 'Үнэлгээ: ' + esc(l.estimate) + ' сая ₮',
       l.listingRef && 'Зар: ' + esc(l.listingRef), l.note && esc(l.note)
     ].filter(Boolean).join(' · ');
     const id = l.id.replace(/[^A-Za-z0-9_-]/g, '');
     return `<div class="crm-row">
       <div class="crm-row-main">
-        <div class="crm-row-top"><span class="crm-type t-${esc(l.type)}">${LEAD_TYPE_LABEL[l.type] || esc(l.type)}</span>
+        <div class="crm-row-top"><span class="crm-type t-${esc(String(l.type).replace(/[^a-z]/g, ''))}">${LEAD_TYPE_LABEL[l.type] || esc(l.type)}</span>
           <strong>${esc(l.name)}</strong> · <a href="tel:+976${esc(l.phone)}">${esc(l.phone)}</a>
           <span class="muted-note">${tsDate(l.createdAt)} · эх сурвалж: ${esc(l.source || 'direct')}</span></div>
         <div class="crm-row-details">${details || '—'}</div>

@@ -211,7 +211,7 @@
       <div class="ld-mi-stats">
         <div class="ld-mi-stat"><div class="ld-mi-stat-label">Нийт үнэ</div><div class="ld-mi-stat-val">${fmtPrice(l.price)}</div></div>
         <div class="ld-mi-stat"><div class="ld-mi-stat-label">1м² үнэ</div><div class="ld-mi-stat-val">${pricePerSqmText(l) || '—'}</div></div>
-        <div class="ld-mi-stat"><div class="ld-mi-stat-label">Бүсийн дундаж 1м²</div><div class="ld-mi-stat-val">${fmt(valuation.marketPerSqm)} ₮/м²</div></div>
+        <div class="ld-mi-stat"><div class="ld-mi-stat-label">Хотхоны дундаж 1м²</div><div class="ld-mi-stat-val">${fmt(valuation.marketPerSqm)} ₮/м²</div></div>
         <div class="ld-mi-stat"><div class="ld-mi-stat-label">Зах зээлээс</div><div class="ld-mi-stat-val" style="color:${valuation.color};">${valuation.diffPct >= 0 ? '+' : ''}${(valuation.diffPct * 100).toFixed(0)}%</div></div>
         ${(valuation.compsPriceMin != null) ? `
         <div class="ld-mi-stat"><div class="ld-mi-stat-label">Харьцуулах заруудын үнэ</div><div class="ld-mi-stat-val">${fmtPrice(valuation.compsPriceMin)} – ${fmtPrice(valuation.compsPriceMax)}</div></div>
@@ -223,7 +223,7 @@
     if (!valuation.available) {
       verdict = 'Зах зээлийн үнэлгээ хийхэд мэдээлэл хангалтгүй'; color = 'var(--ink-3)'; confLabel = null;
       basisLine = valuation.sampleSize
-        ? `Одоогоор ${valuation.sampleSize} харьцуулах зар олдсон — найдвартай тооцоолол хийхэд хамгийн багадаа 2 хэрэгтэй.`
+        ? `Одоогоор ${valuation.sampleSize} харьцуулах зар олдсон — хотхоны дундажийг харуулахад хамгийн багадаа ${BairxPricing.MIN_LISTINGS} хэрэгтэй.`
         : 'BairX дээр энэ төрлийн харьцуулах зар одоогоор алга.';
       reasoning = `Энэ байртай харьцуулах хангалттай зар платформ дээр олдсонгүй тул үнийг зах зээлтэй бодитоор харьцуулж чадахгүй байна. Дэлгэц дээрх тоо зохиомол биш — зөвхөн бодит харьцуулах зар байхгүй тул тооцоолол хийхгүй байна.`;
     } else {

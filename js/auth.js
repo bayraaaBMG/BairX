@@ -61,6 +61,7 @@
           // (js/admin.js grantAdminRole()), which writes through the one privileged
           // firestore.rules path for it — never settable by the user themselves.
           currentUser.role = data.role || 'user';
+          currentUser.blocked = !!data.blocked;
           // Self-heal: the owner's profile doc may already have existed (role:'user' or no
           // role at all) from before this permission system shipped — the create-time
           // bootstrap in createAccount()/loginWithGoogle() only ever runs on a brand-new doc,
@@ -109,7 +110,7 @@
             floor: d.floor, year: d.year,
             bedrooms: d.bedrooms || null, bathrooms: d.bathrooms || null,
             buildingName: d.buildingName || '', complex: d.complex || '',
-            complexId: d.complexId || BairxPricing.slugify(d.complex || d.buildingName || ''),
+            complexId: BairxPricing.slugify(d.complexId || d.complex || d.buildingName || ''),
             mlsId: d.mlsId || '', source: d.source || 'user', priceHistory: d.priceHistory || [],
             buildingType: d.buildingType || '', insulation: d.insulation || '', windowDirection: d.windowDirection || '',
             hoaFee: d.hoaFee || null, heating: d.heating || '',

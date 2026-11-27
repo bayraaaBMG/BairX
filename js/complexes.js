@@ -50,14 +50,16 @@
   // Hot-list membership for any in-memory listing (used by the Listings page's
   // "Зах зээлээс хямд" toggle and by card badges).
   function isHotListing(l) {
-    if (!l || l.cat !== 'apartment' || l._inactive) return false;
+    // Demo seed listings are client-side placeholders — never compared to real averages.
+    if (!l || l.isDemo || l.cat !== 'apartment' || l._inactive) return false;
     const avg = usableAvg(statsFor(l.complexId));
     return avg != null && P_.isHot(l, avg);
   }
 
   function complexListOf() {
     const ids = new Set([...priceData.complexes.keys(), ...priceData.stats.keys()]);
-    return [...ids].map(id => {
+    // Ids are slugs; anything else is skipped rather than ever reaching a URL/handler.
+    return [...ids].filter(id => /^[a-z0-9-]{1,60}$/.test(id)).map(id => {
       const c = priceData.complexes.get(id) || {};
       const s = priceData.stats.get(id) || {};
       return {
@@ -145,7 +147,7 @@
     await loadPriceData();
     const c = priceData.complexes.get(id) || {};
     const st = priceData.stats.get(id) || null;
-    if (!c.name && !st && !listings.some(l => l.complexId === id)) {
+    if (!/^[a-z0-9-]{1,60}$/.test(id) || (!c.name && !st && !listings.some(l => l.complexId === id && !l.isDemo))) {
       return { title: 'Хотхон олдсонгүй — BairX', description: '', html: `<div class="route-page route-narrow"><h1 class="route-title">Хотхон олдсонгүй</h1><p class="route-lead">Энэ хотхоны мэдээлэл одоогоор алга.</p><a class="btn btn-blue" href="/complexes" onclick="return go(event, '/complexes')">Бүх хотхон</a></div>` };
     }
     // Pull this complex's active listings (beyond the first public page already in memory).
@@ -155,7 +157,7 @@
     } catch (e) { console.error('complex listings load failed:', e.code, e.message); }
     const name = c.name || st?.name || listings.find(l => l.complexId === id)?.complex || id;
     const avg = usableAvg(st);
-    const own = listings.filter(l => l.complexId === id && !l._inactive);
+    const own = listings.filter(l => l.complexId === id && !l._inactive && !l.isDemo);
     const photos = (c.photos && c.photos.length ? c.photos : (st?.photo ? [st.photo] : [])).slice(0, 6);
     const recent = (st && st.recentSales) || [];
     const phone = c.phone || SITE_HOTLINE;
@@ -395,8 +397,9 @@
         .where('category', '==', b.kind === 'rent' ? 'rent' : 'apartment').limit(120).get();
       snap.forEach(doc => ingestListingDoc(doc));
     } catch (e) { console.error('budget page load failed:', e.code, e.message); }
-    const items = listings.filter(l => !l._inactive && (b.kind === 'rent' ? l.cat === 'rent' : l.cat === 'apartment') && P_.inBudget(l.price, b))
-      .sort((x, y) => (y.isDemo ? 0 : 1) - (x.isDemo ? 0 : 1) || x.price - y.price);
+    // Real listings only — these are indexable SEO pages, so demo seed data never appears.
+    const items = listings.filter(l => !l._inactive && !l.isDemo && (b.kind === 'rent' ? l.cat === 'rent' : l.cat === 'apartment') && P_.inBudget(l.price, b))
+      .sort((x, y) => x.price - y.price);
     const title = b.label + ' — Улаанбаатар | BairX';
     const desc = `${b.label}: Улаанбаатарын идэвхтэй зарууд, хотхоны 1 м²-ийн дундаж үнэтэй харьцуулсан. Өдөр бүр шинэчлэгдэнэ.`;
     return {
@@ -421,4 +424,8 @@
     if (priceData.stats.size === 0) return;
     if (typeof renderHomeListings === 'function') renderHomeListings();
     if (typeof applyListingFilter === 'function') applyListingFilter();
+    // A listing opened from a direct link before the stats arrived rendered its market
+    // panel as "insufficient data" — re-render it now that the server averages are here.
+    const m = location.hash.match(/^#listing-(\d+)/);
+    if (m && document.getElementById('modal')?.classList.contains('open') && typeof openListing === 'function') openListing(parseInt(m[1], 10));
   });

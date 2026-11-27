@@ -64,9 +64,26 @@
   })();
 
   // PWA — Service Worker
+  // Update mechanism: sw.js is served with Cache-Control: no-cache (vercel.json), the browser
+  // re-checks it on every load and once an hour; a new worker activates immediately
+  // (skipWaiting + clients.claim in sw.js) and deletes the old versioned cache. When that
+  // happens on an already-open tab, offer a reload so the page's JS matches the new worker.
+  // Bump CACHE in sw.js on every release that changes cached assets.
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/sw.js').catch(function() {});
+      const hadController = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.register('/sw.js').then(function(reg) {
+        setInterval(function() { reg.update().catch(function() {}); }, 60 * 60 * 1000);
+      }).catch(function() {});
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (!hadController || window._bairxSwReloadOffered) return;
+        window._bairxSwReloadOffered = true;
+        const t = document.getElementById('toast');
+        if (!t) return;
+        t.innerHTML = 'BairX шинэчлэгдлээ. <a href="javascript:location.reload()" style="color:#fff;text-decoration:underline;font-weight:700;">Дахин ачаалах</a>';
+        t.classList.add('show');
+        setTimeout(function() { t.classList.remove('show'); }, 12000);
+      });
     });
   }
 

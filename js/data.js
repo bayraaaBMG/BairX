@@ -384,7 +384,7 @@
       price: d.price, area: d.area, rooms: d.rooms, floor: d.floor, year: d.year,
       bedrooms: d.bedrooms || null, bathrooms: d.bathrooms || null,
       buildingName: d.buildingName || '', complex: d.complex || '',
-      complexId: d.complexId || BairxPricing.slugify(d.complex || d.buildingName || ''),
+      complexId: BairxPricing.slugify(d.complexId || d.complex || d.buildingName || ''),
       mlsId: d.mlsId || '', source: d.source || 'user', priceHistory: d.priceHistory || [],
       buildingType: d.buildingType || '', insulation: d.insulation || '', windowDirection: d.windowDirection || '',
       hoaFee: d.hoaFee || null, heating: d.heating || '',

@@ -30,6 +30,11 @@ service cloud.firestore {
     function validPhone(p) { return p is string && p.matches('^[0-9]{8}$'); }
     function shortString(s, max) { return s is string && s.size() <= max; }
     function nonEmpty(s, max) { return s is string && s.size() > 0 && s.size() <= max; }
+    // Complex ids are slugs (js/pricing.js slugify) — they end up in URLs and doc ids.
+    function validComplexId(s) { return s is string && s.matches('^[a-z0-9-]{0,60}$'); }
+    function optNumber(d, k) { return !(k in d) || d[k] == null || d[k] is number; }
+    // Fields that feed the public price statistics (complexStats, hot list).
+    function priceFields() { return ['price', 'area', 'areaM2', 'pricePerM2', 'complexId', 'complex', 'category', 'floor', 'rooms']; }
 
     // A blocked user can no longer create or edit listings — set by an admin/owner (see the
     // users/{uid} rules below), never by the user themselves.
@@ -95,8 +100,11 @@ service cloud.firestore {
       // "Бүртгэлээ устгах" (js/legal.js): a user may delete only their OWN profile doc, and the
       // owner's row stays immutable. The client deletes the user's listings/favorites/etc.
       // first, then this doc, then the Auth record.
+      // A blocked user can't delete (and so silently recreate) their profile — that would
+      // erase the block. Their deletion request goes through support instead.
       allow delete: if isSignedIn() && request.auth.uid == uid
-                    && resource.data.get('role', 'user') != 'owner';
+                    && resource.data.get('role', 'user') != 'owner'
+                    && resource.data.get('blocked', false) != true;
     }
 
     // ===== LISTINGS =====
@@ -114,6 +122,7 @@ service cloud.firestore {
       // users can't create listings at all.
       allow create: if isSignedIn()
                     && request.resource.data.ownerId == request.auth.uid
+                    && validComplexId(request.resource.data.get('complexId', ''))
                     && request.resource.data.get('listingVerified', false) == false
                     && request.resource.data.get('status', 'pending') == 'pending'
                     && !isBlocked();
@@ -128,6 +137,13 @@ service cloud.firestore {
       // something INTO 'active' from 'pending'/'rejected', or move it INTO 'rejected' at all.
       allow update: if isSignedIn() && resource.data.ownerId == request.auth.uid
                     && !isBlocked()
+                    && validComplexId(request.resource.data.get('complexId', ''))
+                    // An approved (active) listing can't change price/area/complex while staying
+                    // active — that would move the public averages and hot list unreviewed.
+                    // Editing goes back to 'pending' (my-listings.js does this on every save).
+                    && !(resource.data.get('status', '') == 'active'
+                         && request.resource.data.get('status', '') == 'active'
+                         && request.resource.data.diff(resource.data).affectedKeys().hasAny(priceFields()))
                     && !(request.resource.data.get('listingVerified', false) == true
                          && resource.data.get('listingVerified', false) != true)
                     && request.resource.data.get('reportCount', 0) == resource.data.get('reportCount', 0)
@@ -303,7 +319,7 @@ service cloud.firestore {
     // ===== COMPLEXES (хотхон) — public catalogue, staff-curated =====
     match /complexes/{complexId} {
       allow read: if true;
-      allow create, update: if isStaff()
+      allow create, update: if isStaff() && validComplexId(complexId)
                     && nonEmpty(request.resource.data.name, 120)
                     && shortString(request.resource.data.get('district', ''), 40);
       allow delete: if isAdminOrOwner();
@@ -330,6 +346,7 @@ service cloud.firestore {
       allow read: if isStaff();
       allow create, update: if isStaff()
                     && nonEmpty(request.resource.data.complexId, 80)
+                    && validComplexId(request.resource.data.complexId)
                     && request.resource.data.price is number && request.resource.data.price > 0
                     && request.resource.data.areaM2 is number && request.resource.data.areaM2 > 0
                     && request.resource.data.date is string
@@ -351,19 +368,26 @@ service cloud.firestore {
                     && shortString(request.resource.data.get('source', ''), 40)
                     && shortString(request.resource.data.get('complexId', ''), 80)
                     && shortString(request.resource.data.get('note', ''), 1000)
+                    && shortString(request.resource.data.get('listingRef', ''), 300)
+                    && validComplexId(request.resource.data.get('complexId', ''))
+                    && optNumber(request.resource.data, 'budget') && optNumber(request.resource.data, 'areaM2')
+                    && optNumber(request.resource.data, 'rooms') && optNumber(request.resource.data, 'floor')
+                    && optNumber(request.resource.data, 'estimate')
                     && (!('uid' in request.resource.data)
                         || (isSignedIn() && request.resource.data.uid == request.auth.uid));
       // Staff read everything; an agent reads only the leads assigned to them (CRM).
       allow read: if isStaff()
-                  || (isAgent() && resource.data.get('assignedTo', '') == request.auth.uid);
+                  || (isAgent() && resource.data.get('assignedTo', '') == request.auth.uid)
+                  || (isSignedIn() && resource.data.get('uid', '') == request.auth.uid);
       // CRM pipeline: status / notes / assignment only — the lead's own contact details and
       // consent record are never editable after the fact. Agents can't reassign.
       allow update: if (isStaff() || (isAgent() && resource.data.get('assignedTo', '') == request.auth.uid))
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'notes', 'assignedTo', 'updatedAt'])
                     && request.resource.data.status in ['new', 'contacted', 'closed']
                     && (isStaff() || request.resource.data.get('assignedTo', '') == resource.data.get('assignedTo', ''));
-      // Deletion requests (/optout "delete my data") are carried out by staff.
-      allow delete: if isStaff();
+      // Deletion requests (/optout "delete my data") are carried out by staff; a signed-in
+      // user may delete the leads they submitted themselves ("Бүртгэлээ устгах").
+      allow delete: if isStaff() || (isSignedIn() && resource.data.get('uid', '') == request.auth.uid);
     }
 
     // ===== ALERTS (мэдэгдэл) — owned by a signed-in user =====

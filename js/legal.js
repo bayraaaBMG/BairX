@@ -125,6 +125,7 @@
   function openDeleteAccount() {
     if (!currentUser) { openAuth(); return; }
     if (currentUser.role === 'owner') { showToast('Эзэмшигчийн бүртгэлийг устгах боломжгүй'); return; }
+    if (currentUser.blocked) { showToast('Хаагдсан бүртгэлийг устгуулахын тулд ' + SITE_SUPPORT_EMAIL + ' хаягаар холбогдоно уу'); return; }
     document.getElementById('modalContent').innerHTML = `
       <button class="modal-close" onclick="closeModal()" aria-label="Хаах">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -179,6 +180,9 @@
       await deleteQueryDocs(db.collection('savedSearches').where('userId', '==', uid));
       await deleteQueryDocs(db.collection('notifications').where('userId', '==', uid));
       await deleteQueryDocs(db.collection('alerts').where('userId', '==', uid));
+      await deleteQueryDocs(db.collection('pushTokens').where('userId', '==', uid));
+      // Leads this account submitted while signed in (valuation / alert requests).
+      await deleteQueryDocs(db.collection('leads').where('uid', '==', uid));
       try {
         const list = await storage.ref('listing-images/' + uid).listAll();
         await Promise.all(list.items.map(it => it.delete()));

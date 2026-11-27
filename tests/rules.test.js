@@ -132,6 +132,33 @@ test('optoutRequests: public create with consent, staff read', async () => {
   await assertSucceeds(getDoc(doc(as('managerUid'), 'optoutRequests/o1')));
 });
 
+// ---------- review fixes ----------
+test('users: a blocked user can NOT delete (and so recreate) their profile', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'users/blockedUid'), { role: 'user', blocked: true }));
+  await assertFails(deleteDoc(doc(as('blockedUid'), 'users/blockedUid')));
+});
+test('listings: an active listing cannot change price/complex without going back to pending', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'listings/l1'), { ownerId: 'userUid', status: 'active', price: 500, area: 100, complexId: 'zaisan', reportCount: 0 }));
+  await assertFails(updateDoc(doc(as('userUid'), 'listings/l1'), { price: 1 }));
+  await assertFails(updateDoc(doc(as('userUid'), 'listings/l1'), { complexId: 'other' }));
+  await assertSucceeds(updateDoc(doc(as('userUid'), 'listings/l1'), { price: 450, status: 'pending' }));
+});
+test('listings: complexId must be a slug', async () => {
+  const base = { ownerId: 'userUid', status: 'pending', listingVerified: false, price: 1, area: 1 };
+  await assertSucceeds(addDoc(collection(as('userUid'), 'listings'), Object.assign({ complexId: 'zaisan-tolt' }, base)));
+  await assertFails(addDoc(collection(as('userUid'), 'listings'), Object.assign({ complexId: "x'-alert(1)-'" }, base)));
+});
+test('leads: optional fields are type-checked', async () => {
+  await assertFails(addDoc(collection(anon(), 'leads'), validLead({ areaM2: '<img src=x onerror=alert(1)>' })));
+  await assertSucceeds(addDoc(collection(anon(), 'leads'), validLead({ areaM2: 72, rooms: 3, estimate: 360 })));
+});
+test('leads: a signed-in user can read/delete only the leads they submitted', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'leads/mine'), { type: 'valuation', phone: '99112233', name: 'Б', consent: true, status: 'new', uid: 'userUid' }));
+  await assertSucceeds(getDoc(doc(as('userUid'), 'leads/mine')));
+  await assertFails(getDoc(doc(as('userUid'), 'leads/lead1')));
+  await assertSucceeds(deleteDoc(doc(as('userUid'), 'leads/mine')));
+});
+
 // ---------- users self-delete ----------
 test('users: a user can delete their own profile, never someone else\'s or the owner\'s', async () => {
   await assertSucceeds(deleteDoc(doc(as('userUid'), 'users/userUid')));

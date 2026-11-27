@@ -36,7 +36,8 @@ function ubDate(ms) {
 function listingFromDoc(doc) {
   const d = doc.data();
   return Object.assign({ id: doc.id }, d, {
-    complexId: d.complexId || P.slugify(d.complex || d.buildingName || ''),
+    // Always re-slugified: the field is owner-written and becomes a doc id / URL segment.
+    complexId: P.slugify(d.complexId || d.complex || d.buildingName || ''),
     category: d.category || d.cat || 'apartment'
   });
 }
@@ -67,7 +68,8 @@ async function recomputeAll() {
     listingsBy.get(l.complexId).push(l);
   }
   for (const doc of salesSnap.docs) {
-    const s = doc.data();
+    const s = Object.assign({}, doc.data());
+    s.complexId = P.slugify(s.complexId);
     if (!s.complexId) continue;
     if (!salesBy.has(s.complexId)) salesBy.set(s.complexId, []);
     salesBy.get(s.complexId).push(s);
@@ -132,6 +134,16 @@ async function recomputeAll() {
     tookMs: Date.now() - started
   } });
 
+  // Complexes that no longer have a catalogue entry, active listings or sales: delete their
+  // old stats doc so a frozen average/"Шинэчилсэн" date never stays live on the site.
+  const existing = await db.collection('complexStats').listDocuments();
+  const stale = existing.filter(ref => !ids.has(ref.id));
+  for (let i = 0; i < stale.length; i += 400) {
+    const batch = db.batch();
+    stale.slice(i, i + 400).forEach(ref => batch.delete(ref));
+    await batch.commit();
+  }
+
   await commitInChunks(writes);
   logger.info('complexStats recomputed', { complexes: ids.size, listings: allListings.length, sales: salesSnap.size, hot: hot.length });
   return { complexes: ids.size, listings: allListings.length, sales: salesSnap.size, hot: hot.length, updatedDate: today };
@@ -141,15 +153,15 @@ exports.dailyComplexStats = onSchedule({ schedule: 'every day 03:00', timeZone: 
   await recomputeAll();
 });
 
-async function isStaffUid(uid, email) {
-  if (email && email.toLowerCase() === OWNER_EMAIL) return true;
+async function isStaffUid(uid, email, emailVerified) {
+  if (email && emailVerified === true && email === OWNER_EMAIL) return true;
   const snap = await db.doc('users/' + uid).get();
   return STAFF_ROLES.includes(snap.exists ? (snap.data().role || 'user') : 'user');
 }
 
 exports.recomputeStatsNow = onCall({ timeoutSeconds: 300 }, async (req) => {
   if (!req.auth) throw new HttpsError('unauthenticated', 'Нэвтэрнэ үү');
-  if (!(await isStaffUid(req.auth.uid, req.auth.token.email))) throw new HttpsError('permission-denied', 'Зөвхөн админ');
+  if (!(await isStaffUid(req.auth.uid, req.auth.token.email, req.auth.token.email_verified))) throw new HttpsError('permission-denied', 'Зөвхөн админ');
   return recomputeAll();
 });
 

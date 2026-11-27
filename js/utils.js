@@ -105,71 +105,33 @@
   // similar size, then district, then city-wide) and openly reporting how many
   // comparables it found and how that narrowing affected confidence. If there simply
   // isn't enough real data to compare against, it says so instead of guessing.
+  // Compares the listing against its complex's 1 м² average computed SERVER-SIDE by the
+  // daily Cloud Function (complexStats/{complexId}, loaded by js/complexes.js). The browser
+  // no longer aggregates listing prices itself — that old client-side median mixed demo
+  // listings into a "market" figure. No server average (or one built on fewer than
+  // MIN_LISTINGS unique listings) → "insufficient data", never a guessed number.
   function computeValuation(l) {
-    if (!l || l.cat === 'rent' || typeof l.price !== 'number' || !l.area) {
+    if (!l || l.cat !== 'apartment' || typeof l.price !== 'number' || !l.area) {
       return { available: false, reason: 'not-applicable' };
     }
+    const st = (typeof statsFor === 'function') ? statsFor(l.complexId) : null;
+    if (!st || st.avgPpm2 == null || (st.listingCount || 0) < BairxPricing.MIN_LISTINGS) {
+      return { available: false, reason: 'insufficient-data', sampleSize: st ? (st.listingCount || 0) : 0 };
+    }
     const subjectPerSqm = (l.price * 1000000) / l.area;
-
-    const pool = (typeof listings !== 'undefined' ? listings : [])
-      .filter(x => x.id !== l.id && x.cat === l.cat && !x._inactive && x.cat !== 'rent'
-        && typeof x.price === 'number' && x.area)
-      .map(x => ({ l: x, perSqm: (x.price * 1000000) / x.area }))
-      .filter(x => isFinite(x.perSqm) && x.perSqm > 0);
-
-    function median(arr) {
-      const vals = arr.map(a => a.perSqm).sort((a, b) => a - b);
-      const mid = Math.floor(vals.length / 2);
-      return vals.length % 2 ? vals[mid] : (vals[mid - 1] + vals[mid]) / 2;
-    }
-
-    let tier, comps;
-    if (l.complex) {
-      comps = pool.filter(a => a.l.district === l.district && a.l.complex === l.complex);
-      tier = 'complex';
-    }
-    if (!comps || comps.length < 3) {
-      comps = pool.filter(a => a.l.district === l.district && Math.abs(a.l.area - l.area) / l.area <= 0.3);
-      tier = 'district-similar';
-    }
-    if (comps.length < 3) {
-      comps = pool.filter(a => a.l.district === l.district);
-      tier = 'district';
-    }
-    if (comps.length < 3) {
-      comps = pool;
-      tier = 'city';
-    }
-
-    if (comps.length < 2) {
-      return { available: false, reason: 'insufficient-data', sampleSize: comps.length };
-    }
-
-    const marketPerSqm = median(comps);
+    const marketPerSqm = st.avgPpm2 * 1000000;
     const diffPct = (subjectPerSqm - marketPerSqm) / marketPerSqm;
     let verdict, color;
-    if (diffPct <= -0.08) { verdict = 'Сонирхолтой санал'; color = '#009878'; }
+    if (diffPct <= -(1 - BairxPricing.HOT_THRESHOLD)) { verdict = 'Сонирхолтой санал'; color = '#009878'; }
     else if (diffPct <= 0.08) { verdict = 'Зах зээлийн үнэ'; color = '#1E5BFF'; }
     else { verdict = 'Зах зээлээс дээгүүр'; color = '#FF4757'; }
-
-    let confidence;
-    if ((tier === 'complex' && comps.length >= 3) || (tier !== 'city' && comps.length >= 8)) confidence = 'high';
-    else if (comps.length >= 5) confidence = 'medium';
-    else confidence = 'low';
-
-    const basisText = {
-      complex: `тухайн хотхон дахь ${comps.length} зартай`,
-      'district-similar': `дүүргийн ижил хэмжээний ${comps.length} зартай`,
-      district: `дүүргийн ${comps.length} зартай`,
-      city: `хотын хэмжээний ${comps.length} зартай (дүүрэгт хангалттай харьцуулах зар олдсонгүй)`
-    }[tier];
-
-    const compPrices = comps.map(a => a.l.price).filter(p => typeof p === 'number').sort((a, b) => a - b);
-
+    const n = st.listingCount;
+    const confidence = n >= 8 ? 'high' : n >= 5 ? 'medium' : 'low';
     return {
-      available: true, verdict, color, confidence, tier, basisText,
-      sampleSize: comps.length, subjectPerSqm, marketPerSqm, diffPct,
-      compsPriceMin: compPrices[0], compsPriceMax: compPrices[compPrices.length - 1]
+      available: true, verdict, color, confidence, tier: 'complex',
+      basisText: `тухайн хотхоны ${n} идэвхтэй зарын 1 м²-ийн дундажтай (сервер дээр өдөр бүр тооцоолсон, шинэчилсэн: ${st.updatedDate || '—'})`,
+      sampleSize: n, subjectPerSqm, marketPerSqm, diffPct,
+      compsPriceMin: null, compsPriceMax: null
     };
   }
 
