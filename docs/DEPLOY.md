@@ -17,6 +17,16 @@ firebase deploy --only firestore:rules,storage
 
 Storage дүрэм Firestore-оос эрх уншдаг. Анх deploy хийхэд CLI "cross-service rules"-д зөвшөөрөл асууна, зөвшөөрнө.
 
+### Rules v3 (Phase 2–4)
+
+Шинэ collection: `agents`, `reviews`, `siteConfig`, `crmTasks`. Leads-д `search_request` төрөл болон 8 шатны pipeline нэмэгдсэн. Admin/owner `complexStats`, `siteStats`-ийг зөвхөн `source:'manual'` тэмдэгтэйгээр бичиж болно (Cloud Functions deploy хийгдээгүй үеийн гар аргаар шинэчлэх). Storage-д `agent-images/` хавтас нэмэгдсэн.
+
+```
+firebase deploy --only firestore:rules,firestore:indexes,storage --project bairx-fd502
+```
+
+v3 deploy хийгдээгүй үед сайт `siteConfig/home`-ийг уншиж шалгадаг (`rulesV3Ready()` in js/pages.js). Permission denied гарвал шинэ формууд (хайлт даатгах, сэтгэгдэл) "түр хаалттай" гэж харуулж, агент/Select/сэтгэгдлийн хэсэг нуугдана. Deploy хийсний дараа автоматаар нээгдэнэ.
+
 ## 3. Cloud Functions
 
 ```

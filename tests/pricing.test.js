@@ -135,3 +135,35 @@ test('natural-language query parser', () => {
   assert.deepEqual(P.parseNaturalQuery('түрээс 2 өрөө Баянгол 3 сая хүртэл'), { kind: 'rent', maxPrice: 3, rooms: 2, district: 'bayangol' });
   assert.deepEqual(P.parseNaturalQuery('300 саяас дээш Сүхбаатар'), { minPrice: 300, district: 'sukhbaatar' });
 });
+
+// ---------- Phase 2: min/max, monthly history, shared builder ----------
+test('computeComplexStats: min/max only with ≥ MIN_LISTINGS unique listings; deal history by month', () => {
+  const now = Date.UTC(2026, 10, 27);
+  const ls = [
+    { category: 'apartment', complexId: 'z', price: 500, area: 100, floor: '9', rooms: 3 },
+    { category: 'apartment', complexId: 'z', price: 364, area: 70, floor: '4', rooms: 2 },
+    { category: 'apartment', complexId: 'z', price: 288, area: 72, floor: '11', rooms: 2 }
+  ];
+  const st = P.computeComplexStats(ls, [
+    { date: '2026-10-05', price: 490, areaM2: 100 }, { date: '2026-10-20', price: 300, areaM2: 60 }, { date: '2026-08-01', price: 343, areaM2: 70 }
+  ], now);
+  assert.equal(st.minPpm2, 4); assert.equal(st.maxPpm2, 5.2);
+  assert.deepEqual(st.history.map(h => [h.month, h.n]), [['2026-08', 1], ['2026-10', 2]]);
+  assert.equal(st.history[1].avgPpm2, 4.95);
+  assert.equal(st.soldMinPpm2_12m, 4.9); assert.equal(st.soldMaxPpm2_12m, 5);
+  const two = P.computeComplexStats(ls.slice(0, 2), [], now);
+  assert.equal(two.minPpm2, null); assert.equal(two.maxPpm2, null);
+});
+test('buildAllStats: same output shape as the Cloud Function; hot list and summary', () => {
+  const ls = [
+    ['500', 100, '9'], ['364', 70, '4'], ['324', 60, '6'], ['288', 72, '11']
+  ].map(([p, a, f], i) => P.normalizeListing('l' + i, { category: 'apartment', status: 'active', complex: 'Зайсан', price: +p, area: a, floor: f, rooms: 2 }));
+  const out = P.buildAllStats({ zaisan: { name: 'Зайсан', district: 'khan-uul' } }, ls, [{ complexId: 'Zaisan', date: '2026-01-01', price: 400, areaM2: 80 }], Date.UTC(2026, 10, 27), '2026-11-27');
+  assert.deepEqual(out.ids, ['zaisan']);
+  assert.equal(out.stats.zaisan.listingCount, 4);
+  assert.equal(out.stats.zaisan.salesCount, 1);
+  assert.equal(out.stats.zaisan.updatedDate, '2026-11-27');
+  assert.equal(out.hotlist.items.length, 1);
+  assert.equal(out.hotlist.items[0].listingId, 'l3');
+  assert.deepEqual(out.summary, { complexCount: 1, activeListingCount: 4, salesCount: 1, hotCount: 1, updatedDate: '2026-11-27' });
+});

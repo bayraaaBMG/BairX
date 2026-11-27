@@ -35,6 +35,7 @@
   renderAccountSidebar();
   renderSiteAds();
   if (typeof renderHomeMarket === 'function') renderHomeMarket();
+  if (typeof renderHomeExtras === 'function') renderHomeExtras();
 
   // Initialize page router + listing hash restore
   (function() {

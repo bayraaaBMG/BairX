@@ -43,6 +43,13 @@ service firebase.storage {
       allow delete: if isStaff();
     }
 
+    // Agent profile photos (Admin → Агентууд), same ceiling as the other staff uploads.
+    match /agent-images/{slug}/{fileName} {
+      allow read: if true;
+      allow write: if isStaff() && isImageUnder(5 * 1024 * 1024);
+      allow delete: if isStaff();
+    }
+
     // Everything else stays closed by default.
     match /{allPaths=**} {
       allow read, write: if false;

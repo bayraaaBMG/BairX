@@ -184,10 +184,10 @@
         ${contactButtonsHtml(phone, { complexId: id, message: 'Сайн байна уу, BairX дээрх ' + name + ' хотхоны талаар асуух гэсэн юм.' })}
         <a class="btn btn-ghost cx-val-cta" href="/valuation?c=${encodeURIComponent(id)}" onclick="return go(event, '/valuation?c=${encodeURIComponent(id)}')">Энэ хотхонд байраа үнэлүүлэх →</a>
       </div>
-      <h2 class="route-h2">Энэ хотхоны зарууд</h2>
-      <div class="home-listings-grid">${own.length ? own.map(l => listingCardHtml(l)).join('') : homeEmptyStateHtml()}</div>
+      ${typeof complexExtrasHtml === 'function' ? complexExtrasHtml(id, c, st, own) : ''}
       <h2 class="route-h2">Саяхан зарагдсан</h2>
-      ${recentSalesHtml(recent)}`
+      ${recentSalesHtml(recent)}`,
+      after: () => { if (typeof complexExtrasAfter === 'function') complexExtrasAfter(id, c.agentSlug); }
     };
   });
 

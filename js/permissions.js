@@ -46,12 +46,12 @@
   // require actorUid to match the caller and forbid any update/delete afterward — this
   // function can only ever append, never edit history.
   async function logAdminAction(action, targetType, targetId, reason) {
-    if (!currentUser || !isAdminOrOwnerUser()) return;
+    if (!currentUser || !isStaffUser()) return;
     try {
       await db.collection('adminAuditLogs').add({
         actorUid: currentUser.uid,
         actorEmail: currentUser.email || '',
-        actorRole: isOwnerUser() ? 'owner' : 'admin',
+        actorRole: isOwnerUser() ? 'owner' : (currentUser.role || 'admin'),
         action,
         targetType,
         targetId: String(targetId),

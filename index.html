@@ -52,6 +52,7 @@
       <a href="/#newdev" onclick="showPage('newdev'); return false;">Шинэ орон сууц</a>
       <a href="/complexes" onclick="return go(event, '/complexes')">Хотхонууд</a>
       <a href="/hotlist" onclick="return go(event, '/hotlist')">Хямд зар</a>
+      <a href="/market" onclick="return go(event, '/market')">Зах зээл</a>
       <a href="/#calc" onclick="showPage('calc'); return false;">Тооцоолуур</a>
       <a href="/#resources" onclick="showPage('resources'); return false;">Зөвлөгөө</a>
       <a onclick="currentUser ? showPage('dashboard') : openAuth()">Миний самбар</a>
@@ -140,6 +141,10 @@
     <a href="/growth" onclick="return go(event, '/growth')">Үнийн өсөлт</a>
     <a href="/budget" onclick="return go(event, '/budget')">Төсвөөр хэдэн м²</a>
     <a href="/alerts" onclick="return go(event, '/alerts')">Мэдэгдэл авах</a>
+    <a href="/market" onclick="return go(event, '/market')">Зах зээлийн судалгаа</a>
+    <a href="/transactions" onclick="return go(event, '/transactions')">Бодит хэлцлүүд</a>
+    <a href="/search-request" onclick="return go(event, '/search-request')">Хайлтаа даатгах</a>
+    <a href="/agents" onclick="return go(event, '/agents')">Агентууд</a>
     <a onclick="showPage('compare'); toggleMobileMenu()">Авах vs Түрээслэх</a>
     <a onclick="showPage('calc'); toggleMobileMenu()">Зээл тооцоолуур</a>
     <a onclick="showPage('resources'); toggleMobileMenu()">Зөвлөгөө</a>
@@ -419,6 +424,7 @@
         <div class="home-cat-tile-count" id="homeCatCount-other"><span class="sk-num"></span></div>
       </button>
     </div>
+    <div id="homeExtras" class="home-extras"></div>
     <div id="homeFaq"></div>
   </div>
 </section>
@@ -2141,7 +2147,7 @@
           <li><a onclick="openInfoPage('about')">Бидний тухай</a></li>
           <li><a onclick="openInfoPage('career')">Карьер</a></li>
           <li><a onclick="openInfoPage('press')">Хэвлэл</a></li>
-          <li><a onclick="openInfoPage('contact')">Холбоо барих</a></li>
+          <li><a href="/contact" onclick="return go(event, '/contact')">Холбоо барих</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -2160,9 +2166,24 @@
         </ul>
       </div>
       <div class="footer-col">
+        <h5>Үйлчилгээ</h5>
+        <ul>
+          <li><a href="/market" onclick="return go(event, '/market')">Зах зээлийн судалгаа</a></li>
+          <li><a href="/transactions" onclick="return go(event, '/transactions')">Бодит хэлцлүүд</a></li>
+          <li><a href="/featured" onclick="return go(event, '/featured')">BairX Select</a></li>
+          <li><a href="/valuation" onclick="return go(event, '/valuation')">Байраа үнэлүүлэх</a></li>
+          <li><a href="/budget" onclick="return go(event, '/budget')">Төсвөөр хайх</a></li>
+          <li><a href="/search-request" onclick="return go(event, '/search-request')">Хайлтаа даатгах</a></li>
+          <li><a href="/alerts" onclick="return go(event, '/alerts')">Мэдэгдэл авах</a></li>
+          <li><a href="/o/all" onclick="return go(event, '/o/all')">Арилжааны үл хөдлөх</a></li>
+          <li><a href="/agents" onclick="return go(event, '/agents')">Агентууд</a></li>
+          <li><a href="/reviews" onclick="return go(event, '/reviews')">Сэтгэгдэл</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
         <h5>Хууль</h5>
         <ul>
-          <li><a onclick="openInfoPage('terms')">Үйлчилгээний нөхцөл</a></li>
+          <li><a href="/terms" onclick="return go(event, '/terms')">Үйлчилгээний нөхцөл</a></li>
           <li><a href="/privacy" onclick="return go(event, '/privacy')">Нууцлалын бодлого</a></li>
           <li><a href="/optout" onclick="return go(event, '/optout')">Зараа хасуулах</a></li>
           <li><a onclick="openInfoPage('security')">Аюулгүй байдал</a></li>
@@ -2415,8 +2436,11 @@
 <script defer src="/js/admin.js"></script>
 <script defer src="/js/complexes.js"></script>
 <script defer src="/js/market.js"></script>
+<script defer src="/js/pages.js"></script>
 <script defer src="/js/alerts.js"></script>
 <script defer src="/js/crm.js"></script>
+<script defer src="/js/admin-data.js"></script>
+<script defer src="/js/assist.js"></script>
 <script defer src="/js/init.js"></script>
 
 <!-- ============ MOBILE BOTTOM NAV ============ -->

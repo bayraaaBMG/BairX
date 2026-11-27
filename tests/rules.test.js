@@ -75,7 +75,7 @@ test('leads: admin & manager read all; agent reads only assigned', async () => {
 test('leads: CRM update — status/notes only, contact details immutable', async () => {
   await assertSucceeds(updateDoc(doc(as('managerUid'), 'leads/lead2'), { status: 'contacted', notes: 'Залгасан' }));
   await assertFails(updateDoc(doc(as('managerUid'), 'leads/lead2'), { phone: '11111111' }));
-  await assertFails(updateDoc(doc(as('managerUid'), 'leads/lead2'), { status: 'won' }));
+  await assertFails(updateDoc(doc(as('managerUid'), 'leads/lead2'), { status: 'bogus' }));
   await assertSucceeds(updateDoc(doc(as('agentUid'), 'leads/lead1'), { status: 'closed' }));
   await assertFails(updateDoc(doc(as('agentUid'), 'leads/lead1'), { assignedTo: 'userUid' }));
 });
@@ -171,4 +171,70 @@ test('users: a user can delete their own profile, never someone else\'s or the o
   await assertFails(deleteDoc(doc(as('userUid'), 'users/adminUid')));
   await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'users/ownerUid'), { role: 'owner' }));
   await assertFails(deleteDoc(doc(as('ownerUid', OWNER_EMAIL), 'users/ownerUid')));
+});
+
+// ---------- v3 rules: manual stats fallback, site config, agents, reviews, CRM tasks ----------
+const manualStats = (o) => Object.assign({ complexId: 'zaisan', source: 'manual', listingCount: 4, salesCount: 3, avgPpm2: 4.9 }, o);
+test('complexStats: only admin/owner may write, and only a source:manual builder doc', async () => {
+  await assertSucceeds(setDoc(doc(as('adminUid'), 'complexStats/zaisan'), manualStats()));
+  await assertSucceeds(setDoc(doc(as('ownerUid', OWNER_EMAIL), 'siteStats/summary'), { source: 'manual', complexCount: 1 }));
+  await assertFails(setDoc(doc(as('managerUid'), 'complexStats/zaisan'), manualStats()));
+  await assertFails(setDoc(doc(as('userUid'), 'complexStats/zaisan'), manualStats()));
+  await assertFails(setDoc(doc(anon(), 'complexStats/zaisan'), manualStats()));
+  await assertFails(setDoc(doc(as('adminUid'), 'complexStats/zaisan'), manualStats({ source: 'function' })));
+  await assertFails(setDoc(doc(as('adminUid'), 'complexStats/zaisan'), manualStats({ complexId: 'other' })));
+  await assertFails(setDoc(doc(as('adminUid'), 'complexStats/zaisan'), manualStats({ listingCount: 'many' })));
+  await assertFails(setDoc(doc(as('adminUid'), 'siteStats/anything'), { source: 'manual' }));
+});
+test('siteConfig: public read, staff write of known docs only', async () => {
+  await assertSucceeds(getDoc(doc(anon(), 'siteConfig/home')));
+  await assertSucceeds(setDoc(doc(as('managerUid'), 'siteConfig/featured'), { listingIds: ['a'] }));
+  await assertFails(setDoc(doc(as('userUid'), 'siteConfig/home'), { sections: {} }));
+  await assertFails(setDoc(doc(as('adminUid'), 'siteConfig/secret'), { x: 1 }));
+});
+test('agents: public read, staff write with validated fields', async () => {
+  await assertSucceeds(getDocs(collection(anon(), 'agents')));
+  await assertSucceeds(setDoc(doc(as('adminUid'), 'agents/bat-erdene'), { name: 'Бат-Эрдэнэ', phone: '99112233', dealsClosed: 12 }));
+  await assertFails(setDoc(doc(as('userUid'), 'agents/me'), { name: 'Би' }));
+  await assertFails(setDoc(doc(as('adminUid'), 'agents/Bad Slug'), { name: 'X' }));
+  await assertFails(setDoc(doc(as('adminUid'), 'agents/x'), { name: 'X', phone: '123' }));
+  await assertFails(setDoc(doc(as('adminUid'), 'agents/x'), { name: 'X', dealsClosed: 'many' }));
+});
+const validReview = (o) => Object.assign({ name: 'Сараа', rating: 5, text: 'Сайн үйлчилгээ', consent: true, status: 'pending', createdAt: serverTimestamp() }, o);
+test('reviews: public submits pending only; public reads approved only; staff moderate', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    const fdb = ctx.firestore();
+    await setDoc(doc(fdb, 'reviews/r1'), { name: 'A', rating: 5, text: 'x', status: 'pending' });
+    await setDoc(doc(fdb, 'reviews/r2'), { name: 'B', rating: 4, text: 'y', status: 'approved' });
+  });
+  await assertSucceeds(addDoc(collection(anon(), 'reviews'), validReview()));
+  await assertFails(addDoc(collection(anon(), 'reviews'), validReview({ status: 'approved' })));
+  await assertFails(addDoc(collection(anon(), 'reviews'), validReview({ rating: 9 })));
+  await assertFails(addDoc(collection(anon(), 'reviews'), validReview({ consent: false })));
+  await assertFails(addDoc(collection(anon(), 'reviews'), validReview({ extra: 1 })));
+  await assertFails(getDoc(doc(anon(), 'reviews/r1')));
+  await assertSucceeds(getDoc(doc(anon(), 'reviews/r2')));
+  await assertFails(updateDoc(doc(as('userUid'), 'reviews/r1'), { status: 'approved' }));
+  await assertSucceeds(updateDoc(doc(as('managerUid'), 'reviews/r1'), { status: 'approved', reviewedBy: 'managerUid' }));
+  await assertFails(updateDoc(doc(as('managerUid'), 'reviews/r2'), { text: 'өөрчилсөн' }));
+});
+test('leads: search_request with structured fields; full pipeline statuses', async () => {
+  await assertSucceeds(addDoc(collection(anon(), 'leads'), validLead({ type: 'search_request', budget: 500, district: 'khan-uul', financing: 'loan', downPayment: 150, areaMin: 60, areaMax: 90, notifyMatches: true })));
+  await assertFails(addDoc(collection(anon(), 'leads'), validLead({ type: 'search_request', financing: 'crypto' })));
+  await assertFails(addDoc(collection(anon(), 'leads'), validLead({ type: 'search_request', downPayment: 'lots' })));
+  for (const st of ['offered', 'viewing', 'negotiating', 'contract', 'won', 'lost']) {
+    await assertSucceeds(updateDoc(doc(as('managerUid'), 'leads/lead2'), { status: st }));
+  }
+});
+const validTask = (o) => Object.assign({ title: 'Залгах', kind: 'followup', dueAt: new Date(), done: false, assignedTo: 'agentUid', createdBy: 'agentUid' }, o);
+test('crmTasks: agent manages own tasks; staff all; public none', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'crmTasks/t1'), validTask({ assignedTo: 'otherAgent' })); });
+  await assertSucceeds(addDoc(collection(as('agentUid'), 'crmTasks'), validTask()));
+  await assertFails(addDoc(collection(as('agentUid'), 'crmTasks'), validTask({ assignedTo: 'otherAgent' })));
+  await assertSucceeds(addDoc(collection(as('managerUid'), 'crmTasks'), validTask({ createdBy: 'managerUid', assignedTo: 'otherAgent' })));
+  await assertFails(addDoc(collection(as('userUid'), 'crmTasks'), validTask({ createdBy: 'userUid', assignedTo: 'userUid' })));
+  await assertFails(addDoc(collection(anon(), 'crmTasks'), validTask()));
+  await assertFails(addDoc(collection(as('agentUid'), 'crmTasks'), validTask({ kind: 'party' })));
+  await assertFails(getDoc(doc(as('agentUid'), 'crmTasks/t1')));
+  await assertSucceeds(getDoc(doc(as('adminUid'), 'crmTasks/t1')));
 });

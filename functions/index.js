@@ -33,14 +33,7 @@ function ubDate(ms) {
   return new Date((ms == null ? Date.now() : ms) + 8 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
-function listingFromDoc(doc) {
-  const d = doc.data();
-  return Object.assign({ id: doc.id }, d, {
-    // Always re-slugified: the field is owner-written and becomes a doc id / URL segment.
-    complexId: P.slugify(d.complexId || d.complex || d.buildingName || ''),
-    category: d.category || d.cat || 'apartment'
-  });
-}
+function listingFromDoc(doc) { return P.normalizeListing(doc.id, doc.data()); }
 
 async function commitInChunks(writes) {
   for (let i = 0; i < writes.length; i += 400) {
@@ -58,81 +51,22 @@ async function recomputeAll() {
     db.collection('complexes').get()
   ]);
 
-  const complexes = new Map(cxSnap.docs.map(d => [d.id, d.data()]));
-  const listingsBy = new Map();
-  const salesBy = new Map();
+  // Same pure builder the admin "manual recompute" uses (js/pricing.js buildAllStats).
+  const complexes = Object.fromEntries(cxSnap.docs.map(d => [d.id, d.data()]));
   const allListings = listSnap.docs.map(listingFromDoc);
-  for (const l of allListings) {
-    if (!l.complexId) continue;
-    if (!listingsBy.has(l.complexId)) listingsBy.set(l.complexId, []);
-    listingsBy.get(l.complexId).push(l);
-  }
-  for (const doc of salesSnap.docs) {
-    const s = Object.assign({}, doc.data());
-    s.complexId = P.slugify(s.complexId);
-    if (!s.complexId) continue;
-    if (!salesBy.has(s.complexId)) salesBy.set(s.complexId, []);
-    salesBy.get(s.complexId).push(s);
-  }
-
-  const ids = new Set([...complexes.keys(), ...listingsBy.keys(), ...salesBy.keys()]);
+  const sales = salesSnap.docs.map(d => d.data());
   const today = ubDate(started);
+  const built = P.buildAllStats(complexes, allListings, sales, started, today);
+  const ids = new Set(built.ids);
+  const hot = built.hotlist.items;
   const writes = [];
-  const statsById = new Map();
-
-  for (const id of ids) {
-    const cx = complexes.get(id) || {};
-    const sales = salesBy.get(id) || [];
-    const stats = P.computeComplexStats(listingsBy.get(id) || [], sales, started);
-    // Anonymized "Саяхан зарагдсан": month only, price rounded to 1 сая ₮, no names/phones/ids.
-    const recentSales = sales
-      .filter(s => P.toMs(s.date) != null)
-      .sort((a, b) => P.toMs(b.date) - P.toMs(a.date))
-      .slice(0, 8)
-      .map(s => ({ month: String(s.date).slice(0, 7), price: Math.round(s.price), areaM2: Math.round(s.areaM2), rooms: P.parseRooms(s.rooms) }));
-    const doc = Object.assign({
-      complexId: id,
-      name: cx.name || (listingsBy.get(id) || [])[0]?.complex || id,
-      district: cx.district || (listingsBy.get(id) || [])[0]?.district || '',
-      khoroo: cx.khoroo || null,
-      photo: (cx.photos && cx.photos[0]) || (listingsBy.get(id) || []).find(l => l.img)?.img || '',
-      recentSales,
-      minListings: P.MIN_LISTINGS,
-      minSales: P.MIN_SALES,
-      updatedDate: today,
-      updatedAt: FieldValue.serverTimestamp()
-    }, stats);
-    statsById.set(id, doc);
-    writes.push({ ref: db.collection('complexStats').doc(id), data: doc });
+  for (const id of built.ids) {
+    writes.push({ ref: db.collection('complexStats').doc(id), data: Object.assign({}, built.stats[id], { source: 'function', updatedAt: FieldValue.serverTimestamp() }) });
   }
-
-  // Hot list: active apartments ≥15% below their complex's average, where that average is
-  // itself built on at least MIN_LISTINGS unique listings.
-  const hot = [];
-  for (const l of allListings) {
-    const st = statsById.get(l.complexId);
-    if (!st || st.avgPpm2 == null || st.listingCount < P.MIN_LISTINGS) continue;
-    if (!P.isStatsEligible(l) || !P.isHot(l, st.avgPpm2)) continue;
-    const ppm = P.listingPpm2(l);
-    hot.push({
-      listingId: l.id, complexId: l.complexId, complexName: st.name,
-      title: l.title || '', img: (l.images && l.images[0]) || l.img || '',
-      price: l.price, areaM2: P.num(l.areaM2 != null ? l.areaM2 : l.area),
-      rooms: P.parseRooms(l.rooms), floor: l.floor || '', district: l.district || '',
-      pricePerM2: P.round(ppm, 4), complexAvgPpm2: st.avgPpm2,
-      discountPct: P.discountPct(ppm, st.avgPpm2)
-    });
-  }
-  hot.sort((a, b) => b.discountPct - a.discountPct);
-  writes.push({ ref: db.doc('siteStats/hotlist'), data: {
-    items: hot.slice(0, 300), threshold: P.HOT_THRESHOLD, minListings: P.MIN_LISTINGS,
-    updatedDate: today, updatedAt: FieldValue.serverTimestamp()
-  } });
-  writes.push({ ref: db.doc('siteStats/summary'), data: {
-    complexCount: ids.size, activeListingCount: allListings.length, salesCount: salesSnap.size,
-    hotCount: hot.length, updatedDate: today, updatedAt: FieldValue.serverTimestamp(),
-    tookMs: Date.now() - started
-  } });
+  writes.push({ ref: db.doc('siteStats/hotlist'), data: Object.assign({}, built.hotlist, { updatedAt: FieldValue.serverTimestamp() }) });
+  writes.push({ ref: db.doc('siteStats/summary'), data: Object.assign({}, built.summary, {
+    source: 'function', updatedAt: FieldValue.serverTimestamp(), tookMs: Date.now() - started
+  }) });
 
   // Complexes that no longer have a catalogue entry, active listings or sales: delete their
   // old stats doc so a frozen average/"Шинэчилсэн" date never stays live on the site.

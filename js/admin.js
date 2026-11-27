@@ -69,8 +69,12 @@
       const el = adminSectionEl();
       if (el) el.innerHTML = `<div class="admin-state-block">
         <div class="admin-state-title">Үнэ, лид, хэлцлийн ажлын самбар</div>
-        <div class="admin-state-sub">Лидүүд (CRM), зарагдсан хэлцэл олноор оруулах, хотхон ба зураг, хэмжилт, зараа хасуулах хүсэлт.</div>
-        <a class="btn btn-blue" href="/crm" onclick="return go(event, '/crm')">Ажлын самбар нээх →</a>
+        <div class="admin-state-sub">Лидийн шат, даалгавар ба уулзалт, хэлцэл ба шимтгэл, тайлан, агентууд, сэтгэгдэл, нүүр хуудасны тохиргоо, CSV/Excel импорт, давхардал, статистик шинэчлэх, хэмжилт.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+          <a class="btn btn-blue" href="/crm" onclick="return go(event, '/crm')">Ажлын самбар нээх →</a>
+          <a class="btn btn-ghost" href="/crm/manager" onclick="return go(event, '/crm/manager')">Менежерийн тайлан</a>
+          <a class="btn btn-ghost" href="/admin/studio" onclick="return go(event, '/admin/studio')">Контент студи</a>
+        </div>
       </div>`;
     }
   }

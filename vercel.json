@@ -88,6 +88,50 @@
     {
       "source": "/favorites",
       "destination": "/index.html"
+    },
+    {
+      "source": "/featured",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/transactions",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/listing/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/o/:slug",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/search-request",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/agents",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/agent/:slug",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/reviews",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/crm/manager",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/studio",
+      "destination": "/index.html"
     }
   ],
   "headers": [

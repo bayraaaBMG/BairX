@@ -49,7 +49,8 @@ const ago = (d) => new Date(now - d * day).toISOString().slice(0, 10);
   await put('users/' + userUid, { uid: userUid, firstName: 'Тест', lastName: 'Хэрэглэгч', email: USER.email, role: 'user' });
 
   const complexes = [
-    { id: 'zaisan-tolt', name: 'Зайсан Тольт (ТЕСТ)', district: 'khan-uul', khoroo: 15, yearBuilt: 2022, floors: 18 },
+    { id: 'zaisan-tolt', name: 'Зайсан Тольт (ТЕСТ)', district: 'khan-uul', khoroo: 15, yearBuilt: 2022, floors: 18,
+      developer: 'Тест Девелопмент ХХК', buildingType: 'Цутгамал төмөр бетон', lat: 47.8864, lng: 106.9057, agentSlug: 'test-agent' },
     { id: 'olimp-tauer', name: 'Олимп тауэр (ТЕСТ)', district: 'sukhbaatar', khoroo: 1, yearBuilt: 2020, floors: 22 },
     { id: 'nogoon-nuur', name: 'Ногоон нуур (ТЕСТ)', district: 'bayangol', khoroo: 19 }
   ];
@@ -85,6 +86,23 @@ const ago = (d) => new Date(now - d * day).toISOString().slice(0, 10);
   ];
   let j = 0;
   for (const [complexId, date, price, areaM2, rooms] of S) await put('sales/test-sale-' + (++j), { complexId, date, price, areaM2, rooms });
+
+  // Phase 2: one office listing (no complex), an agent, reviews, BairX Select picks.
+  await put('listings/test-office-1', {
+    ownerId: 'test-seller', category: 'office', propertyType: 'office', status: 'active', title: 'ТЕСТ оффис 120 м²',
+    loc: 'Тест байршил', district: 'sukhbaatar', price: 900, area: 120, areaM2: 120, rooms: 0, floor: '3/9',
+    source: 'user', priceHistory: [], sellerName: 'Тест', sellerPhone: '99112233', sellerType: 'Агент', images: [], img: '',
+    features: [], description: 'Emulator-ийн тест оффис', listingVerified: true, reportCount: 0, viewCount: 0,
+    createdAt: new Date(now - 20 * 3600000), expiresAt: now + 30 * day, bumpedAt: now - 20
+  });
+  await put('agents/test-agent', {
+    name: 'Тест Агент', org: 'BairX (ТЕСТ)', yearsExperience: 6, dealsClosed: 42, totalVolume: 18500, phone: '99001122',
+    achievements: 'Тест амжилт', bio: 'Тест танилцуулга', facebook: 'https://facebook.com/test', telegram: '@bairx_test',
+    complexIds: ['zaisan-tolt'], featuredListingIds: ['test-listing-1'], active: true, order: 1
+  });
+  await put('reviews/test-review-approved', { name: 'Тест Үйлчлүүлэгч', rating: 5, text: 'ТЕСТ: маш сайн үйлчилгээ', agentSlug: 'test-agent', consent: true, status: 'approved', createdAt: new Date(now - 5 * day) });
+  await put('reviews/test-review-pending', { name: 'Хүлээгдэж буй', rating: 2, text: 'ТЕСТ: шалгагдаагүй сэтгэгдэл', consent: true, status: 'pending', createdAt: new Date(now - day) });
+  await put('siteConfig/featured', { listingIds: ['test-listing-5', 'test-listing-1'] });
 
   console.log(JSON.stringify({ seeded: true, ownerUid, userUid, complexes: complexes.length, listings: L.length, sales: S.length }));
 })().catch(e => { console.error(e); process.exit(1); });

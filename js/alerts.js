@@ -48,6 +48,7 @@
   registerRoute(/^\/alerts$/, async () => {
     await loadPriceData();
     const b = new URLSearchParams(location.search).get('b') || '';
+    const preCx = new URLSearchParams(location.search).get('c') || '';
     const cx = complexListOf().sort((a, b2) => a.name.localeCompare(b2.name));
     const channelHtml = `
       <div class="lf-field"><span>Мэдэгдэл хүлээн авах суваг *</span>
@@ -68,7 +69,7 @@
             <label class="lf-field"><span>Дээд төсөв (сая ₮)</span><input class="form-input" id="alBudget" type="number" min="10" step="10" value="${esc(b)}" placeholder="500" /></label>
             <label class="lf-field"><span>Өрөө</span><select class="form-input" id="alRooms"><option value="">Хамаагүй</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4+</option></select></label>
           </div>
-          <label class="lf-field"><span>Хотхон</span><select class="form-input" id="alComplex"><option value="">Бүх хотхон</option>${cx.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select></label>
+          <label class="lf-field"><span>Хотхон</span><select class="form-input" id="alComplex"><option value="">Бүх хотхон</option>${cx.map(c => `<option value="${esc(c.id)}" ${c.id === preCx ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
           <label class="consent-row" style="color:var(--ink-2)"><input type="checkbox" id="alOnlyHot" checked><span>Зөвхөн хотхоны дунджаас 15%+ хямд зар</span></label>
           ${currentUser ? channelHtml : `
             <div class="lf-sep">Нэвтэрсэн бол Web Push / и-мэйлээр шууд мэдэгдэнэ. Нэвтрэхгүйгээр утсаа үлдээвэл манай ажилтан холбогдоно.</div>

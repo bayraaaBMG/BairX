@@ -169,8 +169,24 @@
     const sold2023Avg = avg(in2023);
     const soldPrevAvg = avg(prev12);
 
+    const ppms = unique.map(l => l.pricePerM2).filter(v => v != null);
+    const sold12 = last12.map(salePpm2);
+    // Monthly deal history, last 24 months (deals only, listing prices never mixed in).
+    const byMonth = new Map();
+    for (const sl of salesBetween(sales, twoYearsAgo, now + 1)) {
+      const m = new Date(toMs(sl.date)).toISOString().slice(0, 7);
+      if (!byMonth.has(m)) byMonth.set(m, []);
+      byMonth.get(m).push(salePpm2(sl));
+    }
+    const history = [...byMonth.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([m, arr]) => ({ month: m, avgPpm2: round(mean(arr), 4), n: arr.length }));
     return {
-      avgPpm2: round(unique.length ? mean(unique.map(l => l.pricePerM2)) : null, 4),
+      avgPpm2: round(ppms.length ? mean(ppms) : null, 4),
+      minPpm2: round(ppms.length >= MIN_LISTINGS ? Math.min(...ppms) : null, 4),
+      maxPpm2: round(ppms.length >= MIN_LISTINGS ? Math.max(...ppms) : null, 4),
+      soldMinPpm2_12m: round(sold12.length >= MIN_SALES ? Math.min(...sold12) : null, 4),
+      soldMaxPpm2_12m: round(sold12.length >= MIN_SALES ? Math.max(...sold12) : null, 4),
+      history,
       listingCount: unique.length,
       rawListingCount: eligible.length,
       sales12m: last12.length,
@@ -278,7 +294,78 @@
     return out;
   }
 
+  // ---- Whole-site statistics: the ONE implementation used by the Cloud Function and by
+  // the admin-only manual recompute in the browser (js/admin-data.js). Pure: no I/O, no
+  // timestamps — callers add updatedAt. complexes: { id: doc }, listings: normalized docs.
+  function normalizeListing(id, d) {
+    return Object.assign({ id }, d, {
+      // Always re-slugified: the field is owner-written and becomes a doc id / URL segment.
+      complexId: slugify(d.complexId || d.complex || d.buildingName || ''),
+      category: d.category || d.cat || 'apartment'
+    });
+  }
+  function buildAllStats(complexes, listings, sales, nowMs, today) {
+    const now = nowMs == null ? Date.now() : nowMs;
+    const cxs = complexes || {};
+    const listingsBy = new Map(), salesBy = new Map();
+    for (const l of listings || []) {
+      if (!l.complexId) continue;
+      if (!listingsBy.has(l.complexId)) listingsBy.set(l.complexId, []);
+      listingsBy.get(l.complexId).push(l);
+    }
+    for (const raw of sales || []) {
+      const sl = Object.assign({}, raw, { complexId: slugify(raw.complexId) });
+      if (!sl.complexId) continue;
+      if (!salesBy.has(sl.complexId)) salesBy.set(sl.complexId, []);
+      salesBy.get(sl.complexId).push(sl);
+    }
+    const ids = new Set([...Object.keys(cxs), ...listingsBy.keys(), ...salesBy.keys()]);
+    const stats = {};
+    for (const id of ids) {
+      const cx = cxs[id] || {};
+      const ls = listingsBy.get(id) || [];
+      const ss = salesBy.get(id) || [];
+      // Anonymized "Саяхан зарагдсан": month only, price rounded to 1 сая ₮, no names/phones/ids.
+      const recentSales = ss.filter(x => toMs(x.date) != null)
+        .sort((a, b) => toMs(b.date) - toMs(a.date)).slice(0, 8)
+        .map(x => ({ month: String(x.date).slice(0, 7), price: Math.round(x.price), areaM2: Math.round(x.areaM2), rooms: parseRooms(x.rooms) }));
+      stats[id] = Object.assign({
+        complexId: id,
+        name: cx.name || (ls[0] && ls[0].complex) || id,
+        district: cx.district || (ls[0] && ls[0].district) || '',
+        khoroo: cx.khoroo || null,
+        photo: (cx.photos && cx.photos[0]) || ((ls.find(l => l.img) || {}).img) || '',
+        recentSales, minListings: MIN_LISTINGS, minSales: MIN_SALES, updatedDate: today || ''
+      }, computeComplexStats(ls, ss, now));
+    }
+    // Hot list: active apartments >=15% below a complex average that itself rests on
+    // at least MIN_LISTINGS unique listings.
+    const hot = [];
+    for (const l of listings || []) {
+      const st = stats[l.complexId];
+      if (!st || st.avgPpm2 == null || st.listingCount < MIN_LISTINGS) continue;
+      if (!isStatsEligible(l) || !isHot(l, st.avgPpm2)) continue;
+      const ppm = listingPpm2(l);
+      hot.push({
+        listingId: l.id, complexId: l.complexId, complexName: st.name,
+        title: l.title || '', img: (l.images && l.images[0]) || l.img || '',
+        price: l.price, areaM2: num(l.areaM2 != null ? l.areaM2 : l.area),
+        rooms: parseRooms(l.rooms), floor: l.floor || '', district: l.district || '',
+        pricePerM2: round(ppm, 4), complexAvgPpm2: st.avgPpm2, discountPct: discountPct(ppm, st.avgPpm2)
+      });
+    }
+    hot.sort((a, b) => b.discountPct - a.discountPct);
+    return {
+      stats, ids: [...ids],
+      hotlist: { items: hot.slice(0, 300), threshold: HOT_THRESHOLD, minListings: MIN_LISTINGS, updatedDate: today || '' },
+      summary: { complexCount: ids.size, activeListingCount: (listings || []).length, salesCount: (sales || []).length, hotCount: hot.length, updatedDate: today || '' }
+    };
+  }
+  // Calendar date in Ulaanbaatar (UTC+8), "YYYY-MM-DD" — what the UI prints as "Шинэчилсэн".
+  function ubDate(ms) { return new Date((ms == null ? Date.now() : ms) + 8 * 3600 * 1000).toISOString().slice(0, 10); }
+
   return {
+    normalizeListing, buildAllStats, ubDate,
     HOT_THRESHOLD, VALUATION_SPREAD, MIN_SALES, MIN_LISTINGS, BUDGET_SLUGS,
     num, round, mean, median, pricePerM2, parseFloorNum, parseRooms, slugify,
     dedupeKey, dedupeListings, listingPpm2, isStatsEligible, avgPpm2,

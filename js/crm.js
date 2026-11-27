@@ -8,8 +8,11 @@
   let _crmTab = 'leads';
   let _crmLeadStatus = 'new';
   let _crmAgents = null;
-  const LEAD_TYPE_LABEL = { valuation: 'Үнэлгээ', alert: 'Мэдэгдэл', call: 'Залгуулах' };
-  const LEAD_STATUS_LABEL = { new: 'Шинэ', contacted: 'Холбогдсон', closed: 'Хаагдсан' };
+  const LEAD_TYPE_LABEL = { valuation: 'Үнэлгээ', alert: 'Мэдэгдэл', call: 'Залгуулах', search_request: 'Хайлт даатгасан', agent_contact: 'Агентад' };
+  // Pipeline: Шинэ хүсэлт → Холбогдсон → Байр санал болгосон → Үзлэг товлосон → Үнэ тохиролцож
+  // байгаа → Гэрээ → Амжилттай хаасан (+ Цуцлагдсан). 'closed' is the pre-v3 terminal state.
+  const LEAD_STATUS_LABEL = { new: 'Шинэ хүсэлт', contacted: 'Холбогдсон', offered: 'Санал болгосон', viewing: 'Үзлэг товлосон',
+    negotiating: 'Үнэ тохиролцож буй', contract: 'Гэрээ', won: 'Амжилттай хаасан', lost: 'Цуцлагдсан', closed: 'Хаагдсан (хуучин)' };
 
   registerRoute(/^\/crm$/, async () => {
     const t = new URLSearchParams(location.search).get('tab');
@@ -33,15 +36,23 @@
     }
     if (!crmAllowed()) { root.innerHTML = render403(); return; }
     const staff = isStaffUser();
-    if (!staff) _crmTab = 'leads';
     const tabs = [
       { id: 'leads', label: staff ? 'Лидүүд' : 'Миний лидүүд' },
-      ...(staff ? [{ id: 'sales', label: 'Хэлцэл' }, { id: 'complexes', label: 'Хотхон & зураг' }, { id: 'metrics', label: 'Хэмжилт' }, { id: 'optout', label: 'Хүсэлт' }] : [])
+      { id: 'tasks', label: 'Даалгавар & уулзалт' },
+      ...(staff ? [
+        { id: 'deals', label: 'Хэлцэл бүртгэх' }, { id: 'reports', label: 'Тайлан' }, { id: 'sales', label: 'Хэлцэл (paste)' },
+        { id: 'complexes', label: 'Хотхон & зураг' }, { id: 'agents', label: 'Агентууд' }, { id: 'reviews', label: 'Сэтгэгдэл' },
+        { id: 'home', label: 'Нүүр хуудас' }, { id: 'import', label: 'Импорт & давхардал' }, { id: 'stats', label: 'Статистик' },
+        { id: 'metrics', label: 'Хэмжилт' }, { id: 'optout', label: 'Хүсэлт' }] : [])
     ];
+    // Don't overwrite the requested tab: on a cold load the role arrives a moment later.
+    const tab = tabs.some(t => t.id === _crmTab) ? _crmTab : 'leads';
     root.innerHTML = `<div class="route-head"><div class="route-eyebrow">${esc(roleLabel(isOwnerUser() ? 'owner' : currentUser.role))}</div><h1 class="route-title">Ажлын самбар</h1>
-      <div class="admin-tabs">${tabs.map(t => `<button class="mytab ${_crmTab === t.id ? 'active' : ''}" onclick="setCrmTab('${t.id}')">${t.label}</button>`).join('')}</div></div>
+      <div class="admin-tabs">${tabs.map(t => `<button class="mytab ${tab === t.id ? 'active' : ''}" onclick="setCrmTab('${t.id}')">${t.label}</button>`).join('')}</div></div>
       <div id="crmBody"><div class="admin-loading">Ачааллаж байна…</div></div>`;
-    ({ leads: crmLeads, sales: crmSales, complexes: crmComplexes, metrics: crmMetrics, optout: crmOptout }[_crmTab] || crmLeads)();
+    ({ leads: crmLeads, tasks: crmTasks, deals: crmDeals, reports: crmReports, sales: crmSales, complexes: crmComplexes,
+       agents: crmAgents, reviews: crmReviews, home: crmHomeConfig, import: crmImport, stats: crmStats,
+       metrics: crmMetrics, optout: crmOptout }[tab] || crmLeads)();
   }
   function setCrmTab(t) { _crmTab = t; renderCrm(); }
   const crmBody = () => document.getElementById('crmBody');
@@ -65,10 +76,11 @@
       const [snap, agents] = await Promise.all([q.limit(500).get(), crmLoadAgents()]);
       const all = snap.docs.map(d => Object.assign({ id: d.id }, d.data()))
         .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-      const counts = { new: 0, contacted: 0, closed: 0 };
+      const counts = {};
       all.forEach(l => { counts[l.status || 'new'] = (counts[l.status || 'new'] || 0) + 1; });
       const items = all.filter(l => (l.status || 'new') === _crmLeadStatus);
-      el.innerHTML = `<div class="admin-tabs">${Object.keys(LEAD_STATUS_LABEL).map(s => `<button class="mytab ${_crmLeadStatus === s ? 'active' : ''}" onclick="_crmLeadStatus='${s}'; crmLeads()">${LEAD_STATUS_LABEL[s]} (${counts[s] || 0})</button>`).join('')}</div>
+      el.innerHTML = `<div class="crm-toolbar"><button class="btn btn-ghost" onclick="crmExportLeads()">CSV татах</button></div>
+        <div class="admin-tabs crm-stages">${Object.keys(LEAD_STATUS_LABEL).filter(s => s !== 'closed' || counts.closed).map(s => `<button class="mytab ${_crmLeadStatus === s ? 'active' : ''}" onclick="_crmLeadStatus='${s}'; crmLeads()">${LEAD_STATUS_LABEL[s]} (${counts[s] || 0})</button>`).join('')}</div>
         ${items.length ? `<div class="crm-list">${items.map(l => crmLeadRow(l, agents)).join('')}</div>` : adminEmptyState('Лид алга', 'Энэ төлөвт лид байхгүй байна.')}`;
     } catch (e) {
       console.error('crm leads failed:', e.code, e.message);
@@ -82,7 +94,10 @@
       cx && 'Хотхон: ' + esc(cx),
       l.areaM2 && esc(l.areaM2) + ' м²', l.rooms && esc(l.rooms) + ' өрөө', l.floor != null && l.floor !== '' && esc(l.floor) + ' давхар',
       l.budget && 'Төсөв: ' + esc(l.budget) + ' сая ₮', l.estimate && 'Үнэлгээ: ' + esc(l.estimate) + ' сая ₮',
-      l.listingRef && 'Зар: ' + esc(l.listingRef), l.note && esc(l.note)
+      l.listingRef && 'Зар: ' + esc(l.listingRef), l.note && esc(l.note),
+      l.district && 'Дүүрэг: ' + esc(districtLabel(l.district)), (l.areaMin || l.areaMax) && 'Талбай: ' + esc(l.areaMin || '?') + '–' + esc(l.areaMax || '?') + ' м²',
+      l.downPayment && 'Урьдчилгаа: ' + esc(l.downPayment) + ' сая ₮', l.financing && ({ cash: 'Бэлэн', loan: 'Зээл', mixed: 'Хосолсон' }[l.financing] || ''),
+      l.agentSlug && 'Агент: ' + esc(l.agentSlug), l.nextFollowUp?.toDate && 'Follow-up: ' + tsDate(l.nextFollowUp)
     ].filter(Boolean).join(' · ');
     const id = l.id.replace(/[^A-Za-z0-9_-]/g, '');
     return `<div class="crm-row">
@@ -97,6 +112,7 @@
         <select class="form-input" id="crmStatus_${id}">${Object.keys(LEAD_STATUS_LABEL).map(s => `<option value="${s}" ${(l.status || 'new') === s ? 'selected' : ''}>${LEAD_STATUS_LABEL[s]}</option>`).join('')}</select>
         ${isStaffUser() && agents && agents.length ? `<select class="form-input" id="crmAssign_${id}"><option value="">Хуваарилаагүй</option>${agents.map(a => `<option value="${esc(a.uid)}" ${l.assignedTo === a.uid ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select>` : (l.assignedTo ? `<div class="muted-note">Хуваарилсан</div>` : '')}
         <button class="btn btn-blue" onclick="crmSaveLead('${id}')">Хадгалах</button>
+        <button class="btn btn-ghost" onclick="history.pushState(null,'','/crm?tab=tasks&lead=${id}'); setCrmTab('tasks')">+ Даалгавар</button>
       </div>
     </div>`;
   }
@@ -373,5 +389,7 @@
 
   // Re-render if the user signs in/out (or their role loads) while on /crm.
   function refreshCrmIfActive() {
-    if (location.pathname === '/crm' && document.getElementById('crmRoot')) renderCrm();
+    if ((location.pathname === '/crm' || location.pathname === '/crm/manager') && document.getElementById('crmRoot')) renderCrm();
+    // Same for the content studio: on a cold load it renders before the user/role arrive.
+    if (location.pathname === '/admin/studio' && document.getElementById('studioRoot') && typeof renderStudio === 'function') renderStudio();
   }

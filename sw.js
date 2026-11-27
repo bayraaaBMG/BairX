@@ -1,4 +1,4 @@
-const CACHE = 'bairx-v5';
+const CACHE = 'bairx-v6';
 const OFFLINE_PAGE = '/';
 
 const PRECACHE = [
@@ -30,8 +30,14 @@ self.addEventListener('fetch', e => {
 
   const url = new URL(e.request.url);
 
-  // Don't cache Google Fonts or other CDN requests
-  if (!url.origin.includes(self.location.hostname) && !url.origin.includes('fonts.googleapis.com')) {
+  // Only this site's own origin (exact match) and Google Fonts CSS are handled here.
+  // An earlier substring check (origin.includes(hostname)) also matched other ports on the
+  // same host — e.g. the Firestore emulator at 127.0.0.1:8080 — so Firestore long-poll
+  // requests were proxied and cached by the worker, which replayed stale responses
+  // (400 "unknown session") and left reads hanging. Firestore/Auth/Storage are never
+  // touched by the worker now.
+  const sameOrigin = url.origin === self.location.origin;
+  if (!sameOrigin && url.origin !== 'https://fonts.googleapis.com') {
     return;
   }
 
@@ -53,7 +59,7 @@ self.addEventListener('fetch', e => {
   // immediately instead of silently serving a stale cached script forever. Cache is
   // only a fallback for when the network is unavailable (offline support).
   // /data/*.json (bank list etc.) is included: it changes without a code deploy.
-  if (url.origin.includes(self.location.hostname) && /\.(js|css|json)$/.test(url.pathname)) {
+  if (sameOrigin && /\.(js|css|json)$/.test(url.pathname)) {
     e.respondWith(
       fetch(e.request).then(res => {
         if (res && res.status === 200) {

@@ -16,7 +16,7 @@ fs.mkdirSync(SHOTS, { recursive: true });
 const PROD_HOSTS = /(^|\.)(firestore|identitytoolkit|securetoken|firebasestorage|firebaseinstallations|fcmregistrations)\.googleapis\.com$|cloudfunctions\.net$/;
 const PROD_FIREBASE = (url) => { try { return PROD_HOSTS.test(new URL(String(url)).hostname); } catch (e) { return false; } };
 // Third-party resources that may legitimately fail offline / be rate-limited; reported, not fatal.
-const EXTERNAL_SOFT = /apis\.google\.com|images\.unsplash\.com|tile\.openstreetmap\.org|overpass-api|fonts\.(googleapis|gstatic)\.com|unpkg\.com/;
+const EXTERNAL_SOFT = /apis\.google\.com|images\.unsplash\.com|(tile|www)\.openstreetmap\.org|overpass-api|fonts\.(googleapis|gstatic)\.com|unpkg\.com/;
 
 test.beforeEach(async ({ page }, info) => {
   const problems = { console: [], pageerror: [], prod: [], http: [], soft: [] };
@@ -30,6 +30,10 @@ test.beforeEach(async ({ page }, info) => {
     if (r.status() >= 400 && /127\.0\.0\.1:(8080|9099|9199|5001)\//.test(u)) {
       info.annotations.push({ type: 'emulator-' + r.status(), description: r.request().method() + ' ' + u.slice(0, 200) });
       console.log('[emulator ' + r.status() + '] ' + info.title + ' ' + r.request().method() + ' ' + u.slice(0, 200));
+      // A Firestore Listen long-poll whose session the emulator already dropped (after a
+      // navigation) answers 400 — SDK transport noise, it reconnects by itself.
+      if (r.status() === 400 && /:8080\/google\.firestore\.v1\.Firestore\/(Listen|Write)\/channel/.test(u)) problems.listen400 = (problems.listen400 || 0) + 1;
+      else problems.emuOther = (problems.emuOther || 0) + 1;
     }
     if (r.status() >= 400 && !u.includes(':8080') && !u.includes(':9099') && !u.includes(':9199') && !u.includes(':5001')) {
       (EXTERNAL_SOFT.test(u) ? problems.soft : problems.http).push(r.status() + ' ' + u);
@@ -53,7 +57,12 @@ test.afterEach(async ({}, info) => {
   // "Could not reach Cloud Firestore backend" is the SDK's 10-second emulator latency warning;
   // a real production attempt would show up in p.prod (blocked + recorded) instead.
   const ignore = (t) => /Failed to load resource: net::ERR_(INTERNET_DISCONNECTED|NAME_NOT_RESOLVED|CONNECTION)|unsplash|openstreetmap|overpass|Could not reach Cloud Firestore backend/i.test(t);
-  const consoleErrors = p.console.filter((t) => !ignore(t));
+  // Ignore exactly as many "400 (Bad Request)" console lines as Listen-channel 400s were seen.
+  let listen400 = p.listen400 || 0;
+  const consoleErrors = p.console.filter((t) => !ignore(t)).filter((t) => {
+    if (listen400 > 0 && /status of 400 \(Bad Request\)/.test(t)) { listen400--; return false; }
+    return true;
+  });
   if (p.soft.length) info.annotations.push({ type: 'external-soft-failures', description: p.soft.slice(0, 5).join(' | ') });
   expect.soft(p.prod, 'requests to PRODUCTION Firebase').toEqual([]);
   expect.soft(p.pageerror, 'uncaught page errors').toEqual([]);
@@ -93,7 +102,11 @@ async function recompute(page) {
 }
 
 // ---------- tests (serial: later ones rely on stats computed by the first) ----------
-test.describe.configure({ mode: 'serial' });
+// Default (non-serial) mode: with workers=1 and fullyParallel=false the tests still run in
+// file order, but one failure no longer skips the rest — every failure is collected in a
+// single run. Tests that depend on earlier data (stats from test 1, review from test 24)
+// still get it because order is preserved.
+test.describe.configure({ mode: 'default' });
 
 test('1. Cloud Function (emulator) recomputes complexStats from the CRM button', async ({ page }) => {
   test.setTimeout(150000);
@@ -272,7 +285,7 @@ test('13. CRM: lead pipeline, bulk sales paste, image upload (compressed)', asyn
   await first.locator('button:has-text("Хадгалах")').click();
   await expect(page.locator('#toast')).toContainText('Хадгалагдлаа');
 
-  await page.click('.mytab:has-text("Хэлцэл")');
+  await page.click('.mytab:has-text("Хэлцэл (paste)")');
   // nogoon-nuur has <3 listings, so extra deals here never change other tests' expectations.
   await page.selectOption('#salesComplex', 'nogoon-nuur');
   await page.fill('#salesPaste', '2026-10-01, 410, 70, 2\n2026-10-15\t600\t101\t3\nбуруу мөр');
@@ -282,7 +295,7 @@ test('13. CRM: lead pipeline, bulk sales paste, image upload (compressed)', asyn
   await expect(page.locator('#salesExisting tbody tr', { hasText: '2026-10-15' }).first()).toBeVisible();
   await expect(page.locator('#salesExisting tbody tr', { hasText: '2026-10-01' }).first()).toBeVisible();
 
-  await page.click('.mytab:has-text("Хотхон")');
+  await page.click('.mytab:has-text("Хотхон & зураг")');
   await page.selectOption('#cxEditSel', 'zaisan-tolt');
   // 2400×1800 PNG generated in-page so the ≤1600px compression path is exercised.
   const pngB64 = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 2400; c.height = 1800; const g = c.getContext('2d'); g.fillStyle = '#1E5BFF'; g.fillRect(0, 0, 2400, 1800); return c.toDataURL('image/png').split(',')[1]; });
@@ -339,9 +352,10 @@ test('17. PWA: service worker active with the current cache version, manifest OK
 });
 
 test('18. No broken internal links (home, footer, route pages)', async ({ page }) => {
+  test.setTimeout(240000);
   const hrefs = new Set();
-  for (const p of ['/', '/complexes', '/hotlist', '/b/250', '/market']) {
-    await page.goto(p);
+  for (const p of ['/', '/complexes', '/hotlist', '/b/250', '/market', '/complex/zaisan-tolt', '/agents']) {
+    await page.goto(p, { waitUntil: 'domcontentloaded' });
     // Firestore keeps a long-poll open, so "networkidle" never fires — wait for content.
     await page.waitForSelector('#routeContent .route-loading', { state: 'detached' }).catch(() => {});
     await page.waitForTimeout(1500);
@@ -389,4 +403,242 @@ test('21. Short paths open the existing pages and survive a refresh', async ({ p
     expect(r.status(), p).toBe(200);
     await expect(page.locator('#' + id)).toHaveClass(/page-active/);
   }
+});
+
+// ---------- Phase 2: complex extras, Select, agents, reviews, search request, other pages ----------
+test('22. Complex page: building info, map, min/max, deal history, sale/rent split, agent', async ({ page }, info) => {
+  await route(page, '/complex/zaisan-tolt');
+  await expect(page.locator('#routeContent .cx-info')).toContainText('Тест Девелопмент ХХК');
+  await expect(page.locator('#routeContent .cx-map iframe')).toHaveAttribute('src', /openstreetmap\.org\/export\/embed\.html.*marker=47\.8864,106\.9057/);
+  await expect(page.locator('#routeContent .cx-kpi', { hasText: 'хамгийн бага' })).toContainText('4.00 сая ₮/м²');
+  await expect(page.locator('#routeContent .cx-kpi', { hasText: 'хамгийн өндөр' })).toContainText('5.40 сая ₮/м²');
+  expect(await page.locator('#routeContent .ph-svg rect').count()).toBeGreaterThanOrEqual(2);
+  await expect(page.locator('#routeContent .home-listings-grid .listing-card')).toHaveCount(4);
+  await expect(page.locator('#cxHot .hot-mini')).toHaveCount(1);
+  await expect(page.locator('#cxAgents .ag-card')).toContainText('Тест Агент');
+  await shot(page, info, 'complex-extras');
+});
+
+test('23. BairX Select, agents list and agent profile (approved reviews only)', async ({ page }) => {
+  await route(page, '/featured');
+  await expect(page.locator('#routeContent .listing-card')).toHaveCount(2);
+  await route(page, '/agents');
+  await expect(page.locator('#routeContent .ag-card')).toHaveCount(1);
+  await route(page, '/agent/test-agent');
+  await expect(page.locator('#routeContent .ag-facts')).toContainText('42');
+  await expect(page.locator('#routeContent .ag-social a', { hasText: 'Telegram' })).toHaveAttribute('href', 'https://t.me/bairx_test');
+  await expect(page.locator('#routeContent .listing-card')).toHaveCount(1);
+  await expect(page.locator('#routeContent .rv-card')).toHaveCount(1);
+  await expect(page.locator('#routeContent')).not.toContainText('шалгагдаагүй сэтгэгдэл');
+});
+
+test('24. Reviews: public sees approved only; a new review is saved as pending', async ({ page }) => {
+  await route(page, '/reviews');
+  await expect(page.locator('#routeContent .rv-card')).toHaveCount(1);
+  await page.fill('#rvName', 'E2E Шүүмжлэгч');
+  await page.selectOption('#rvRating', '4');
+  await page.fill('#rvText', 'E2E сэтгэгдэл ' + test.info().project.name);
+  await page.check('#rvConsent');
+  await page.click('#rvSubmit');
+  await expect(page.locator('#rvForm .lead-success')).toBeVisible();
+  const r = (await emulatorDocs('reviews')).find((d) => d.f.text?.stringValue === 'E2E сэтгэгдэл ' + test.info().project.name);
+  expect(r.f.status.stringValue).toBe('pending');
+  expect(Number(r.f.rating.integerValue)).toBe(4);
+});
+
+test('25. Search request ("Хайлтаа даатгах") becomes a structured CRM lead', async ({ page }) => {
+  await route(page, '/search-request?agent=test-agent');
+  await expect(page.locator('#routeContent .route-lead')).toContainText('Тест Агент');
+  const name = 'E2E Хайгч ' + test.info().project.name;
+  await page.fill('#srName', name);
+  await page.fill('#srPhone', '99887766');
+  await page.fill('#srBudget', '450');
+  await page.fill('#srDown', '120');
+  await page.selectOption('#srFin', 'loan');
+  await page.selectOption('#srDistrict', 'khan-uul');
+  await page.selectOption('#srRooms', '3');
+  await page.fill('#srAreaMin', '70');
+  await page.fill('#srNote', 'Сургуультай ойр');
+  await page.check('#srConsent');
+  await page.click('#srSubmit');
+  await expect(page.locator('#srForm .lead-success')).toBeVisible();
+  const l = (await emulatorDocs('leads')).find((d) => d.f.name?.stringValue === name);
+  expect(l.f.type.stringValue).toBe('search_request');
+  expect(l.f.financing.stringValue).toBe('loan');
+  expect(Number(l.f.downPayment.integerValue)).toBe(120);
+  expect(l.f.agentSlug.stringValue).toBe('test-agent');
+  expect(l.f.notifyMatches.booleanValue).toBe(true);
+});
+
+test('26. Deals, commercial, terms, contact and shareable listing URLs', async ({ page }) => {
+  await route(page, '/transactions');
+  expect(await page.locator('#routeContent .data-table tbody tr').count()).toBeGreaterThan(5);
+  await route(page, '/o/office');
+  await expect(page.locator('#routeContent .listing-card')).toHaveCount(1);
+  await route(page, '/terms');
+  await expect(page.locator('#routeContent h1')).toHaveText('Үйлчилгээний нөхцөл');
+  await route(page, '/contact');
+  await expect(page.locator('#routeContent h1')).toBeVisible();
+  const r = await page.goto('/listing/test-listing-1');
+  expect(r.status()).toBe(200);
+  await expect(page.locator('#modal')).toHaveClass(/open/);
+  await expect(page).toHaveTitle(/ТЕСТ зар 1/);
+});
+
+test('27. Home: BairX Select, agents, search-request CTA and approved reviews', async ({ page }, info) => {
+  await page.goto('/');
+  await page.waitForSelector('#homeExtras .sr-cta');
+  await expect(page.locator('#homeExtras .listing-card')).toHaveCount(2);
+  await expect(page.locator('#homeExtras .ag-card')).toHaveCount(1);
+  await expect(page.locator('#homeExtras .rv-card')).toHaveCount(1);
+  await shot(page, info, 'home-extras');
+});
+
+// ---------- Phase 3: CRM pipeline, tasks, deals, reports, agents, reviews, home config, import, stats ----------
+test('28. CRM: 8-stage pipeline, follow-up task from a lead, overdue reminder, done', async ({ page }) => {
+  await login(page, OWNER);
+  await page.goto('/crm');
+  await page.waitForSelector('#crmBody .crm-stages');
+  for (const s of ['Шинэ хүсэлт', 'Холбогдсон', 'Санал болгосон', 'Үзлэг товлосон', 'Үнэ тохиролцож буй', 'Гэрээ', 'Амжилттай хаасан', 'Цуцлагдсан']) {
+    await expect(page.locator('#crmBody .crm-stages .mytab', { hasText: s })).toHaveCount(1);
+  }
+  await page.click('.mytab:has-text("Даалгавар")');
+  const title = 'E2E follow-up ' + test.info().project.name;
+  await page.fill('#tkTitle', title);
+  await page.selectOption('#tkKind', 'followup');
+  await page.fill('#tkDue', '2020-01-01T10:00');
+  await page.click('#tkSave');
+  const row = page.locator('.crm-row', { hasText: title });
+  await expect(row).toHaveClass(/is-late/);
+  await row.locator('button:has-text("Дууссан")').click();
+  await expect(page.locator('.crm-row.is-done', { hasText: title })).toBeVisible();
+});
+
+test('29. CRM: register a deal with commission; reports and manager view', async ({ page }) => {
+  await login(page, OWNER);
+  await page.goto('/crm?tab=deals');
+  await page.waitForSelector('#dlComplex');
+  await page.selectOption('#dlComplex', 'nogoon-nuur');
+  await page.fill('#dlPrice', '410');
+  await page.fill('#dlArea', '70');
+  await page.fill('#dlPct', '2');
+  await expect(page.locator('#dlCommission')).toContainText('8.20 сая ₮');
+  await page.click('#dlSave');
+  await expect(page.locator('#toast')).toContainText('Хэлцэл бүртгэгдлээ');
+  const s = (await emulatorDocs('sales')).find((d) => d.f.commission && Number(d.f.commission.doubleValue) === 8.2);
+  expect(s, 'sale with commission').toBeTruthy();
+  await page.goto('/crm/manager');
+  await page.waitForSelector('#crmBody .funnel');
+  await expect(page.locator('#crmBody .mk-stat').first()).not.toContainText('—');
+});
+
+test('30. CRM: agent profile saved by staff (hidden agent stays off the public list)', async ({ page }) => {
+  await login(page, OWNER);
+  await page.goto('/crm?tab=agents');
+  await page.waitForSelector('#agName');
+  const name = 'E2E Агент ' + test.info().project.name;
+  await page.fill('#agName', name);
+  await page.fill('#agPhone', '99112244');
+  await page.fill('#agDeals', '7');
+  await page.selectOption('#agActive', '0');
+  await page.click('#agSave');
+  await expect(page.locator('#toast')).toContainText('Агент хадгалагдлаа');
+  const a = (await emulatorDocs('agents')).find((d) => d.f.name?.stringValue === name);
+  expect(a.f.active.booleanValue).toBe(false);
+  expect(Number(a.f.dealsClosed.integerValue)).toBe(7);
+  await route(page, '/agents');
+  await expect(page.locator('#routeContent .ag-card', { hasText: name })).toHaveCount(0);
+});
+
+test('31. CRM: review moderation and home-page section switch', async ({ page }) => {
+  await login(page, OWNER);
+  await page.goto('/crm?tab=reviews');
+  const mine = page.locator('.crm-row', { hasText: 'E2E сэтгэгдэл ' + test.info().project.name });
+  await expect(mine).toBeVisible();
+  await mine.locator('button:has-text("Татгалзах")').click();
+  await expect(page.locator('#toast')).toContainText('Татгалзлаа');
+  await page.goto('/crm?tab=home');
+  await page.waitForSelector('.cfg-grid');
+  await page.fill('#cfgFeatured', 'no-such-listing');
+  await page.click('#cfgSave');
+  await expect(page.locator('#cfgMsg')).toContainText('no-such-listing');
+  await page.fill('#cfgFeatured', 'test-listing-5, test-listing-1');
+  await page.uncheck('.cfg-grid input[data-sec="faq"]');
+  await page.click('#cfgSave');
+  await expect(page.locator('#toast')).toContainText('Хадгалагдлаа');
+  await page.goto('/');
+  await page.waitForSelector('#homeMarket .mk-stats');
+  await expect(page.locator('#homeFaq .faq-item')).toHaveCount(0);
+  await page.goto('/crm?tab=home');
+  await page.waitForSelector('.cfg-grid');
+  await page.check('.cfg-grid input[data-sec="faq"]');
+  await page.click('#cfgSave');
+  await expect(page.locator('#toast')).toContainText('Хадгалагдлаа');
+});
+
+test('32. CRM: CSV import with validation, duplicate scan, manual stats recompute', async ({ page }) => {
+  test.setTimeout(120000);
+  await login(page, OWNER);
+  await page.goto('/crm?tab=import');
+  await page.waitForSelector('#imKind');
+  await page.selectOption('#imKind', 'sales');
+  const csv = 'complex,date,price,area,rooms\nНогоон нуур (ТЕСТ),2026-09-01,250,60,2\nnogoon-nuur,2026-09-12,260,62,2\nnogoon-nuur,bad-date,1,0,1\n';
+  await page.setInputFiles('#imFile', { name: 'sales.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
+  await page.click('#crmBody button[onclick="crmImportPreview()"]');
+  await expect(page.locator('#imPreview')).toContainText('2 мөр бэлэн');
+  await expect(page.locator('#imPreview')).toContainText('1 мөр алдаатай');
+  await page.click('#imGo');
+  await expect(page.locator('#imPreview .lead-success')).toContainText('2 мөр');
+  await page.click('#crmBody button[onclick="crmFindDuplicates()"]');
+  await expect(page.locator('#dupOut')).toContainText('идэвхтэй зараас');
+  await page.goto('/crm?tab=stats');
+  await page.click('#stRun');
+  await expect(page.locator('#stOut')).toContainText('хотхон');
+  await page.click('#stOut button:has-text("Хадгалах")');
+  await expect(page.locator('#stOut .lead-success')).toBeVisible({ timeout: 30000 });
+  const sum = (await emulatorDocs('siteStats')).find((d) => d.id === 'summary');
+  expect(sum.f.source.stringValue).toBe('manual');
+  const z = (await emulatorDocs('complexStats')).find((d) => d.id === 'zaisan-tolt');
+  expect(Number(z.f.avgPpm2.doubleValue ?? z.f.avgPpm2.integerValue)).toBeCloseTo(4.9, 3);
+});
+
+// ---------- Phase 4: assistant, content studio, honest integration status ----------
+test('33. BairX assistant answers from BairX data only', async ({ page }) => {
+  await page.goto('/');
+  await page.click('.bxa-fab');
+  await expect(page.locator('#bxAssist')).toHaveClass(/open/);
+  await expect(page.locator('#bxAssist .bxa-badge')).toContainText('AI холбогдоогүй');
+  await page.fill('#bxAssistIn', 'Зайсан Тольт хотхоны м2 үнэ');
+  await page.click('#bxAssist button[type="submit"]');
+  await expect(page.locator('#bxAssistLog .bxa-msg.bot').last()).toContainText('4.90 сая ₮/м²');
+  await page.fill('#bxAssistIn', '600 сая хүртэл 2 өрөө');
+  await page.click('#bxAssist button[type="submit"]');
+  await expect(page.locator('#bxAssistLog .bxa-msg.bot').last()).toContainText('зар олдлоо');
+});
+
+test('34. Content studio: template texts + integrations shown as not connected', async ({ page }) => {
+  await login(page, OWNER);
+  await page.goto('/admin/studio');
+  await page.waitForSelector('#stuId');
+  await page.fill('#stuId', 'test-listing-4');
+  await page.click('#studioRoot button:has-text("Үүсгэх")');
+  await expect(page.locator('#stu_desc')).toHaveValue(/худалдана/);
+  await expect(page.locator('#stu_social')).toHaveValue(/#BairX/);
+  await expect(page.locator('#stu_reels')).toHaveValue(/0–3 сек/);
+  // Independent of test 1: the explanation must match whatever stats exist right now —
+  // a discount vs the complex average when complexStats/zaisan-tolt is there, otherwise an
+  // explicit "data insufficient" (never an invented comparison).
+  await expect(page.locator('#stu_explain')).toHaveValue(/1 м²-ийн үнэ 4\.00 сая ₮.*мэргэжлийн үнэлгээ биш/);
+  const hasStats = (await emulatorDocs('complexStats')).some((d) => d.id === 'zaisan-tolt');
+  await expect(page.locator('#stu_explain')).toHaveValue(hasStats ? /дунджаас \d+% хямд/ : /өгөгдөл хүрэлцээгүй/);
+  await expect(page.locator('#studioRoot tr', { hasText: 'Telegram' })).toContainText('Холбогдоогүй');
+  await expect(page.locator('#studioRoot tr', { hasText: 'Web Push' })).toContainText('Холбогдоогүй');
+});
+
+test('35. A regular user cannot open staff tools', async ({ page }) => {
+  await login(page, USER);
+  await page.goto('/admin/studio');
+  await expect(page.locator('#studioRoot')).not.toContainText('Үүсгэх');
+  await page.goto('/crm?tab=stats');
+  await expect(page.locator('#crmRoot')).not.toContainText('Урьдчилан тооцоолох');
 });

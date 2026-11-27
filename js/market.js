@@ -34,7 +34,7 @@
   const PATH_ALIASES = {
     '/listings': 'listings', '/sale': 'listings', '/rent': 'rent', '/new-projects': 'newdev',
     '/loan': 'calc', '/compare': 'compare', '/dashboard': 'dashboard', '/admin': 'admin',
-    '/contact': 'resources', '/favorites': 'dashboard'
+    '/favorites': 'dashboard'
   };
   function pathAlias(path) {
     const clean = String(path || '/').split(/[?#]/)[0].replace(/\/+$/, '');
@@ -149,8 +149,10 @@
     await loadPriceData();
     const [summary, hot] = await Promise.all([loadSiteStat('summary'), loadSiteStat('hotlist')]);
     const items = skylineItems(24);
+    const cfg = (typeof rulesV3Ready === 'function' && await rulesV3Ready()) ? await loadSiteConfig('home') : {};
+    const sec = (k, html) => (typeof homeSectionOn !== 'function' || homeSectionOn(cfg, k)) ? html : '';
     const stat = (v, label) => `<div class="mk-stat"><strong>${v == null ? '—' : esc(String(v))}</strong><span>${label}</span></div>`;
-    el.innerHTML = `
+    el.innerHTML = sec('market', `
       <div class="mk-stats">
         ${stat(summary ? summary.activeListingCount : null, 'идэвхтэй зар')}
         ${stat(summary ? summary.complexCount : (priceData.complexes.size || null), 'хотхон')}
@@ -159,7 +161,7 @@
       </div>
       ${summary ? '' : '<p class="muted-note mk-note">Статистик сервер дээр өдөр бүр тооцогдоно. Одоогоор тооцоолол хийгдээгүй байна.</p>'}
       ${sectionHead('Хотхоны 1 м²-ийн <em>дундаж үнэ</em>', '/market', 'Зах зээлийн судалгаа')}
-      ${skylineHtml(items)}
+      ${skylineHtml(items)}`) + sec('tools', `
       <div class="mk-tools">
         <form class="mk-tool" onsubmit="event.preventDefault();go(null,'/budget?b='+encodeURIComponent(document.getElementById('mkBudget').value||''))">
           <div class="mk-tool-title">Төсвөөрөө хэдэн м² авах вэ?</div>
@@ -176,15 +178,13 @@
           <p class="muted-note">Төсөв, хотхон, өрөөгөө сонгоод шинэ тохирох зар гармагц мэдэгдэл аваарай.</p>
           <a class="btn btn-blue" href="/alerts" onclick="return go(event, '/alerts')">Мэдэгдэл тохируулах</a>
         </div>
-      </div>
+      </div>`) + sec('hot', `
       ${sectionHead('Hot List — <em>дунджаас 15%+ хямд</em>', '/hotlist')}
-      ${hotPreviewHtml(hot)}
+      ${hotPreviewHtml(hot)}`) + sec('sales', `
       ${sectionHead('Саяхан хаасан <em>бодит хэлцлүүд</em>', '/growth', 'Үнийн өсөлт')}
-      ${marketSalesHtml(6)}
-      ${items.length ? sectionHead('Хотхонуудын <em>харьцуулалт</em>', '/complexes', 'Бүх хотхон') + compareTableHtml(items.slice(0, 10)) : ''}
-`;
+      ${marketSalesHtml(6)}`) + sec('compare', items.length ? sectionHead('Хотхонуудын <em>харьцуулалт</em>', '/complexes', 'Бүх хотхон') + compareTableHtml(items.slice(0, 10)) : '');
     const faq = document.getElementById('homeFaq');
-    if (faq) faq.innerHTML = sectionHead('Түгээмэл <em>асуултууд</em>') + faqHtml();
+    if (faq) faq.innerHTML = sec('faq', sectionHead('Түгээмэл <em>асуултууд</em>') + faqHtml());
   }
 
   // ---------- /market ----------

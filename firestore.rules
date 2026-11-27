@@ -281,7 +281,7 @@ service cloud.firestore {
     // own — matching "Admin өөрийн audit log-оо delete хийж болохгүй" (they can't touch it at
     // all, delete included) while still letting them see their own moderation history.
     match /adminAuditLogs/{logId} {
-      allow create: if isAdminOrOwner() && request.resource.data.actorUid == request.auth.uid;
+      allow create: if isStaff() && request.resource.data.actorUid == request.auth.uid;
       allow read: if isOwner() || (isAdmin() && resource.data.actorUid == request.auth.uid);
       allow update, delete: if false;
     }
@@ -328,15 +328,79 @@ service cloud.firestore {
     // ===== COMPLEX STATS — written ONLY by the scheduled Cloud Function =====
     // Public read so the site can show averages/growth; no client (not even admin) can write,
     // so a number on the site can always be traced back to the function's formula.
+    // Fallback while Cloud Functions are not deployed: an admin/owner may write the output
+    // of the SAME pure builder (js/pricing.js buildAllStats) from the admin panel. Every such
+    // doc is stamped source:'manual' and the run is audit-logged. The public can never write.
     match /complexStats/{complexId} {
       allow read: if true;
-      allow write: if false;
+      allow create, update: if isAdminOrOwner() && validComplexId(complexId)
+                    && request.resource.data.source == 'manual'
+                    && request.resource.data.complexId == complexId
+                    && request.resource.data.listingCount is int
+                    && request.resource.data.salesCount is int
+                    && (request.resource.data.avgPpm2 == null || request.resource.data.avgPpm2 is number);
+      allow delete: if isAdminOrOwner();
     }
 
     // ===== SITE STATS (siteStats/hotlist, siteStats/summary) — Cloud Function only =====
     match /siteStats/{docId} {
       allow read: if true;
-      allow write: if false;
+      allow create, update: if isAdminOrOwner() && docId in ['hotlist', 'summary']
+                    && request.resource.data.source == 'manual';
+      allow delete: if false;
+    }
+
+    // ===== SITE CONFIG (home sections on/off, BairX Select picks) — staff edit, public read =====
+    match /siteConfig/{docId} {
+      allow read: if true;
+      allow write: if isStaff() && docId in ['home', 'featured', 'services'];
+    }
+
+    // ===== AGENTS (public profile cards) — only what staff typed in, public read =====
+    match /agents/{slug} {
+      allow read: if true;
+      allow create, update: if isStaff() && validComplexId(slug) && slug.size() > 0
+                    && nonEmpty(request.resource.data.name, 80)
+                    && shortString(request.resource.data.get('bio', ''), 2000)
+                    && (request.resource.data.get('phone', '') == '' || validPhone(request.resource.data.phone))
+                    && optNumber(request.resource.data, 'dealsClosed') && optNumber(request.resource.data, 'totalVolume')
+                    && optNumber(request.resource.data, 'yearsExperience');
+      allow delete: if isAdminOrOwner();
+    }
+
+    // ===== REVIEWS (сэтгэгдэл) — anyone submits (pending), staff approve, public sees approved =====
+    match /reviews/{reviewId} {
+      allow create: if request.resource.data.keys().hasOnly(['name', 'rating', 'text', 'agentSlug', 'complexId', 'consent', 'status', 'createdAt', 'uid'])
+                    && nonEmpty(request.resource.data.name, 80)
+                    && request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+                    && nonEmpty(request.resource.data.text, 1000)
+                    && shortString(request.resource.data.get('agentSlug', ''), 60)
+                    && validComplexId(request.resource.data.get('complexId', ''))
+                    && request.resource.data.consent == true
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.createdAt == request.time
+                    && (!('uid' in request.resource.data) || (isSignedIn() && request.resource.data.uid == request.auth.uid));
+      allow read: if resource.data.status == 'approved' || isStaff();
+      allow update: if isStaff()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'reviewedBy', 'reviewedAt', 'reply'])
+                    && request.resource.data.status in ['pending', 'approved', 'rejected'];
+      allow delete: if isStaff();
+    }
+
+    // ===== CRM TASKS (даалгавар, уулзалт, follow-up) — staff, or the agent it's assigned to =====
+    match /crmTasks/{taskId} {
+      allow read: if isStaff() || (isAgent() && resource.data.assignedTo == request.auth.uid);
+      allow create: if (isStaff() || (isAgent() && request.resource.data.assignedTo == request.auth.uid))
+                    && nonEmpty(request.resource.data.title, 200)
+                    && request.resource.data.kind in ['task', 'meeting', 'followup']
+                    && request.resource.data.dueAt is timestamp
+                    && request.resource.data.done is bool
+                    && request.resource.data.createdBy == request.auth.uid;
+      allow update: if (isStaff() || (isAgent() && resource.data.assignedTo == request.auth.uid
+                                      && request.resource.data.assignedTo == request.auth.uid))
+                    && request.resource.data.kind in ['task', 'meeting', 'followup']
+                    && request.resource.data.done is bool;
+      allow delete: if isStaff() || (isAgent() && resource.data.assignedTo == request.auth.uid);
     }
 
     // ===== SALES (зарагдсан хэлцэл) — staff only, never public =====
@@ -358,8 +422,15 @@ service cloud.firestore {
     match /leads/{leadId} {
       allow create: if request.resource.data.keys().hasOnly(['type', 'phone', 'name', 'budget', 'complexId',
                          'consent', 'createdAt', 'source', 'listingRef', 'areaM2', 'rooms', 'floor',
-                         'estimate', 'note', 'status', 'uid'])
-                    && request.resource.data.type in ['valuation', 'alert', 'call']
+                         'estimate', 'note', 'status', 'uid',
+                         'district', 'downPayment', 'financing', 'areaMin', 'areaMax', 'agentSlug', 'notifyMatches'])
+                    && request.resource.data.type in ['valuation', 'alert', 'call', 'search_request', 'agent_contact']
+                    && shortString(request.resource.data.get('district', ''), 40)
+                    && request.resource.data.get('financing', 'cash') in ['cash', 'loan', 'mixed']
+                    && shortString(request.resource.data.get('agentSlug', ''), 60)
+                    && optNumber(request.resource.data, 'downPayment') && optNumber(request.resource.data, 'areaMin')
+                    && optNumber(request.resource.data, 'areaMax')
+                    && request.resource.data.get('notifyMatches', false) is bool
                     && request.resource.data.consent == true
                     && validPhone(request.resource.data.phone)
                     && nonEmpty(request.resource.data.name, 80)
@@ -382,8 +453,8 @@ service cloud.firestore {
       // CRM pipeline: status / notes / assignment only — the lead's own contact details and
       // consent record are never editable after the fact. Agents can't reassign.
       allow update: if (isStaff() || (isAgent() && resource.data.get('assignedTo', '') == request.auth.uid))
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'notes', 'assignedTo', 'updatedAt'])
-                    && request.resource.data.status in ['new', 'contacted', 'closed']
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'notes', 'assignedTo', 'updatedAt', 'nextFollowUp'])
+                    && request.resource.data.status in ['new', 'contacted', 'offered', 'viewing', 'negotiating', 'contract', 'won', 'lost', 'closed']
                     && (isStaff() || request.resource.data.get('assignedTo', '') == resource.data.get('assignedTo', ''));
       // Deletion requests (/optout "delete my data") are carried out by staff; a signed-in
       // user may delete the leads they submitted themselves ("Бүртгэлээ устгах").
